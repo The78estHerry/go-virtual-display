@@ -234,8 +234,15 @@ make linux                                                    # 只能在 Linux 
   - 測試：`linux/tests/run.ps1` 在 Docker 跑兩支腳本。`simulate.sh` 40 項（原本的），`reinstall.sh` 26 項（新增）：一般使用者＋真的 sudo、用 `script` 提供終端機，涵蓋 n 取消、y 移除再安裝（保留接頭、語言、設定）、降版、升級、沒有 VERSION、沒有終端機、一般移除。全部通過。
 - 2026-11-01：依使用者要求發佈 **v0.4.1**（Gitea Release id 16），Release 說明標明 Linux 沒有實機測過。附件 SHA-256：Windows `CCBBC194…EB45058B`、Linux `A4A6C176…EA2A9980`。
 - 2026-11-01：0.4.2 開發：使用者要求重新安裝時兩邊都保留「登入時自動啟動」。Windows 的 `uninstall.ps1 -KeepUserSettings` 改成不刪 Run 機碼（指向 Program Files 裡的 vdswitch.exe，重新安裝後路徑相同）。兩邊的提示文字和 README 都改成「解析度、語言和登入時自動啟動會保留」。**Windows 待實機確認**：設好自動啟動 → 再執行 install.cmd 回答 y → Run 機碼 `HKCU\...\Run\go-virtual-display` 還在。
+- **2026-11-01 收工時的狀態（下次從這裡接續）**：
+  - 已發佈：v0.3.0（Windows＋補上的 Linux）、v0.4.0、v0.4.1。Release 說明都標明 Linux 沒有實機測過。
+  - main 上是 **0.4.2（開發中，未發佈）**，只改了 Windows 重新安裝時保留自動啟動，已推上 Gitea。測試用安裝包 `dist\release\go-virtual-display-0.4.2-windows.zip` 已產生。
+  - 使用者這台電腦：目前**沒有安裝**本程式（上次測完已移除，檢查過全部乾淨）。Docker Desktop 是這次為了編譯 Linux 版啟動的，可能還開著。
+  - Gitea token：使用者在 11/1 提供了新的 token，已用 `git credential approve` 存進 Credential Manager（claude-bot）。曾建議使用者撤銷並換新，因為 token 貼在對話裡；換新的話要再存一次。
 - 待辦：
-  - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
+  1. 請使用者實機確認 0.4.2：勾選「登入時自動啟動」→ 再執行 `install.cmd` 回答 y → 裝完後仍然勾著。通過後照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
+  2. Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）。測試前可先跑 `linux\tests\run.ps1`。
+  3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 
 ## 給之後的 Claude
 
