@@ -61,20 +61,20 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 ### 手動執行（進階）
 
-一鍵安裝背後執行的是 `windows\` 裡的腳本，也可以在系統管理員 PowerShell 裡個別執行：
+一鍵安裝背後執行的是 `windows\scripts\` 裡的腳本，也可以在系統管理員 PowerShell 裡個別執行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1                # 編譯（需要 Go）
-powershell -ExecutionPolicy Bypass -File .\windows\install.ps1      # 安裝
-powershell -ExecutionPolicy Bypass -File .\windows\verify.ps1       # 檢查（不需要系統管理員）
-powershell -ExecutionPolicy Bypass -File .\windows\uninstall.ps1    # 移除
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\install.ps1      # 安裝
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\verify.ps1       # 檢查（不需要系統管理員）
+powershell -ExecutionPolicy Bypass -File .\windows\scripts\uninstall.ps1    # 移除
 ```
 
 ### 搭配 Synergy
 
 Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。所以安裝時如果偵測到 Synergy 的服務（`Synergy Core Daemon`），拔插用的排程工作會在拔插 3 秒後自動重新啟動它，Synergy 會斷線一下再自動連回。
 
-Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd` 就會加上。其他需要重新啟動的服務可以加到 `windows\common.ps1` 的 `$RestartServices`。
+Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd` 就會加上。其他需要重新啟動的服務可以加到 `windows\scripts\common.ps1` 的 `$RestartServices`。
 
 > ⚠️ 更新顯示卡或晶片組驅動之前，建議先移除虛擬螢幕驅動（VDD 官方建議）。如果開機後黑畫面，請進安全模式移除。
 
@@ -116,7 +116,7 @@ linux/uninstall.sh
 
 這會移除所有安裝的檔案、開機參數、initramfs 設定和登入時自動啟動的設定，並把接頭恢復成自動偵測。只會移除本專案加的參數，你原本的開機參數不會被動到。重新開機後就完全恢復原狀。
 
-檢查用 `linux/verify.sh`。
+檢查用 `linux/scripts/verify.sh`。
 
 ## 拔插開關（vdswitch）
 
@@ -142,8 +142,10 @@ internal/edid/        EDID 1.4 組裝與解析（含測試）
 internal/display/     各平台的狀態查詢與拔插
 internal/ui/          系統列（fyne.io/systray）、小工具（Gio）、設定、自動啟動
 edid/                 產生好的 EDID
-windows/              Windows 一鍵安裝／移除（install.cmd、uninstall.cmd）、背後的 PowerShell 腳本與 VDD 設定
-linux/                Linux 一鍵安裝／移除（install.sh、uninstall.sh）、檢查、小幫手、polkit 規則、initramfs hook
+windows/              Windows 一鍵安裝／移除：只要點 install.cmd、uninstall.cmd
+  scripts/            背後的 PowerShell 腳本與 VDD 設定
+linux/                Linux 一鍵安裝／移除：只要執行 install.sh、uninstall.sh
+  scripts/            檢查、小幫手、polkit 規則、initramfs hook、.desktop
 build.ps1 / Makefile  編譯
 ```
 

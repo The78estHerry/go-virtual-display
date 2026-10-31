@@ -2,7 +2,7 @@
 # 檢查虛擬螢幕：接頭狀態、可用的解析度、系統讀到的 EDID 是否與 edid/edid_1920x1440.bin 相同。不需要 root。
 set -uo pipefail
 
-REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$0")/../.." && pwd)
 CONNECTOR=$(sed -n 's/^CONNECTOR=//p' /etc/go-virtual-display.conf 2>/dev/null | head -n 1)
 if [ -z "$CONNECTOR" ]; then
     echo "[X] 找不到 /etc/go-virtual-display.conf，請先執行 install.sh"

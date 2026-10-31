@@ -84,12 +84,12 @@ echo "==> 安裝 EDID、小幫手與 polkit 規則"
 install -D -m 644 "$REPO/edid/$EDID_NAME" "/lib/firmware/edid/$EDID_NAME"
 echo "CONNECTOR=$CONNECTOR" > "$CONF"
 chmod 644 "$CONF"
-install -D -m 755 "$REPO/linux/vdswitch-helper" "$LIBEXEC/vdswitch-helper"
-install -D -m 644 "$REPO/linux/io.littleherry.vdswitch.policy" /usr/share/polkit-1/actions/io.littleherry.vdswitch.policy
+install -D -m 755 "$REPO/linux/scripts/vdswitch-helper" "$LIBEXEC/vdswitch-helper"
+install -D -m 644 "$REPO/linux/scripts/io.littleherry.vdswitch.policy" /usr/share/polkit-1/actions/io.littleherry.vdswitch.policy
 
 if [ -x "$REPO/dist/linux/vdswitch" ]; then
     install -D -m 755 "$REPO/dist/linux/vdswitch" /usr/local/bin/vdswitch
-    install -D -m 644 "$REPO/linux/vdswitch.desktop" /usr/share/applications/vdswitch.desktop
+    install -D -m 644 "$REPO/linux/scripts/vdswitch.desktop" /usr/share/applications/vdswitch.desktop
     echo "==> 已安裝開關程式 /usr/local/bin/vdswitch"
 else
     echo "==> 找不到 dist/linux/vdswitch，略過開關程式"
@@ -98,7 +98,7 @@ fi
 # 顯示卡驅動若在 initramfs 階段載入，EDID 也必須在 initramfs 裡
 echo "==> 把 EDID 加進 initramfs"
 if command -v update-initramfs >/dev/null; then
-    install -D -m 755 "$REPO/linux/initramfs-hook" /etc/initramfs-tools/hooks/go-virtual-display
+    install -D -m 755 "$REPO/linux/scripts/initramfs-hook" /etc/initramfs-tools/hooks/go-virtual-display
     update-initramfs -u
 elif command -v dracut >/dev/null; then
     echo "install_items+=\" /lib/firmware/edid/$EDID_NAME \"" > /etc/dracut.conf.d/go-virtual-display.conf
@@ -141,7 +141,7 @@ fi
 echo
 echo "安裝完成（接頭 $CONNECTOR）。"
 if [ "$APPLIED" -ne 1 ]; then
-    echo "請重新開機讓設定生效，之後可用 linux/verify.sh 檢查。"
+    echo "請重新開機讓設定生效，之後可用 linux/scripts/verify.sh 檢查。"
 else
-    echo "重新開機後也會自動生效。可用 linux/verify.sh 檢查。"
+    echo "重新開機後也會自動生效。可用 linux/scripts/verify.sh 檢查。"
 fi

@@ -9,7 +9,7 @@ $VddRegKey    = 'HKLM:\SOFTWARE\MikeTheTech\VirtualDisplayDriver'
 $VddMonitorId = 'DISPLAY\MTT1337'  # 驅動建立的螢幕裝置（驅動會把 EDID 的廠商／產品代碼換成 MTT／0x1337）
 $InstallMarker = Join-Path $VddConfigDir '.go-virtual-display'
 
-$RepoRoot     = Split-Path -Parent $PSScriptRoot
+$RepoRoot     = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $VendorDir    = Join-Path $RepoRoot "downloads\vdd-$VddVersion"
 $EdidFile     = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'

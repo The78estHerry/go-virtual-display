@@ -7,6 +7,6 @@ if errorlevel 1 (
     exit /b
 )
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\uninstall.ps1"
 echo.
 pause

@@ -30,9 +30,9 @@
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
-| `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
-| `windows/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
-| `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）、`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop` |
+| `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\scripts\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
+| `windows/scripts/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
+| `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）。其餘在 `linux/scripts/`：`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop` |
 | `downloads/` | 下載的 VDD（gitignore） |
 | `dist/` | 編譯產物（gitignore） |
 
@@ -112,12 +112,13 @@ make linux                                                    # 只能在 Linux 
   - `GraphicsDrivers\ScaleFactors` 裡 `MTT1337...` 的縮放設定：移除時一併刪掉。
   - 登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH`：移除時刪掉，機碼空了也刪。
   - 沒有處理 `GraphicsDrivers\Configuration`／`Connectivity` 裡的螢幕排列紀錄：只有 SYSTEM 能讀，是 Windows 自己管理的快取，手動刪有風險。
+- 2026-10-31：依使用者要求，`windows/`、`linux/` 最上層只留一鍵安裝／移除的兩個檔案，其餘搬進各自的 `scripts/`，讓使用者一眼看出要點哪個。
 - 待辦：
   - 確認自動重啟 Synergy 有效（使用者重跑 `windows\install.cmd` 後實際拔插）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
 
-- 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/verify.ps1` 和 `linux/verify.sh` 都是拿它來比對。
-- 升級 VDD 版本時，要同時更新 `windows/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
+- 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/scripts/verify.ps1` 和 `linux/scripts/verify.sh` 都是拿它來比對。
+- 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
 - commit 一律以 claude-bot 身分，推到 `gitea.littleherry.work/The78estWorld/go-virtual-display`。
