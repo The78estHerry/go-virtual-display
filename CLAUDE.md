@@ -122,6 +122,7 @@ make linux                                                    # 只能在 Linux 
 - 2026-10-31：發佈 **v0.1.0**（annotated tag＋Gitea Release）。附件 `go-virtual-display-0.1.0-windows.zip` 是 `git archive` 的原始碼加上 `dist/windows/vdswitch.exe`，沒裝 Go 也能一鍵安裝。
   - 使用者認為放了太多用不到的檔案，要求只放安裝需要的。新增 `release.ps1` 和 `RELEASING.md`（打包步驟、安裝包內容、所有專案共用的打包準則），`common.ps1` 改成也能在安裝包配置下執行（`$Packaged`）。重包後 v0.1.0 的 tag 移到新 commit，並替換 Release 附件。
   - `download-vdd.ps1` 關掉進度條：Windows PowerShell 5.1 顯示進度條時下載非常慢。
+- 2026-10-31 17:50：使用者從 Gitea 下載精簡版 v0.1.0 安裝包，解壓縮到桌面，安裝、測試、移除。移除後檢查全部清乾淨，Synergy 正常。
 - 待辦：
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
