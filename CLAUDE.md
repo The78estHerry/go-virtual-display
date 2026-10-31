@@ -167,6 +167,19 @@ make linux                                                    # 只能在 Linux 
   - 兩個捷徑都加上註解，中文介面時是中文。
   - 工作列無法由程式自動釘選（Windows 10／11 不允許），請使用者自己右鍵釘選。
   - **`WScript.Shell` 連捷徑註解也用 ANSI 字碼頁處理**，「虛」會變成 `?`。改用 `common.ps1` 的 `New-Shortcut`，透過 Add-Type 的 C# 直接呼叫 `IShellLinkW`。
+- 2026-10-31 晚上：加了 `ExactRefresh` 之後，虛擬螢幕還是沒出現，**問題還沒解決**。目前狀態（0.3.0 安裝中、維持插入）：
+  - VDD 裝置 `Root\MttVDD` 是 Started（OK），WUDFHost 有在跑，但沒有 `DISPLAY\MTT1337` 螢幕裝置，事件記錄沒有錯誤。
+  - `logging=true` 也沒有產生 `C:\VirtualDisplayDriver\Logs`。控制管道 `\\.\pipe\MTTVirtualDisplayPipe` 送 GETSETTINGS 回傳 0 bytes。
+  - 安裝後的 XML 和 0.2.0 幾乎一樣。用 Apply 工作切到 1920×1440（0.2.0 的 DMT 時序）也一樣沒有螢幕，所以應該不是 EDID 時序的問題。
+  - 測試時我把 `%APPDATA%\go-virtual-display\profiles.json` 的 active 改成 `1920x1440@60`（清單有 1920×1080 和 1920×1440），已請使用者之後切回 1920×1080。
+  - 主要推測：今天反覆安裝、移除了約 10 次，Windows 的 indirect display 狀態卡住了（上次開機是 10/26 17:44）。使用者正要**重開機（不移除）**。
+  - 最後一次確認虛擬螢幕正常，是 17:20 前後（0.1.x 的 Synergy 測試）。也請使用者回想 0.2.0 測試時有沒有看到虛擬螢幕。
+  - **重開機後接續**：
+    1. 請使用者看「設定 > 顯示器」有沒有虛擬螢幕，我也檢查 `Get-PnpDevice` 有沒有 `DISPLAY\MTT1337`。
+    2. 有出現：是系統狀態問題，在 README／安裝包說明加上「異常時請重開機」，接著讓使用者驗證 0.3.0 的其餘項目。
+    3. 還是沒有：想辦法拿到 VDD 的記錄（登錄檔設定或控制管道），或拿 v0.2.0 安裝包對照，逐一找出差異。
+  - 0.3.0 還沒驗證的項目：切換解析度和管理視窗、桌面捷徑和搜尋「虛擬螢幕」、新圖示、安裝時語言選單的排版（`e4006e3` 改用 `Console.ReadLine`）、移除是否乾淨。通過後照 `RELEASING.md` 打 v0.3.0 tag 並發佈。
+  - 測試用安裝包：`dist\release\go-virtual-display-0.3.0-windows.zip`（已包含 `e4006e3`）。
 - 待辦：
   - 0.3.0 發佈前把 `vdd_settings.xml` 的 logging 改回 false
   - Linux 版的解析度功能（Windows 確認後）：
