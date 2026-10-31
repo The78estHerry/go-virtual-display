@@ -222,9 +222,11 @@ make linux                                                    # 只能在 Linux 
     - 真的執行檔 `--write-edid`：預設產生 1080，有 profiles.json 時依使用者選的產生。
     - **沒測到**：一般使用者階段的 sudo 流程、真正的 DRM、debugfs、polkit、Gio 的畫面。
   - 測試用安裝包：`dist\release\go-virtual-display-0.4.0-linux-amd64.tar.gz`。
+- 2026-11-01：依使用者要求先發佈 **v0.4.0**，Release 說明標明 Linux 沒有實機測過（Gitea Release id 15）。附件：
+  - `go-virtual-display-0.4.0-windows.zip`（SHA-256 `75E9D119…FE3ACD43`）：Windows 只改了共用的 `model.go`，沒有重新實機測試
+  - `go-virtual-display-0.4.0-linux-amd64.tar.gz`（SHA-256 `2292AD6D…01BFB18E`）
 - 待辦：
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
-  - 決定 0.4.0 什麼時候發佈：Linux 沒有實機測過。Windows 的變更只有共用的 `model.go`，功能沒變
   - Linux 的 install.sh 還沒有「已安裝時先提醒」（Windows 0.3.0 才有）
 
 ## 給之後的 Claude
