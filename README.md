@@ -48,13 +48,19 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 3. 安裝驅動
 4. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
 5. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「虛擬螢幕開關」。如果還沒編譯但有裝 Go，會先自動編譯
-6. 執行檢查，並打開開關程式
+6. 複製移除用的檔案，並登記到「設定 > 應用程式」
+7. 執行檢查，並打開開關程式
 
 可以重複執行，例如改了 EDID 之後再跑一次就會更新。
 
-### 一鍵移除
+### 移除
 
-點兩下 **`windows\uninstall.cmd`**，UAC 詢問時按「是」。這會：
+三種方式擇一，都會跳 UAC 詢問，按「是」：
+- 在系統列圖示按右鍵，選「**解除安裝…**」
+- 到「**設定 > 應用程式**」，找到「虛擬螢幕開關（go-virtual-display）」並移除
+- 點兩下 `windows\uninstall.cmd`
+
+安裝時會把移除用的檔案複製到 `C:\Program Files\go-virtual-display\uninstaller`，所以就算刪掉當初的安裝資料夾，前兩種方式仍然可以移除。移除會：
 - 移除驅動、排程工作、開關程式和登入時自動啟動的設定
 - 移除 Windows 留下的虛擬螢幕裝置紀錄、縮放設定和 VDD 的登錄值
 - 還原原本的 VDD 設定檔。安裝前沒有的話，就連同 `C:\VirtualDisplayDriver` 資料夾一起刪掉
@@ -128,7 +134,7 @@ linux/uninstall.sh
 - **系統列圖示**：
   - 圖示顏色和小工具相同
   - **左鍵點一下切換**
-  - 右鍵選單：插入／拔掉、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、結束
+  - 右鍵選單：插入／拔掉、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、解除安裝…（只有 Windows）、結束
 - 狀態每 2 秒同步一次。從其他地方（裝置管理員、VDD 的控制程式）改變狀態時，兩邊都會跟著更新。
 - 只會執行一份。重複開啟時會把小工具叫出來。
 - 設定存在 `%APPDATA%\go-virtual-display\widget.json`（Linux 是 `~/.config/go-virtual-display/widget.json`）。

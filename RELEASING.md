@@ -5,18 +5,19 @@
 ## 版本號
 
 - 用語意化版本 `主.次.修`，例如 `0.1.0`。tag 名稱加 `v`，例如 `v0.1.0`。
-- 修 bug 加修訂號，加功能加次版號。1.0.0 之前可以有不相容的變更。
+- 修 bug 加修訂號，加功能加次版號。1.0.0 之前可以有不相容的變更。小幅度的功能調整可由使用者決定只加修訂號（例如 0.1.1）。
+- 版本號只寫在 `windows/scripts/common.ps1` 的 `$AppVersion`：`release.ps1` 以它命名安裝包，「設定 > 應用程式」也顯示它。發新版前先改這裡。
 
 ## 步驟
 
-1. 確認要發佈的修改都已 commit 並推上 Gitea，工作目錄乾淨（`git status`）。
+1. 把 `windows/scripts/common.ps1` 的 `$AppVersion` 改成新版本，確認要發佈的修改都已 commit 並推上 Gitea，工作目錄乾淨（`git status`）。
 2. 產生安裝包：
    ```powershell
-   powershell -ExecutionPolicy Bypass -File .\release.ps1 -Version 0.1.0
+   powershell -ExecutionPolicy Bypass -File .\release.ps1
    ```
    它會先跑 `build.ps1`（測試、編譯、重產 EDID），再組出 `dist\release\go-virtual-display-<版本>-windows.zip`，最後列出包進去的檔案。
 3. 核對包進去的檔案和下面的清單一致，沒有多也沒有少。
-4. 解壓縮到一個新資料夾，實際點 `install.cmd` 安裝、拔插、`uninstall.cmd` 移除一輪。
+4. 解壓縮到一個新資料夾，實際點 `install.cmd` 安裝、拔插，再移除一輪。三種移除方式（系統列、設定 > 應用程式、`uninstall.cmd`）有改到的都要試，移除後檢查系統是否乾淨。
 5. 打 annotated tag 並推上去：
    ```
    git tag -a v0.1.0 -m "v0.1.0：<一句話摘要>"
@@ -44,6 +45,7 @@ go-virtual-display-<版本>-windows/
     ├── common.ps1            ┐
     ├── download-vdd.ps1      │
     ├── install.ps1           ├ windows/scripts/
+    ├── launch-uninstall.ps1  │
     ├── uninstall.ps1         │
     ├── verify.ps1            │
     ├── vdd_settings.xml      ┘
@@ -72,6 +74,7 @@ Linux 版的開關程式需要 cgo，要在 Linux 上編譯，目前也還沒實
 | 版本 | 日期 | 安裝包 | 摘要 |
 |---|---|---|---|
 | 0.1.0 | 2026-10-31 | windows | 第一個版本。Windows 已從安裝包實機測試（安裝、拔插、移除乾淨），Linux 未測 |
+| 0.1.1 | 2026-10-31 | windows | 可從系統列「解除安裝…」或「設定 > 應用程式」移除，安裝資料夾刪掉也能移除 |
 
 ## 打包準則（所有專案共用）
 
