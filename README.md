@@ -147,6 +147,7 @@ windows/              Windows 一鍵安裝／移除：只要點 install.cmd、un
 linux/                Linux 一鍵安裝／移除：只要執行 install.sh、uninstall.sh
   scripts/            檢查、小幫手、polkit 規則、initramfs hook、.desktop
 build.ps1 / Makefile  編譯
+release.ps1           產生 Release 安裝包（步驟與內容見 RELEASING.md）
 ```
 
 ## 另一種做法（沒有採用）

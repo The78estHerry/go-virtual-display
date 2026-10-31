@@ -34,7 +34,8 @@
 | `windows/scripts/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
 | `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）。其餘在 `linux/scripts/`：`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop` |
 | `downloads/` | 下載的 VDD（gitignore） |
-| `dist/` | 編譯產物（gitignore） |
+| `dist/` | 編譯產物（gitignore），`dist/release/` 是安裝包 |
+| `release.ps1`、`RELEASING.md` | 產生 Release 安裝包；發佈步驟與各平台安裝包的檔案清單 |
 
 ## 常用指令
 
@@ -119,12 +120,14 @@ make linux                                                    # 只能在 Linux 
   - 第二次移除後檢查，同樣全部清乾淨。
 - 2026-10-31 17:20 前後：重新安裝後實測，安裝完第一次自動插入時 Synergy 也正常。Synergy 紀錄裡安裝（17:21）、拔插、移除（17:24）後都有重新連線。移除後再檢查，同樣全部清乾淨。
 - 2026-10-31：發佈 **v0.1.0**（annotated tag＋Gitea Release）。附件 `go-virtual-display-0.1.0-windows.zip` 是 `git archive` 的原始碼加上 `dist/windows/vdswitch.exe`，沒裝 Go 也能一鍵安裝。
+  - 使用者認為放了太多用不到的檔案，要求只放安裝需要的。新增 `release.ps1` 和 `RELEASING.md`（打包步驟、安裝包內容、所有專案共用的打包準則），`common.ps1` 改成也能在安裝包配置下執行（`$Packaged`）。重包後 v0.1.0 的 tag 移到新 commit，並替換 Release 附件。
+  - `download-vdd.ps1` 關掉進度條：Windows PowerShell 5.1 顯示進度條時下載非常慢。
 - 待辦：
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
 
-- 發新版本：`build.ps1` 編譯，打 annotated tag 推上去，用 `git archive --prefix=go-virtual-display-<版本>/` 打包再加入 `dist/windows/vdswitch.exe`，最後用 Gitea API 建 Release、上傳附件。Release 說明的中文要先寫成 UTF-8 檔案再 `--data-binary` 送出。
+- 發新版本照 `RELEASING.md` 做：`release.ps1 -Version <版本>` 產生精簡的 Windows 安裝包，各平台要包哪些檔案也記在那裡。改了安裝時用到的檔案，要同時更新 `release.ps1` 和 `RELEASING.md` 的清單。
 
 - 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/scripts/verify.ps1` 和 `linux/scripts/verify.sh` 都是拿它來比對。
 - 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。

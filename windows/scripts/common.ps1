@@ -9,9 +9,18 @@ $VddRegKey    = 'HKLM:\SOFTWARE\MikeTheTech\VirtualDisplayDriver'
 $VddMonitorId = 'DISPLAY\MTT1337'  # 驅動建立的螢幕裝置（驅動會把 EDID 的廠商／產品代碼換成 MTT／0x1337）
 $InstallMarker = Join-Path $VddConfigDir '.go-virtual-display'
 
-$RepoRoot     = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$VendorDir    = Join-Path $RepoRoot "downloads\vdd-$VddVersion"
-$EdidFile     = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
+# 兩種配置：Release 安裝包把 EDID 和 vdswitch.exe 放在 scripts\ 裡；原始碼則各在 edid\、dist\windows\
+$Packaged     = Test-Path (Join-Path $PSScriptRoot 'edid_1920x1440.bin')
+if ($Packaged) {
+    $VendorDir = Join-Path $PSScriptRoot "downloads\vdd-$VddVersion"
+    $EdidFile  = Join-Path $PSScriptRoot 'edid_1920x1440.bin'
+    $AppExe    = Join-Path $PSScriptRoot 'vdswitch.exe'
+} else {
+    $RepoRoot  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $VendorDir = Join-Path $RepoRoot "downloads\vdd-$VddVersion"
+    $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
+    $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
+}
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $TaskPath     = '\go-virtual-display\'
 $RunKey       = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'

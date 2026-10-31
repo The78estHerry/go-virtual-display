@@ -10,6 +10,7 @@ New-Item -ItemType Directory -Force $VendorDir | Out-Null
 if (-not (Test-Path $zip) -or (Get-FileHash $zip -Algorithm SHA256).Hash -ne $VddSha256) {
     Write-Host "下載 Virtual Display Driver $VddVersion ..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $ProgressPreference = 'SilentlyContinue'  # Windows PowerShell 5.1 顯示進度條時下載會慢上數十倍
     Invoke-WebRequest -Uri $VddUrl -OutFile $zip -UseBasicParsing
 }
 $hash = (Get-FileHash $zip -Algorithm SHA256).Hash

@@ -67,8 +67,8 @@ Write-Host "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用
 if ($services) { Write-Host "拔插後會自動重新啟動：$($services -join '、')" }
 
 # 5. 開關程式
-$exe = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
-if (-not (Test-Path $exe) -and (Get-Command go -ErrorAction SilentlyContinue)) {
+$exe = $AppExe
+if (-not $Packaged -and -not (Test-Path $exe) -and (Get-Command go -ErrorAction SilentlyContinue)) {
     Write-Host '找不到開關程式執行檔，用 Go 編譯 ...'
     & (Join-Path $RepoRoot 'build.ps1')
 }
@@ -76,6 +76,8 @@ if (Test-Path $exe) {
     Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
     New-Item -ItemType Directory -Force $AppDir | Out-Null
     Copy-Item $exe $AppDir -Force
+    # 從網路下載的安裝包會帶「來自網路」標記，解除後開啟時才不會被 SmartScreen 擋下
+    Unblock-File (Join-Path $AppDir 'vdswitch.exe')
     # WScript.Shell 用系統 ANSI 字碼頁處理路徑，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?，
     # 所以先用英文檔名建立，再用 PowerShell 改名
     $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
