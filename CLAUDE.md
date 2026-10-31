@@ -193,7 +193,8 @@ make linux                                                    # 只能在 Linux 
   - `install.ps1` 一開始先看「應用程式」登記的 `DisplayVersion`，或程式資料夾是否存在（0.1.0 沒有登記）。不看 VDD 裝置，因為可能是使用者自己另外裝的。
   - 已安裝時顯示目前版本和要安裝的版本（相同版本或降版會另外提示），問 `y/N`。回答 y 才執行套件裡的 `uninstall.ps1 -KeepUserSettings`，再全新安裝；其他回答就取消。
   - `-KeepUserSettings`：不刪 `%APPDATA%\go-virtual-display`（解析度清單、小工具位置）和 `HKLM\SOFTWARE\go-virtual-display`（語言）。一般移除仍會全部刪掉。
-  - 已重產 0.3.0 安裝包，等使用者實測：先裝好，再執行一次 install.cmd。
+  - 使用者實測通過：提醒有出現，重新安裝後解析度還在。之後一般移除，檢查全部乾淨（`%APPDATA%`、語言機碼也刪了，`%TEMP%` 沒有殘留），Synergy 正常。
+  - **0.3.0 全部驗證完成，可以發佈**。但 Git Credential Manager 裡沒有 claude-bot 的 token，push／fetch 都會卡在等登入，要請使用者用 `! git push origin main` 登入一次。
 - 待辦：
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
