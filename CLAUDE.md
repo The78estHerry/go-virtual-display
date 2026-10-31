@@ -55,6 +55,7 @@ make linux                                                    # 只能在 Linux 
   - 硬體 ID `Root\MttVDD`，是 root-enumerated 裝置，所以要用 `devcon install MttVDD.inf Root\MttVDD` 建立，`pnputil` 無法建立 root 裝置。
   - 設定目錄預設 `C:\VirtualDisplayDriver`，可用登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH` 指定。
   - 自訂 EDID：在 `vdd_settings.xml` 設 `<CustomEdid>true</CustomEdid>`，檔案命名為 `user_edid.bin` 放在設定目錄。驅動會檢查 checksum。
+  - **驅動會改掉 EDID 的 byte 8–11**：廠商／產品代碼一律換成 `MTT`／`0x1337`，再重算 byte 127 的 checksum，其餘 byte 不變。`PreventSpoof=false` 也一樣。所以螢幕裝置是 `DISPLAY\MTT1337\...`，`verify.ps1` 比對時略過這幾個 byte。
   - 解析度仍以 XML 的 `<resolutions>` 為準，EDID 不會「模擬解析度」，所以 XML 只留 1920×1440@60，global refresh 只留 60。
   - 有 named pipe `\\.\pipe\MTTVirtualDisplayPipe`，可用來重新載入等，目前沒用到。
 - **Windows 拔插**：
@@ -103,6 +104,14 @@ make linux                                                    # 只能在 Linux 
     - 使用者重新啟動 Synergy 後就正常，所以讓拔插的排程工作自動重新啟動 `Synergy Core Daemon` 服務，它會帶起 `synergy-core.exe`。
     - Synergy 的紀錄在 `C:\ProgramData\Synergy\logs\synergy.log`，設定在 `C:\ProgramData\Synergy\config\synergy.conf`。
   - **RustDesk**：遠端畫面上看不到本機的滑鼠移動。沒有虛擬螢幕時也一樣，所以是 RustDesk 本身的問題，不在本專案範圍。
+- 2026-10-31：重跑安裝後 verify 出現紅字「登錄檔中找不到相同的 EDID」。原因是驅動改了廠商代碼（見上面的關鍵事實），所以 verify 改成略過 byte 8–11 和 127。
+- 2026-10-31：使用者執行 uninstall 後檢查殘留，發現四項：
+  - `C:\VirtualDisplayDriver` 裡還有本專案的檔案。原因是第二次安裝把第一次放的檔案當成「原有檔案」備份了，移除時又「還原」回去。
+    - 修正：安裝時放一個標記檔 `.go-virtual-display`，標記檔存在就不再備份。
+  - 已不存在的螢幕裝置 `DISPLAY\MTT1337\...`：移除時改用 `pnputil /remove-device` 刪掉。
+  - `GraphicsDrivers\ScaleFactors` 裡 `MTT1337...` 的縮放設定：移除時一併刪掉。
+  - 登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH`：移除時刪掉，機碼空了也刪。
+  - 沒有處理 `GraphicsDrivers\Configuration`／`Connectivity` 裡的螢幕排列紀錄：只有 SYSTEM 能讀，是 Windows 自己管理的快取，手動刪有風險。
 - 待辦：
   - 確認自動重啟 Synergy 有效（使用者重跑 `windows\install.cmd` 後實際拔插）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）

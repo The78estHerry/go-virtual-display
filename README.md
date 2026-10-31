@@ -56,7 +56,8 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 點兩下 **`windows\uninstall.cmd`**，UAC 詢問時按「是」。這會：
 - 移除驅動、排程工作、開關程式和登入時自動啟動的設定
-- 還原原本的 VDD 設定檔
+- 移除 Windows 留下的虛擬螢幕裝置紀錄、縮放設定和 VDD 的登錄值
+- 還原原本的 VDD 設定檔。安裝前沒有的話，就連同 `C:\VirtualDisplayDriver` 資料夾一起刪掉
 
 ### 手動執行（進階）
 

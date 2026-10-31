@@ -18,13 +18,17 @@ $inf = Join-Path $driverDir 'MttVDD.inf'
 $devcon = Join-Path $VendorDir 'extracted\Dependencies\devcon.exe'
 
 # 2. 設定檔與 EDID（先備份原有檔案）
+#    標記檔存在表示目前的檔案是本專案放的，重複安裝時不能再備份，否則移除時會「還原」成本專案的檔案
 New-Item -ItemType Directory -Force $VddConfigDir | Out-Null
-foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
-    $path = Join-Path $VddConfigDir $name
-    if ((Test-Path $path) -and -not (Test-Path "$path.go-virtual-display.bak")) {
-        Copy-Item $path "$path.go-virtual-display.bak"
-        Write-Host "已備份原有的 $name"
+if (-not (Test-Path $InstallMarker)) {
+    foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
+        $path = Join-Path $VddConfigDir $name
+        if (Test-Path $path) {
+            Copy-Item $path "$path.go-virtual-display.bak" -Force
+            Write-Host "已備份原有的 $name"
+        }
     }
+    Set-Content $InstallMarker 'go-virtual-display'
 }
 Copy-Item (Join-Path $PSScriptRoot 'vdd_settings.xml') (Join-Path $VddConfigDir 'vdd_settings.xml') -Force
 Copy-Item $EdidFile (Join-Path $VddConfigDir 'user_edid.bin') -Force

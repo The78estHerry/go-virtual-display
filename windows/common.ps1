@@ -6,6 +6,8 @@ $VddSha256    = 'A701F2272E9FCF382849B24F913C6DD07597B3B1116525F2E90182F01960915
 $VddHardwareId = 'Root\MttVDD'
 $VddConfigDir = 'C:\VirtualDisplayDriver'
 $VddRegKey    = 'HKLM:\SOFTWARE\MikeTheTech\VirtualDisplayDriver'
+$VddMonitorId = 'DISPLAY\MTT1337'  # 驅動建立的螢幕裝置（驅動會把 EDID 的廠商／產品代碼換成 MTT／0x1337）
+$InstallMarker = Join-Path $VddConfigDir '.go-virtual-display'
 
 $RepoRoot     = Split-Path -Parent $PSScriptRoot
 $VendorDir    = Join-Path $RepoRoot "downloads\vdd-$VddVersion"

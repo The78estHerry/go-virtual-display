@@ -15,19 +15,31 @@ if ($dev.Status -ne 'OK') {
 }
 
 $want = [IO.File]::ReadAllBytes($EdidFile)
+# VDD 會把 byte 8–11（廠商代碼、產品代碼）換成自己的 MTT／0x1337，再重算 byte 127 的 checksum，比對時略過這幾個 byte
+$ignored = 8, 9, 10, 11, 127
 $found = $false
 foreach ($key in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Enum\DISPLAY' -ErrorAction SilentlyContinue) {
     foreach ($inst in Get-ChildItem $key.PSPath) {
         $edid = (Get-ItemProperty (Join-Path $inst.PSPath 'Device Parameters') -Name EDID -ErrorAction SilentlyContinue).EDID
-        if ($edid -and $edid.Length -ge 128 -and [Convert]::ToBase64String($edid[0..127]) -eq [Convert]::ToBase64String($want)) {
-            Write-Host "[O] 系統記錄的 EDID 與 edid_1920x1440.bin 相同（DISPLAY\$($key.PSChildName)\$($inst.PSChildName)）" -ForegroundColor Green
+        if (-not $edid -or $edid.Length -lt 128) { continue }
+        $diff = @(0..127 | Where-Object { $edid[$_] -ne $want[$_] })
+        $where = "DISPLAY\$($key.PSChildName)\$($inst.PSChildName)"
+        if ($diff.Count -eq 0) {
+            Write-Host "[O] 系統記錄的 EDID 與 edid_1920x1440.bin 完全相同（$where）" -ForegroundColor Green
+            $found = $true
+        } elseif (-not ($diff | Where-Object { $_ -notin $ignored })) {
+            Write-Host "[O] 系統記錄的 EDID 與 edid_1920x1440.bin 相同，只有廠商／產品代碼被驅動換成 $($key.PSChildName)（$where）" -ForegroundColor Green
             $found = $true
         }
     }
 }
 if (-not $found) {
-    Write-Host '[X] 登錄檔中找不到相同的 EDID' -ForegroundColor Red
-    $ok = $false
+    if ($dev.Status -eq 'OK') {
+        Write-Host '[X] 登錄檔中找不到相同的 EDID' -ForegroundColor Red
+        $ok = $false
+    } else {
+        Write-Host '[!] 登錄檔中還沒有這份 EDID：虛擬螢幕插入過一次之後才會出現' -ForegroundColor Yellow
+    }
 }
 
 Add-Type -AssemblyName System.Windows.Forms
