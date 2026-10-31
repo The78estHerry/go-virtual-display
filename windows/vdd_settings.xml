@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- go-virtual-display：以 Virtual Display Driver 25.7.23 附帶的 vdd_settings.xml 為底修改 -->
+<!-- 只留一台螢幕、只提供 1920x1440@60，並啟用 user_edid.bin（edid/edid_1920x1440.bin） -->
+<vdd_settings>
+    <monitors>
+        <count>1</count>
+    </monitors>
+    <gpu>
+        <friendlyname>default</friendlyname>
+    </gpu>
+	<global>
+		<!--These are global refreshrates, any you add in here, will be replicated to all resolutions-->
+		<g_refresh_rate>60</g_refresh_rate>
+	</global>
+    <resolutions>
+        <resolution>
+            <width>1920</width>
+            <height>1440</height>
+            <refresh_rate>60</refresh_rate>
+        </resolution>
+    </resolutions>
+    <options>
+		<CustomEdid>true</CustomEdid> <!-- Custom Edid should be named "user_edid.bin"! This does not support emulating resolutions!-->
+		<PreventSpoof>false</PreventSpoof> <!--Enable this to prevent manufacturer spoofing when using custom edid. Please only do so if you need to!-->
+		<EdidCeaOverride>false</EdidCeaOverride> <!--Enable this to override or add hard coded cea-extension block to custom Edid support allowing you to enable HDR-->
+		<HardwareCursor>true</HardwareCursor>
+		<SDR10bit>false</SDR10bit>
+		<HDRPlus>false</HDRPlus>
+		<logging>false</logging>
+        <debuglogging>false</debuglogging>
+	</options>
+</vdd_settings>

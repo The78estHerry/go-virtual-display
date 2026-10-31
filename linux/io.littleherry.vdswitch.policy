@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>go-virtual-display</vendor>
+  <action id="io.littleherry.vdswitch.toggle">
+    <description>Plug or unplug the virtual display</description>
+    <description xml:lang="zh_TW">插入或拔掉虛擬螢幕</description>
+    <message>Authentication is required to plug or unplug the virtual display</message>
+    <message xml:lang="zh_TW">插入或拔掉虛擬螢幕需要驗證</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/libexec/go-virtual-display/vdswitch-helper</annotate>
+  </action>
+</policyconfig>

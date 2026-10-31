@@ -1,0 +1,91 @@
+# CLAUDE.md — go-virtual-display
+
+給 Claude 的專案說明與建置紀錄。使用者看的說明在 `README.md`。所有文件、註解、commit 訊息一律用台灣繁體中文。
+
+## 目的
+
+讓 Windows（以及 Linux）在沒有實體螢幕時，以為接著一台回報自訂 EDID 的 1920×1440 螢幕，並提供系統列圖示＋桌面小工具形式的一鍵軟體拔插開關。
+
+## 已做的決定與原因
+
+- **Windows 用現成的 Virtual Display Driver（VDD）＋自訂 EDID**（「路線 A」）。另一個選項是自己改 Microsoft IddSampleDriver（「路線 B」），沒採用，因為未簽章的驅動要開測試簽章模式，而這需要關 Secure Boot，畫面還有浮水印。VDD 已簽章，又支援 `user_edid.bin`。
+- **Linux 一起做，Mac 不做**。
+  - Linux 用核心內建的 `drm.edid_firmware` 加 sysfs `status`（`on`／`off`），完全不需要額外驅動。
+  - Mac 只能透過私有 API `CGVirtualDisplay` 建立虛擬螢幕，無法吃原始 EDID，所以不做。
+- **語言**：
+  - 開關程式和 EDID 產生器用 Go，跨平台共用。使用者偏好 Go，其次 Python，能用 shell 解決更好。
+  - 安裝腳本用各平台內建的 shell：Windows PowerShell 5.1、bash。
+- **命名**：Go 專案一律加 `go-` 前綴，所以資料夾、Gitea repo、Go module 都叫 go-virtual-display。
+- **開關介面**：系統列圖示＋桌面小工具（開關式），不做桌面捷徑。
+  - 系統列用 `fyne.io/systray`，小工具用 Gio（`gioui.org`）。
+  - 在 Windows 上兩者都不需要 cgo。
+
+## 檔案
+
+| 路徑 | 用途 |
+|---|---|
+| `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、預設參數 `Default`（DMT 1920×1440@60） |
+| `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
+| `edid/edid_1920x1440.bin` | 產出的 EDID，兩個平台共用，commit 進 repo |
+| `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
+| `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
+| `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
+| `windows/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
+| `linux/` | `install.sh`、`verify.sh`、`uninstall.sh`、`vdswitch-helper`、polkit 規則、`.desktop` |
+| `downloads/` | 下載的 VDD（gitignore） |
+| `dist/` | 編譯產物（gitignore） |
+
+## 常用指令
+
+```
+go test ./...
+powershell -ExecutionPolicy Bypass -File .\build.ps1          # Windows 編譯 + 重產 EDID
+GOOS=linux go vet ./internal/display ./internal/edid ./cmd/make-edid   # Linux 端在 Windows 上能檢查到的部分
+make linux                                                    # 只能在 Linux 上（Gio 需要 cgo）
+```
+
+## 查到的關鍵事實（不要重查）
+
+- **VDD 的版本和下載**：
+  - GitHub Releases API 只列得到 2024 年的兩個舊版。
+  - 正式版本 25.7.23 是從 winget manifest 找到的：`https://github.com/VirtualDrivers/Virtual-Display-Driver/releases/download/25.7.23/VDD.Control.25.7.23.zip`，SHA-256 `A701F227…9609154`（完整值在 `windows/common.ps1`）。
+  - zip 裡的 `SignedDrivers/x86/VDD/` 實際上是 amd64 驅動（INF 寫 NTamd64），另外附 `Dependencies/devcon.exe`。
+- **VDD 驅動的行為**（從 DLL 字串和 INF 確認）：
+  - 硬體 ID `Root\MttVDD`，是 root-enumerated 裝置，所以要用 `devcon install MttVDD.inf Root\MttVDD` 建立，`pnputil` 無法建立 root 裝置。
+  - 設定目錄預設 `C:\VirtualDisplayDriver`，可用登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH` 指定。
+  - 自訂 EDID：在 `vdd_settings.xml` 設 `<CustomEdid>true</CustomEdid>`，檔案命名為 `user_edid.bin` 放在設定目錄。驅動會檢查 checksum。
+  - 解析度仍以 XML 的 `<resolutions>` 為準，EDID 不會「模擬解析度」，所以 XML 只留 1920×1440@60，global refresh 只留 60。
+  - 有 named pipe `\\.\pipe\MTTVirtualDisplayPipe`，可用來重新載入等，目前沒用到。
+- **Windows 拔插**：
+  - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
+  - 排程工作的動作用 `conhost.exe --headless pnputil.exe ...`，避免閃出主控台視窗。
+  - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
+- **使用者的電腦**：
+  - Windows 11 Pro 26200，zh-TW 語系，1920×1080 螢幕。
+  - 顯示卡是 AMD Mobility Radeon HD 5000（很舊）。VDD 的算繪可能要靠 WARP，若虛擬螢幕黑畫面要往這裡查。
+
+## 踩過的坑
+
+- **Gio 事件迴圈裡不能同步呼叫會送訊息給該視窗的 Win32 API**（`ShowWindow`、`SetWindowPos` 等）。Gio 的視窗執行緒會等迴圈處理完事件，兩邊互等就卡死，視窗變成無回應。`widget.go` 收到 `ViewEvent` 時用 `go setupWidgetWindow(...)` 另開 goroutine。
+- **systray 在 Windows 上建立視窗和處理訊息必須在同一個執行緒**。`fyne.io/systray` 的 `RunWithExternalLoop` 會在任意 goroutine 跑 `GetMessage`，不能用。改成在 `runtime.LockOSThread()` 的 goroutine 裡呼叫 `systray.Run`，Gio 的 `app.Main()` 留在 main goroutine。
+- **模組根目錄不能有 `vendor/` 資料夾**，Go 會當成 vendoring 而報錯，所以下載目錄叫 `downloads/`。
+- **PowerShell 5.1 讀取沒有 BOM 的 UTF-8 檔案會當成 ANSI（cp950）**，中文會變亂碼。所有 `.ps1` 都存成 UTF-8 with BOM＋CRLF，`.gitattributes` 固定換行。
+- **`schtasks` 的錯誤訊息是 cp950 編碼**，所以不放進錯誤字串，只回報 exit code。
+- **Gio 預設字型沒有中文**。Windows 版明確載入 `msjh.ttc`（微軟正黑體）並關閉系統字型掃描，啟動比較快；Linux 版靠系統字型補中文。
+
+## 進度紀錄
+
+- 2026-10-31：規劃（路線比較→選 A＋自訂 EDID→加入拔插開關→改用 Go→加入 Linux→改名 go-virtual-display）。完成以下項目：
+  - EDID 產生器與測試
+  - Windows 腳本
+  - Linux 腳本
+  - vdswitch（Windows 版已實際執行：小工具在右下角、不在工作列、圓角、中文正常；驅動未安裝時正確顯示錯誤）
+- 待辦：
+  - Windows 實機安裝與拔插測試（需要使用者以系統管理員身分執行 `install.ps1`）
+  - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
+
+## 給之後的 Claude
+
+- 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/verify.ps1` 和 `linux/verify.sh` 都是拿它來比對。
+- 升級 VDD 版本時，要同時更新 `windows/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
+- commit 一律以 claude-bot 身分，推到 `gitea.littleherry.work/The78estWorld/go-virtual-display`。

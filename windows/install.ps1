@@ -1,0 +1,70 @@
+﻿# 安裝虛擬螢幕驅動、套用 1920x1440 設定與自訂 EDID、建立免 UAC 的拔插排程工作、安裝開關程式。
+# 需要系統管理員權限。可重複執行（會更新設定並重新載入驅動）。
+param(
+    # 排程工作要以哪個使用者執行；預設為目前登入桌面的使用者
+    [string]$User = (Get-CimInstance Win32_ComputerSystem).UserName
+)
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
+Assert-Admin
+
+# 1. 下載驅動
+& (Join-Path $PSScriptRoot 'download-vdd.ps1')
+$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x86' }  # x86 資料夾內是 amd64 驅動
+$driverDir = Join-Path $VendorDir "extracted\SignedDrivers\$arch\VDD"
+$inf = Join-Path $driverDir 'MttVDD.inf'
+$devcon = Join-Path $VendorDir 'extracted\Dependencies\devcon.exe'
+
+# 2. 設定檔與 EDID（先備份原有檔案）
+New-Item -ItemType Directory -Force $VddConfigDir | Out-Null
+foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
+    $path = Join-Path $VddConfigDir $name
+    if ((Test-Path $path) -and -not (Test-Path "$path.go-virtual-display.bak")) {
+        Copy-Item $path "$path.go-virtual-display.bak"
+        Write-Host "已備份原有的 $name"
+    }
+}
+Copy-Item (Join-Path $PSScriptRoot 'vdd_settings.xml') (Join-Path $VddConfigDir 'vdd_settings.xml') -Force
+Copy-Item $EdidFile (Join-Path $VddConfigDir 'user_edid.bin') -Force
+New-Item -Force $VddRegKey | Out-Null
+Set-ItemProperty $VddRegKey -Name VDDPATH -Value $VddConfigDir
+Write-Host "已套用設定與 EDID 到 $VddConfigDir"
+
+# 3. 安裝驅動，或在已安裝時重新載入
+if (Get-VddDevice) {
+    Write-Host '驅動已安裝，更新驅動套件並重新載入裝置 ...'
+    pnputil /add-driver "$inf" /install | Out-Null
+    pnputil /restart-device /deviceid "$VddHardwareId" | Out-Null
+} else {
+    Write-Host '安裝 Virtual Display Driver ...'
+    & $devcon install "$inf" "$VddHardwareId"
+    if ($LASTEXITCODE -ne 0) { throw "devcon 安裝失敗（代碼 $LASTEXITCODE）" }
+}
+
+# 4. 拔插用排程工作：以最高權限執行，之後按開關不會跳 UAC
+foreach ($t in @(@{ Name = 'Plug'; Verb = '/enable-device' }, @{ Name = 'Unplug'; Verb = '/disable-device' })) {
+    $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
+        -Argument "--headless $env:SystemRoot\System32\pnputil.exe $($t.Verb) /deviceid `"$VddHardwareId`""
+    $principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
+    Register-ScheduledTask -TaskPath $TaskPath -TaskName $t.Name -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+}
+Write-Host "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用者：$User）"
+
+# 5. 開關程式
+$exe = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
+if (Test-Path $exe) {
+    Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
+    New-Item -ItemType Directory -Force $AppDir | Out-Null
+    Copy-Item $exe $AppDir -Force
+    $lnk = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\虛擬螢幕開關.lnk'
+    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+    $sc.TargetPath = Join-Path $AppDir 'vdswitch.exe'
+    $sc.Save()
+    Write-Host "已安裝開關程式到 $AppDir，開始功能表捷徑：虛擬螢幕開關"
+} else {
+    Write-Host "找不到 $exe，略過開關程式（先執行 build.ps1）"
+}
+
+Write-Host ''
+Write-Host '完成。執行 verify.ps1 檢查結果。'

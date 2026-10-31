@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Virtual Display Switch
+Name[zh_TW]=虛擬螢幕開關
+Comment=Plug or unplug the 1920x1440 virtual display
+Comment[zh_TW]=插入或拔掉 1920x1440 虛擬螢幕
+Exec=/usr/local/bin/vdswitch
+Icon=video-display
+Categories=Utility;
