@@ -194,7 +194,8 @@ make linux                                                    # 只能在 Linux 
   - 已安裝時顯示目前版本和要安裝的版本（相同版本或降版會另外提示），問 `y/N`。回答 y 才執行套件裡的 `uninstall.ps1 -KeepUserSettings`，再全新安裝；其他回答就取消。
   - `-KeepUserSettings`：不刪 `%APPDATA%\go-virtual-display`（解析度清單、小工具位置）和 `HKLM\SOFTWARE\go-virtual-display`（語言）。一般移除仍會全部刪掉。
   - 使用者實測通過：提醒有出現，重新安裝後解析度還在。之後一般移除，檢查全部乾淨（`%APPDATA%`、語言機碼也刪了，`%TEMP%` 沒有殘留），Synergy 正常。
-  - **0.3.0 全部驗證完成，可以發佈**。但 Git Credential Manager 裡沒有 claude-bot 的 token，push／fetch 都會卡在等登入，要請使用者用 `! git push origin main` 登入一次。
+  - Git Credential Manager 裡的 claude-bot token 在 10/31 23:35 之後不見了（原因不明，可能是某次驗證失敗被 GCM 自動刪除）。使用者提供新 token（scope：write:repository／organization／package，沒有 read:user），用 `git credential approve` 存回去。Claude Code 裡有 `GCM_INTERACTIVE=never`，不會跳登入視窗，token 不見時 push 會一直卡住，要請使用者提供 token 或在一般終端機登入。
+- 2026-11-01：發佈 **v0.3.0**（annotated tag＋Gitea Release id 14，附件 `go-virtual-display-0.3.0-windows.zip`，SHA-256 `325396E4…9C1F0082`）。
 - 待辦：
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
