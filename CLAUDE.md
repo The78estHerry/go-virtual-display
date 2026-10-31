@@ -113,6 +113,7 @@ make linux                                                    # 只能在 Linux 
   - 登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH`：移除時刪掉，機碼空了也刪。
   - 沒有處理 `GraphicsDrivers\Configuration`／`Connectivity` 裡的螢幕排列紀錄：只有 SYSTEM 能讀，是 Windows 自己管理的快取，手動刪有風險。
 - 2026-10-31：依使用者要求，`windows/`、`linux/` 最上層只留一鍵安裝／移除的兩個檔案，其餘搬進各自的 `scripts/`，讓使用者一眼看出要點哪個。
+- 2026-10-31 17:09：使用者用新版 `uninstall.cmd` 移除後檢查，以下全部清除乾淨，Synergy 服務正常執行：VDD 裝置、驅動套件、殘留的 MTT1337 螢幕裝置、縮放設定、`C:\VirtualDisplayDriver`、`HKLM\SOFTWARE\MikeTheTech`、程式目錄、開始功能表捷徑、開機啟動、排程工作資料夾。
 - 待辦：
   - 確認自動重啟 Synergy 有效（使用者重跑 `windows\install.cmd` 後實際拔插）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
