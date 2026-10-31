@@ -63,12 +63,32 @@ go-virtual-display-<版本>-windows/
   - Virtual Display Driver 本體：安裝時才下載並驗證 SHA-256，不重新散布
 - 新增會在安裝時用到的檔案時，要同時改 `release.ps1` 和這份清單。
 
-### Linux：尚未提供
+### Linux：`go-virtual-display-<版本>-linux-amd64.tar.gz`
 
-Linux 版的開關程式需要 cgo，要在 Linux 上編譯，目前也還沒實機測試，所以還沒有 Linux 安裝包。之後要做時，比照 Windows 的原則：
-- 只放 `install.sh`、`uninstall.sh`、`scripts/` 裡的檔案、EDID、編好的 `vdswitch`
-- 腳本改成能從安裝包的配置找到 EDID 和執行檔
-- 檔名 `go-virtual-display-<版本>-linux-amd64.tar.gz`，用 tar 才能保留執行權限
+Linux 版的開關程式（Gio）需要 cgo，Windows 上無法直接編譯，所以用 Docker 的 Linux 容器編譯並打包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\release-linux.ps1 -Ref v0.3.0   # 預設 HEAD
+```
+
+- 需要 Docker Desktop（Linux 容器）。用 `debian:bullseye`（glibc 2.31）編譯，Ubuntu 20.04／Debian 11 以後都能執行。Go 從 go.dev 下載並比對 SHA-256。
+- Debian 11 的安全更新已經搬到 `archive.debian.org`，腳本會改寫 apt 來源。
+- 用 tar 才能保留執行權限。檔案擁有者固定為 root（0/0）。
+- 0.3.0 的腳本以原始碼的目錄配置找檔案，所以安裝包也沿用這個配置：
+
+```
+go-virtual-display-<版本>-linux-amd64/
+├── README.txt                使用說明，英文在前、繁中在後（release-linux.ps1 產生，UTF-8＋LF）
+├── linux/
+│   ├── install.sh            一鍵安裝
+│   ├── uninstall.sh          一鍵移除
+│   └── scripts/              verify.sh、vdswitch-helper、lang.sh、initramfs-hook、polkit 規則、.desktop
+├── edid/edid_1920x1440.bin
+└── dist/linux/vdswitch       開關程式（容器內編譯）
+```
+
+- 之後改了 Linux 腳本時，可以改成和 Windows 一樣的扁平配置（install.sh、uninstall.sh 放最上層），要同時改 `release-linux.ps1` 和這份清單。
+- 打包後，用 `ubuntu:22.04` 容器檢查：腳本 `bash -n`、`readelf -d` 看依賴的函式庫、`ldd` 沒有 not found。
 
 ## 版本紀錄
 

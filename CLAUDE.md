@@ -43,6 +43,7 @@
 | `downloads/` | 下載的 VDD（gitignore） |
 | `dist/` | 編譯產物（gitignore），`dist/release/` 是安裝包 |
 | `release.ps1`、`RELEASING.md` | 產生 Release 安裝包；發佈步驟與各平台安裝包的檔案清單 |
+| `release-linux.ps1` | 用 Docker（`debian:bullseye`）編譯 Linux 版並打包成 tar.gz，`-Ref` 指定版本 |
 
 ## 常用指令
 
@@ -196,6 +197,13 @@ make linux                                                    # 只能在 Linux 
   - 使用者實測通過：提醒有出現，重新安裝後解析度還在。之後一般移除，檢查全部乾淨（`%APPDATA%`、語言機碼也刪了，`%TEMP%` 沒有殘留），Synergy 正常。
   - Git Credential Manager 裡的 claude-bot token 在 10/31 23:35 之後不見了（原因不明，可能是某次驗證失敗被 GCM 自動刪除）。使用者提供新 token（scope：write:repository／organization／package，沒有 read:user），用 `git credential approve` 存回去。Claude Code 裡有 `GCM_INTERACTIVE=never`，不會跳登入視窗，token 不見時 push 會一直卡住，要請使用者提供 token 或在一般終端機登入。
 - 2026-11-01：發佈 **v0.3.0**（annotated tag＋Gitea Release id 14，附件 `go-virtual-display-0.3.0-windows.zip`，SHA-256 `325396E4…9C1F0082`）。
+- 2026-11-01：依使用者要求，用 v0.3.0 的程式碼補上 Linux 安裝包 `go-virtual-display-0.3.0-linux-amd64.tar.gz`（SHA-256 `1c6bf10f…be717af8`），附加到同一個 Release，並更新 Release 說明。
+  - 新增 `release-linux.ps1`：用 Docker Desktop 的 `debian:bullseye` 編譯（glibc 2.31）。Debian 11 的安全更新已搬到 `archive.debian.org`，要改 apt 來源。
+  - 安裝包沿用原始碼的目錄配置（`linux/`、`edid/`、`dist/linux/vdswitch`），0.3.0 的腳本不用改。
+  - 只在 `ubuntu:22.04` 容器裡驗證過：腳本語法、`ldd` 沒有缺少的函式庫、執行檔可以啟動（沒有桌面所以無法顯示）。**還沒有實機測試**。
+  - 已知問題：0.3.0 的 Linux 版系統列文字顯示 `profile.Default` 的 1920×1080，實際是 1920×1440。
+  - Git Bash 裡的 Python 讀 stdin、印出中文會用 cp932，看起來像亂碼。要用 `PYTHONUTF8=1` 並從檔案讀寫，不要從 stdin 讀中文。
+- 使用者問 icon 三個方案的比較網頁：上一個工作階段的暫存資料夾已經清掉，只剩定案的 A1（`assets/icon.svg`）。
 - 待辦：
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
