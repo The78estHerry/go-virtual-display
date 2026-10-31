@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!-- go-virtual-display：以 Virtual Display Driver 25.7.23 附帶的 vdd_settings.xml 為底修改 -->
-<!-- 只留一台螢幕、預設只提供 1920x1080@60，並啟用 user_edid.bin；切換解析度時由 vdswitch.exe --apply 改寫 resolutions 與 g_refresh_rate -->
+<!-- 只留一台螢幕、預設只提供 1920x1080@60，並啟用 user_edid.bin；切換解析度時由 vdswitch.exe 的 apply 功能改寫 resolutions 與 g_refresh_rate -->
+<!-- 注意：XML 註解裡不能出現兩個連續的減號，否則整個檔案格式錯誤，驅動不會建立螢幕（0.3.0 測試版的問題） -->
 <vdd_settings>
     <monitors>
         <count>1</count>
@@ -26,7 +27,7 @@
 		<HardwareCursor>true</HardwareCursor>
 		<SDR10bit>false</SDR10bit>
 		<HDRPlus>false</HDRPlus>
-		<logging>true</logging> <!-- go-virtual-display 0.3.0 測試版：診斷螢幕沒有出現的問題，發佈前改回 false -->
+		<logging>false</logging>
         <debuglogging>false</debuglogging>
 	</options>
 </vdd_settings>

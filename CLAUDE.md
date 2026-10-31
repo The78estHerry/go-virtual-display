@@ -85,6 +85,7 @@ make linux                                                    # 只能在 Linux 
 - **`schtasks` 的錯誤訊息用系統字碼頁編碼**（不是 UTF-8），所以不放進錯誤字串，只回報 exit code。
 - **`WScript.Shell` 的 `CreateShortcut` 用 ANSI 字碼頁處理路徑**。使用者的字碼頁是 932，「虛」不在裡面，變成 `?` 後 `Save()` 報 FileNotFoundException。0.2.0 起捷徑檔名一律英文（`Virtual Display Switch.lnk`），安裝與移除時也會刪掉 0.1.x 的中文捷徑。
 - **PowerShell 的 `Get-UICulture` 不可靠**。使用者的顯示語言是繁中（`GetUserDefaultUILanguage` = 0x0404），`Get-UICulture` 卻回傳 en-US。所以腳本和 Go 都直接呼叫 `GetUserDefaultUILanguage`，取低 10 位元等於 0x04（LANG_CHINESE）就算中文。
+- **`vdd_settings.xml` 的註解裡不能寫 `--`**（例如 `--apply`）。XML 格式錯誤時，VDD 不會報錯，只是不建立螢幕，非常難查。
 - **Git Bash 的 `sed -i` 會把 CRLF 檔案改成 LF**。改 `.ps1`、`.cmd` 不要用 `sed -i`，改完要確認仍是 UTF-8 with BOM＋CRLF。
 - **Gio 預設字型沒有中文**。Windows 版在中文介面才載入 `msjh.ttc`（微軟正黑體），並關閉系統字型掃描，啟動比較快；英文介面只用 Go 字型。Linux 版靠系統字型補中文。英文字比較寬，英文介面的小工具寬度是 288 dp（中文 248 dp）。
 
@@ -178,10 +179,16 @@ make linux                                                    # 只能在 Linux 
     1. 請使用者看「設定 > 顯示器」有沒有虛擬螢幕，我也檢查 `Get-PnpDevice` 有沒有 `DISPLAY\MTT1337`。
     2. 有出現：是系統狀態問題，在 README／安裝包說明加上「異常時請重開機」，接著讓使用者驗證 0.3.0 的其餘項目。
     3. 還是沒有：想辦法拿到 VDD 的記錄（登錄檔設定或控制管道），或拿 v0.2.0 安裝包對照，逐一找出差異。
+- 2026-11-01：**找到真正原因**。重開機後 0.3.0 還是沒有螢幕，使用者改裝 0.1.1 就正常。
+  - 在 0.1.1 上逐一替換設定檔測試（以系統管理員執行的腳本，換檔→`pnputil /restart-device`→看有沒有 `DISPLAY\MTT1337`→還原）：
+    - LF 換行、logging 行尾註解、1080 的 XML＋0.3.0 的 EDID：都正常
+    - 0.3.0 的 XML（不論 LF 或 CRLF）：沒有螢幕
+  - 原因：0.3.0 的 `vdd_settings.xml` 第 3 行註解寫了 `vdswitch.exe --apply`。**XML 註解不能有 `--`**，整個檔案格式錯誤，驅動不讀設定，所以不建立螢幕、也不寫記錄、沒有任何錯誤。之前推測的 EDID 時序和系統狀態都不是原因（`ExactRefresh` 仍保留，讓更新率剛好是整數）。
+  - 修正：拿掉註解裡的 `--`，logging 改回 false。`setVDDResolution` 寫入前用 `encoding/xml` 檢查格式，測試也會檢查範本格式。`.gitattributes` 加上 `*.xml text eol=crlf`，0.3.0 之前的安裝包是 CRLF，之後被改成 LF 了（實測 LF 也能用，只是保持一致）。
+  - 重新產生測試用安裝包 `dist\release\go-virtual-display-0.3.0-windows.zip`，等使用者移除 0.1.1 後重裝測試。
   - 0.3.0 還沒驗證的項目：切換解析度和管理視窗、桌面捷徑和搜尋「虛擬螢幕」、新圖示、安裝時語言選單的排版（`e4006e3` 改用 `Console.ReadLine`）、移除是否乾淨。通過後照 `RELEASING.md` 打 v0.3.0 tag 並發佈。
-  - 測試用安裝包：`dist\release\go-virtual-display-0.3.0-windows.zip`（已包含 `e4006e3`）。
+  - 另外要查：0.1.1 重開機後插入時，虛擬螢幕變成主螢幕（在 (0,0)，實體螢幕被排到右邊）。
 - 待辦：
-  - 0.3.0 發佈前把 `vdd_settings.xml` 的 logging 改回 false
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
     - helper 新增 `edid <檔案>`：驗證 128 bytes、header、checksum

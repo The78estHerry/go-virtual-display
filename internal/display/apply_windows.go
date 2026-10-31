@@ -1,9 +1,12 @@
 package display
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -144,7 +147,23 @@ func setVDDResolution(path string, p profile.Profile) error {
 		}
 		return "" // 只留一個 global 更新率
 	})
+	// 格式錯誤的 XML 驅動會整個不讀，結果是不建立螢幕、也沒有任何錯誤訊息，所以寫入前先檢查
+	if err := checkXML([]byte(s)); err != nil {
+		return fmt.Errorf(i18n.T("Invalid XML in %s: %v; please reinstall", "%s 的 XML 格式錯誤：%v，請重新安裝"), path, err)
+	}
 	return writeFileAtomic(path, []byte(s))
+}
+
+// checkXML 確認 b 是格式正確的 XML（例如註解裡不能有 "--"）。
+func checkXML(b []byte) error {
+	d := xml.NewDecoder(bytes.NewReader(b))
+	for {
+		if _, err := d.Token(); err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+	}
 }
 
 func writeFileAtomic(path string, b []byte) error {

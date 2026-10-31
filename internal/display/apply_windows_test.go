@@ -40,6 +40,26 @@ func TestSetVDDResolution(t *testing.T) {
 	}
 }
 
+// 安裝用的 vdd_settings.xml 必須是格式正確的 XML，否則驅動不會建立螢幕（0.3.0 測試版就是註解裡寫了 "--"）
+func TestVDDSettingsTemplateIsWellFormed(t *testing.T) {
+	src, err := os.ReadFile(filepath.Join("..", "..", "windows", "scripts", "vdd_settings.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkXML(src); err != nil {
+		t.Fatalf("vdd_settings.xml 格式錯誤：%v", err)
+	}
+	if strings.Contains(string(src), "<logging>true</logging>") {
+		t.Error("發佈用的設定不應開啟 logging")
+	}
+}
+
+func TestCheckXMLRejectsDoubleHyphenInComment(t *testing.T) {
+	if checkXML([]byte("<a><!-- vdswitch.exe --apply --></a>")) == nil {
+		t.Error("註解裡有 -- 應該回報錯誤")
+	}
+}
+
 func TestSetVDDResolutionRejectsUnknownFormat(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "vdd_settings.xml")
 	if err := os.WriteFile(path, []byte("<vdd_settings></vdd_settings>"), 0o644); err != nil {

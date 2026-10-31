@@ -2,6 +2,7 @@
 *.ps1 text eol=crlf
 *.bin binary
 *.cmd text eol=crlf
+*.xml text eol=crlf
 linux/** text eol=lf
 *.ico binary
 *.png binary
