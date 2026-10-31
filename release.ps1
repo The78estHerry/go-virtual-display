@@ -1,10 +1,10 @@
 ﻿# 產生 Windows 版 Release 安裝包 dist\release\go-virtual-display-<版本>-windows.zip。
 # 只放安裝需要的檔案：一鍵安裝／移除、PowerShell 腳本、VDD 設定、EDID、編好的開關程式、使用說明。
-param(
-    [Parameter(Mandatory)][string]$Version  # 例如 0.1.0
-)
+# 版本號以 windows\scripts\common.ps1 的 $AppVersion 為準（「設定 > 應用程式」顯示的也是它）。
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
+. .\windows\scripts\common.ps1
+$Version = $AppVersion
 
 & .\build.ps1
 
@@ -25,7 +25,8 @@ go-virtual-display $Version（Windows）
 
 安裝：點兩下 install.cmd，UAC 詢問時按「是」。
       會自動下載已簽章的 Virtual Display Driver $((Select-String -Path windows\scripts\common.ps1 -Pattern "VddVersion\s*=\s*'(.+)'").Matches[0].Groups[1].Value) 並驗證 SHA-256。
-移除：點兩下 uninstall.cmd，UAC 詢問時按「是」。
+移除：在系統列圖示按右鍵選「解除安裝…」，或到「設定 > 應用程式」移除「虛擬螢幕開關」。
+      也可以點兩下 uninstall.cmd。安裝後就算刪掉這個資料夾，前兩種方式仍然可以移除。
 
 需求：Windows 10／11 x64、Microsoft Visual C++ Redistributable。
 有裝 Synergy 的話，每次拔插後會自動重新啟動它。

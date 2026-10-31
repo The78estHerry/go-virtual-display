@@ -92,6 +92,30 @@ if (Test-Path $exe) {
     Write-Host "找不到 $exe，也沒有安裝 Go，略過開關程式"
 }
 
+# 6. 移除用的檔案複製到安裝位置，並登記到「設定 > 應用程式」，安裝資料夾刪掉後仍能移除
+Remove-Item $UninstallerDir -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force (Join-Path $UninstallerDir 'scripts') | Out-Null
+Copy-Item (Join-Path (Split-Path -Parent $PSScriptRoot) 'uninstall.cmd') $UninstallerDir
+Copy-Item (Join-Path $PSScriptRoot 'common.ps1'), (Join-Path $PSScriptRoot 'uninstall.ps1'), (Join-Path $PSScriptRoot 'launch-uninstall.ps1') (Join-Path $UninstallerDir 'scripts')
+Get-ChildItem $UninstallerDir -Recurse -File | Unblock-File
+$launcher = Join-Path $UninstallerDir 'scripts\launch-uninstall.ps1'
+New-Item -Force $UninstallKey | Out-Null
+$entry = @{
+    DisplayName     = '虛擬螢幕開關（go-virtual-display）'
+    DisplayVersion  = $AppVersion
+    Publisher       = 'go-virtual-display'
+    InstallLocation = $AppDir
+    UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcher`""
+    URLInfoAbout    = 'https://gitea.littleherry.work/The78estWorld/go-virtual-display'
+}
+if (Test-Path (Join-Path $AppDir 'vdswitch.exe')) { $entry.DisplayIcon = Join-Path $AppDir 'vdswitch.exe' }
+foreach ($k in $entry.Keys) { Set-ItemProperty $UninstallKey -Name $k -Value $entry[$k] }
+Set-ItemProperty $UninstallKey -Name NoModify -Value 1 -Type DWord
+Set-ItemProperty $UninstallKey -Name NoRepair -Value 1 -Type DWord
+$sizeKB = [int]((Get-ChildItem $AppDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
+Set-ItemProperty $UninstallKey -Name EstimatedSize -Value $sizeKB -Type DWord
+Write-Host '已登記到「設定 > 應用程式」，也可從系統列圖示的「解除安裝…」移除'
+
 Write-Host ''
 if (-not $Launch) {
     Write-Host '完成。執行 verify.ps1 檢查結果。'

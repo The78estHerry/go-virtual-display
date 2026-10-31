@@ -41,7 +41,8 @@ try {
 Write-Host '已刪除排程工作'
 
 Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue
-Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue  # 含 uninstaller\
+Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\虛擬螢幕開關.lnk') -Force -ErrorAction SilentlyContinue
 Write-Host '已移除開關程式與開機啟動項'
 

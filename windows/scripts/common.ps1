@@ -21,7 +21,10 @@ if ($Packaged) {
     $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
     $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
 }
+$AppVersion   = '0.1.1'  # 發佈版本；release.ps1 以此為準
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
+$UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除
+$UninstallKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\go-virtual-display'  # 「設定 > 應用程式」
 $TaskPath     = '\go-virtual-display\'
 $RunKey       = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $RunValue     = 'go-virtual-display'

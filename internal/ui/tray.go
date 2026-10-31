@@ -28,6 +28,10 @@ func (a *App) trayReady() {
 	mTop := systray.AddMenuItemCheckbox("小工具固定在最上層", "", LoadSettings().TopMost)
 	mAuto := systray.AddMenuItemCheckbox("登入時自動啟動", "", AutostartEnabled())
 	systray.AddSeparator()
+	mUninstall := systray.AddMenuItem("解除安裝…", "")
+	if !uninstallSupported() {
+		mUninstall.Hide()
+	}
 	mQuit := systray.AddMenuItem("結束", "")
 
 	setCheck := func(m *systray.MenuItem, on bool) {
@@ -72,6 +76,8 @@ func (a *App) trayReady() {
 			if err := SetAutostart(on); err == nil {
 				setCheck(mAuto, on)
 			}
+		case <-mUninstall.ClickedCh:
+			startUninstall() // 移除腳本會關掉這個程式
 		case <-mQuit.ClickedCh:
 			a.quit()
 			return
