@@ -39,32 +39,35 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 - [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist)（缺少時驅動會報 `vcruntime140.dll not found`）
 - 自己編譯時需要 Go 1.26 以上
 
-### 安裝
+### 一鍵安裝
 
-1. 編譯（或使用已編好的 `dist\windows\vdswitch.exe`）：
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\build.ps1
-   ```
-2. 以**系統管理員身分**開啟 PowerShell，執行：
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\windows\install.ps1
-   ```
-   這一步會：
-   - 下載驅動
-   - 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
-   - 安裝驅動
-   - 建立排程工作 `\go-virtual-display\Plug`、`\go-virtual-display\Unplug`
-   - 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「虛擬螢幕開關」
-3. 檢查（不需要系統管理員）：
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\windows\verify.ps1
-   ```
+在專案資料夾裡點兩下 **`install.cmd`**，UAC 詢問時按「是」，接著全部自動完成：
 
-### 移除
+1. 下載驅動並驗證 SHA-256
+2. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
+3. 安裝驅動
+4. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC
+5. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「虛擬螢幕開關」。如果還沒編譯但有裝 Go，會先自動編譯
+6. 執行檢查，並打開開關程式
 
-以系統管理員身分執行 `windows\uninstall.ps1`。這會：
+可以重複執行，例如改了 EDID 之後再跑一次就會更新。
+
+### 一鍵移除
+
+點兩下 **`uninstall.cmd`**，UAC 詢問時按「是」。這會：
 - 移除驅動、排程工作、開關程式和登入時自動啟動的設定
 - 還原原本的 VDD 設定檔
+
+### 手動執行（進階）
+
+一鍵安裝背後執行的是 `windows\` 裡的腳本，也可以在系統管理員 PowerShell 裡個別執行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build.ps1                # 編譯（需要 Go）
+powershell -ExecutionPolicy Bypass -File .\windows\install.ps1      # 安裝
+powershell -ExecutionPolicy Bypass -File .\windows\verify.ps1       # 檢查（不需要系統管理員）
+powershell -ExecutionPolicy Bypass -File .\windows\uninstall.ps1    # 移除
+```
 
 > ⚠️ 更新顯示卡或晶片組驅動之前，建議先移除虛擬螢幕驅動（VDD 官方建議）。如果開機後黑畫面，請進安全模式移除。
 
@@ -122,6 +125,8 @@ edid/                 產生好的 EDID
 windows/              Windows 安裝／驗證／移除腳本與 VDD 設定
 linux/                Linux 安裝／驗證／移除腳本、小幫手、polkit 規則
 build.ps1 / Makefile  編譯
+install.cmd           Windows 一鍵安裝（自動要求系統管理員權限）
+uninstall.cmd         Windows 一鍵移除
 ```
 
 ## 另一種做法（沒有採用）

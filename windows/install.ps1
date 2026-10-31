@@ -2,7 +2,9 @@
 # 需要系統管理員權限。可重複執行（會更新設定並重新載入驅動）。
 param(
     # 排程工作要以哪個使用者執行；預設為目前登入桌面的使用者
-    [string]$User = (Get-CimInstance Win32_ComputerSystem).UserName
+    [string]$User = (Get-CimInstance Win32_ComputerSystem).UserName,
+    # 安裝完成後執行檢查，並以一般權限開啟開關程式（install.cmd 使用）
+    [switch]$Launch
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -53,6 +55,10 @@ Write-Host "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用
 
 # 5. 開關程式
 $exe = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
+if (-not (Test-Path $exe) -and (Get-Command go -ErrorAction SilentlyContinue)) {
+    Write-Host '找不到開關程式執行檔，用 Go 編譯 ...'
+    & (Join-Path $RepoRoot 'build.ps1')
+}
 if (Test-Path $exe) {
     Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
     New-Item -ItemType Directory -Force $AppDir | Out-Null
@@ -63,8 +69,20 @@ if (Test-Path $exe) {
     $sc.Save()
     Write-Host "已安裝開關程式到 $AppDir，開始功能表捷徑：虛擬螢幕開關"
 } else {
-    Write-Host "找不到 $exe，略過開關程式（先執行 build.ps1）"
+    Write-Host "找不到 $exe，也沒有安裝 Go，略過開關程式"
 }
 
 Write-Host ''
-Write-Host '完成。執行 verify.ps1 檢查結果。'
+if (-not $Launch) {
+    Write-Host '完成。執行 verify.ps1 檢查結果。'
+    return
+}
+Write-Host '安裝完成，檢查結果：'
+Start-Sleep -Seconds 3  # 等驅動把螢幕建立好
+& (Join-Path $PSScriptRoot 'verify.ps1')
+$installed = Join-Path $AppDir 'vdswitch.exe'
+if (Test-Path $installed) {
+    # 透過 explorer 啟動，開關程式才會以一般權限執行，而不是繼承這裡的系統管理員權限
+    Start-Process explorer.exe -ArgumentList "`"$installed`""
+    Write-Host '已開啟虛擬螢幕開關（桌面右下角與系統列）'
+}

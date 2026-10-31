@@ -30,6 +30,7 @@
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
+| `install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
 | `windows/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
 | `linux/` | `install.sh`、`verify.sh`、`uninstall.sh`、`vdswitch-helper`、polkit 規則、`.desktop` |
 | `downloads/` | 下載的 VDD（gitignore） |
@@ -80,8 +81,12 @@ make linux                                                    # 只能在 Linux 
   - Windows 腳本
   - Linux 腳本
   - vdswitch（Windows 版已實際執行：小工具在右下角、不在工作列、圓角、中文正常；驅動未安裝時正確顯示錯誤）
+- 2026-10-31：使用者覺得安裝步驟太多，加入一鍵安裝／移除：
+  - 新增 `install.cmd`、`uninstall.cmd`
+  - `install.ps1 -Launch`：缺執行檔時自動編譯；裝完先執行 verify，再透過 `explorer.exe` 以一般權限開啟開關程式，避免它繼承系統管理員權限
+  - `uninstall.ps1` 會一併刪掉排程工作留下的空資料夾
 - 待辦：
-  - Windows 實機安裝與拔插測試（需要使用者以系統管理員身分執行 `install.ps1`）
+  - Windows 實機安裝與拔插測試（由使用者點兩下 `install.cmd`）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude

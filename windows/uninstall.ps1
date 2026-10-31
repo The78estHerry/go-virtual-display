@@ -16,6 +16,11 @@ Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*\mttvdd.i
 }
 
 Get-ScheduledTask -TaskPath $TaskPath -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false
+try {
+    $svc = New-Object -ComObject Schedule.Service
+    $svc.Connect()
+    $svc.GetFolder('\').DeleteFolder($TaskPath.Trim('\'), 0)  # 刪掉留下的空資料夾
+} catch {}
 Write-Host '已刪除排程工作'
 
 Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue
