@@ -29,6 +29,7 @@
 | 路徑 | 用途 |
 |---|---|
 | `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、`CVTReducedBlanking`（cvt.go）、舊版固定參數 `Default`（DMT 1920×1440@60，Linux 版用） |
+| `assets/` | 程式圖示：`icon.svg`（方案 A1，原始檔）、`icon.ico`、`icon-256.png`、`make-icon.ps1`（用 Edge headless 轉 PNG 再組 ICO，用 windres 產生 `cmd/vdswitch/rsrc_windows_amd64.syso`） |
 | `internal/profile` | 解析度清單 `profiles.json`（`Load`／`Add`／`Remove`／`SetActive`）、14 組 `Presets`、每組的 `EDID()`、`Validate()` |
 | `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
 | `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是 Windows 安裝的預設，後者是 Linux 版固定使用（和 0.2.0 以前完全相同） |
@@ -151,7 +152,11 @@ make linux                                                    # 只能在 Linux 
   - 系統列子選單的分隔線無法移除（`AddSeparator` 沒有回傳值），所以「管理解析度…」放最上面、分隔線固定，下面的解析度項目用 `Remove()` 重建。
   - 修正 Range Limits：水平頻率超過 255 kHz 時用 EDID 1.4 的 offset 旗標（之前會溢位）。
   - 移除時一併刪掉 `%APPDATA%\go-virtual-display`：之前會留下 widget.json，這次修正。
-  - 使用者另外要求設計「夢境裡想著一個螢幕」的程式圖示，給「安裝的程式」使用。先畫三個方案讓使用者選。
+  - 使用者另外要求設計「夢境裡想著一個螢幕」的程式圖示，給「安裝的程式」使用。
+    - 第一輪提了三個方案，使用者選 A（雲朵泡泡），要求拿掉小泡泡、螢幕畫面要彩色夢幻（提到彩虹小馬：有版權的角色不能用，改提原創版本）。
+    - 第二輪提 A1 彩虹與雲、A2 原創彩虹獨角獸、A3 全像彩光，使用者定案 **A1**。
+    - 嵌入方式：`go run github.com/tc-hib/go-winres` 被權限分類器擋下（執行外部下載的程式），改用電腦上已安裝的 llvm-mingw `windres` 把 `vdswitch.rc` 編成 `.syso`。
+    - 圖示會自動出現在「安裝的程式」（DisplayIcon 指向 vdswitch.exe）和開始功能表捷徑上。系統列維持會變色的狀態圖示。
 - 待辦：
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改

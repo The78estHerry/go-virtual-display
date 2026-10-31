@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- go-virtual-display 圖示：夢的泡泡裡想著一台螢幕，螢幕畫面是彩虹與雲（方案 A1） -->
+  <defs>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4DEFF"/>
+    </linearGradient>
+    <linearGradient id="pastel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8EC5FF"/><stop offset=".55" stop-color="#D7B8FF"/><stop offset="1" stop-color="#FFC4E1"/>
+    </linearGradient>
+    <clipPath id="scr"><rect x="77" y="93" width="106" height="70" rx="5"/></clipPath>
+  </defs>
+  <path d="M58 188 C18 188 10 140 42 126 C30 82 84 58 110 82 C126 38 200 40 208 90 C250 90 258 140 230 156 C248 190 212 214 186 198 C170 220 116 220 102 198 C88 210 58 208 58 188 Z"
+        fill="url(#cloud)" stroke="#7B6BD6" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="70" y="86" width="120" height="84" rx="9" fill="#2A2350"/>
+  <rect x="122" y="170" width="16" height="12" fill="#2A2350"/>
+  <rect x="104" y="180" width="52" height="8" rx="4" fill="#2A2350"/>
+  <g clip-path="url(#scr)">
+    <rect x="77" y="93" width="106" height="70" fill="url(#pastel)"/>
+    <g fill="none" stroke-width="7">
+      <path d="M92 163 A38 38 0 0 1 168 163" stroke="#FF5E8A"/>
+      <path d="M99 163 A31 31 0 0 1 161 163" stroke="#FFB347"/>
+      <path d="M106 163 A24 24 0 0 1 154 163" stroke="#FFE45C"/>
+      <path d="M113 163 A17 17 0 0 1 147 163" stroke="#5EE0A0"/>
+      <path d="M120 163 A10 10 0 0 1 140 163" stroke="#5EA8FF"/>
+    </g>
+    <path d="M80 165 C76 156 86 150 92 155 C95 147 108 148 108 157 C115 156 117 165 110 167 Z" fill="#fff"/>
+    <path d="M150 165 C148 156 158 152 162 157 C166 149 178 151 178 160 C184 160 184 167 178 168 Z" fill="#fff"/>
+    <path d="M95 104 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" fill="#fff"/>
+    <path d="M166 100 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5 z" fill="#FFF6B0"/>
+  </g>
+</svg>

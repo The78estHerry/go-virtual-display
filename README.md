@@ -140,6 +140,12 @@ linux/uninstall.sh
 
 檢查用 `linux/scripts/verify.sh`。
 
+## 圖示
+
+程式圖示是「夢的泡泡裡想著一台螢幕」，螢幕畫面是彩虹與雲。它嵌在 `vdswitch.exe` 裡，「安裝的程式」、開始功能表和檔案總管都會顯示。系統列圖示仍是會隨狀態變色的螢幕：綠色插入、灰色拔掉、橘色切換中、紅色錯誤。
+
+改圖示時編輯 `assets/icon.svg`，再執行 `assets/make-icon.ps1`。它會用 Windows 內建的 Edge 把 SVG 轉成各種尺寸，組成 `icon.ico`，再用 llvm-mingw 的 windres 產生 `cmd/vdswitch/rsrc_windows_amd64.syso`。產物都會 commit，所以平常編譯不需要這些工具。
+
 ## 介面語言
 
 開關程式、安裝和移除的訊息都有英文和繁體中文兩種。
@@ -175,6 +181,7 @@ internal/profile/     解析度清單（profiles.json）與每組解析度的 ED
 internal/display/     各平台的狀態查詢與拔插
 internal/ui/          系統列（fyne.io/systray）、小工具（Gio）、設定、自動啟動
 edid/                 產生好的 EDID
+assets/               程式圖示：icon.svg（原始檔）、icon.ico、make-icon.ps1（產生 .ico 與 cmd/vdswitch 的 .syso）
 windows/              Windows 一鍵安裝／移除：只要點 install.cmd、uninstall.cmd
   scripts/            背後的 PowerShell 腳本與 VDD 設定
 linux/                Linux 一鍵安裝／移除：只要執行 install.sh、uninstall.sh

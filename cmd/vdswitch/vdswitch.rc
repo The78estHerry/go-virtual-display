@@ -1,0 +1,3 @@
+// vdswitch.exe 的 Windows 資源：程式圖示（「安裝的程式」、開始功能表、檔案總管都會顯示）。
+// 由 assets/make-icon.ps1 編譯成 rsrc_windows_amd64.syso，Go 編譯時會自動連結。
+1 ICON "../../assets/icon.ico"

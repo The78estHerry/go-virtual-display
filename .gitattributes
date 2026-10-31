@@ -3,3 +3,6 @@
 *.bin binary
 *.cmd text eol=crlf
 linux/** text eol=lf
+*.ico binary
+*.png binary
+*.syso binary

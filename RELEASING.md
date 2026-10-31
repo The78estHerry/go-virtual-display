@@ -17,6 +17,7 @@
    ```
    它會先跑 `build.ps1`（測試、編譯、重產 EDID），再組出 `dist\release\go-virtual-display-<版本>-windows.zip`，最後列出包進去的檔案。
 3. 核對包進去的檔案和下面的清單一致，沒有多也沒有少。
+   改了 `assets/icon.svg` 的話，先執行 `assets/make-icon.ps1` 更新 `icon.ico` 和 `.syso`，並一起 commit。
 4. 解壓縮到一個新資料夾，實際點 `install.cmd` 安裝、拔插，再移除一輪。三種移除方式（系統列、設定 > 應用程式、`uninstall.cmd`）有改到的都要試，移除後檢查系統是否乾淨。
 5. 打 annotated tag 並推上去：
    ```
