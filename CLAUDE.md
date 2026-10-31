@@ -157,7 +157,18 @@ make linux                                                    # 只能在 Linux 
     - 第二輪提 A1 彩虹與雲、A2 原創彩虹獨角獸、A3 全像彩光，使用者定案 **A1**。
     - 嵌入方式：`go run github.com/tc-hib/go-winres` 被權限分類器擋下（執行外部下載的程式），改用電腦上已安裝的 llvm-mingw `windres` 把 `vdswitch.rc` 編成 `.syso`。
     - 圖示會自動出現在「安裝的程式」（DisplayIcon 指向 vdswitch.exe）和開始功能表捷徑上。系統列維持會變色的狀態圖示。
+- 2026-10-31：0.3.0 第一次實測，插入後沒有出現虛擬螢幕：VDD 裝置是 Started，但沒有 `DISPLAY\MTT1337` 螢幕裝置，事件記錄也沒有錯誤。
+  - 推測原因：CVT reduced blanking 的 1920×1080 實際更新率是 59.93 Hz，VDD 設定檔寫的是整數 60。0.2.0 的 1920×1440 用 DMT，剛好 60.000 Hz，所以正常。
+  - 修正：新增 `edid.ExactRefresh`，微調總像素和總行數，讓「總像素 × 總行數 × 更新率」是 10000 的倍數，pixel clock 用的是 10 kHz 單位。例如 1920×1080 變成 2080×1125、140.40 MHz、剛好 60 Hz。測試要求每組預設都剛好是整數 Hz。
+  - 為了確認原因，這個測試版在 `vdd_settings.xml` 開啟 `<logging>true</logging>`，記錄應該在 `C:\VirtualDisplayDriver\Logs`。`uninstall.ps1` 在沒有還原原本設定時，會一併刪掉 `Logs`。**發佈前要改回 false。**
+  - 使用者在我重現測試時執行了移除，裝置當場消失，這是移除造成的，不是 bug。
+- 2026-10-31：使用者關掉程式後不知道怎麼重新打開，原因是開始功能表捷徑是英文名稱，中文系統搜尋不到。
+  - 安裝時多建一個桌面捷徑，移除時一併刪除。
+  - 兩個捷徑都加上註解，中文介面時是中文。
+  - 工作列無法由程式自動釘選（Windows 10／11 不允許），請使用者自己右鍵釘選。
+  - **`WScript.Shell` 連捷徑註解也用 ANSI 字碼頁處理**，「虛」會變成 `?`。改用 `common.ps1` 的 `New-Shortcut`，透過 Add-Type 的 C# 直接呼叫 `IShellLinkW`。
 - 待辦：
+  - 0.3.0 發佈前把 `vdd_settings.xml` 的 logging 改回 false
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
     - helper 新增 `edid <檔案>`：驗證 128 bytes、header、checksum

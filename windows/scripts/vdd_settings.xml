@@ -26,7 +26,7 @@
 		<HardwareCursor>true</HardwareCursor>
 		<SDR10bit>false</SDR10bit>
 		<HDRPlus>false</HDRPlus>
-		<logging>false</logging>
+		<logging>true</logging> <!-- go-virtual-display 0.3.0 測試版：診斷螢幕沒有出現的問題，發佈前改回 false -->
         <debuglogging>false</debuglogging>
 	</options>
 </vdd_settings>

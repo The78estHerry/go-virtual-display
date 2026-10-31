@@ -22,6 +22,10 @@ func TestPresetsBuildAndParse(t *testing.T) {
 		if info.Preferred.HActive != p.Width || info.Preferred.VActive != p.Height {
 			t.Errorf("%s 解析回來是 %dx%d", p.Key(), info.Preferred.HActive, info.Preferred.VActive)
 		}
+		// 更新率必須剛好是整數：pixel clock ＝ 總像素 × 總行數 × 更新率
+		if tm := info.Preferred; tm.PixelClockKHz*1000 != tm.HTotal()*tm.VTotal()*p.Refresh {
+			t.Errorf("%s 的更新率不是剛好 %d Hz：%.4f（%+v）", p.Key(), p.Refresh, tm.RefreshHz(), tm)
+		}
 		if want := "GVD-" + p.Key()[:len(p.Key())-3]; info.SerialText != want {
 			t.Errorf("%s 序號字串 %q，預期 %q", p.Key(), info.SerialText, want)
 		}

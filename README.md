@@ -63,7 +63,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1080.bin      # 檢查並列出內�
 3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）。EDID 依你存的解析度產生，新安裝是 1920×1080
 4. 安裝驅動
 5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
-6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「Virtual Display Switch」。如果還沒編譯但有裝 Go，會先自動編譯
+6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表和桌面建立「Virtual Display Switch」捷徑（想釘選到工作列的話，在捷徑上按右鍵選「釘選到工作列」）。如果還沒編譯但有裝 Go，會先自動編譯
 7. 複製移除用的檔案，並登記到「設定 > 應用程式」
 8. 執行檢查，並打開開關程式
 

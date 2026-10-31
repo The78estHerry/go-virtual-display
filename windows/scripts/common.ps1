@@ -25,6 +25,7 @@ if ($Packaged) {
 $AppVersion   = '0.3.0'  # 發佈版本；release.ps1 以此為準
 $AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名一律英文）
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
+$DesktopDir   = [Environment]::GetFolderPath('Desktop')  # 安裝與移除都以同一個使用者的系統管理員身分執行
 $UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除
 $UninstallKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\go-virtual-display'  # 「設定 > 應用程式」
 $TaskPath     = '\go-virtual-display\'
@@ -54,6 +55,54 @@ function Assert-Admin {
     if (-not (New-Object Security.Principal.WindowsPrincipal $id).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         throw (T 'Please run this script from PowerShell started with "Run as administrator".' '請用「以系統管理員身分執行」的 PowerShell 執行這個腳本。')
     }
+}
+
+# 建立捷徑。不用 WScript.Shell：它以 ANSI 字碼頁處理字串，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?。
+# 這裡直接用 Unicode 版的 IShellLinkW。
+function New-Shortcut([string]$Path, [string]$Target, [string]$Description) {
+    if (-not ('GoVirtualDisplay.ShellLink' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+namespace GoVirtualDisplay {
+    [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IShellLinkW {
+        void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder f, int cch, IntPtr fd, uint flags);
+        void GetIDList(out IntPtr ppidl);
+        void SetIDList(IntPtr pidl);
+        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder s, int cch);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string s);
+        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder s, int cch);
+        void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string s);
+        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder s, int cch);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string s);
+        void GetHotkey(out short k);
+        void SetHotkey(short k);
+        void GetShowCmd(out int c);
+        void SetShowCmd(int c);
+        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder s, int cch, out int i);
+        void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string s, int i);
+        void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string s, uint r);
+        void Resolve(IntPtr hwnd, uint flags);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string s);
+    }
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+    class CShellLink { }
+    public static class ShellLink {
+        public static void Create(string path, string target, string description) {
+            var link = (IShellLinkW)new CShellLink();
+            link.SetPath(target);
+            link.SetWorkingDirectory(System.IO.Path.GetDirectoryName(target));
+            link.SetDescription(description);
+            ((IPersistFile)link).Save(path, true);
+        }
+    }
+}
+'@
+    }
+    [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description)
 }
 
 function Get-VddDevice {

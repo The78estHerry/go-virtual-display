@@ -107,13 +107,15 @@ if (Test-Path $exe) {
     Copy-Item $exe $AppDir -Force
     # 從網路下載的安裝包會帶「來自網路」標記，解除後開啟時才不會被 SmartScreen 擋下
     Unblock-File (Join-Path $AppDir 'vdswitch.exe')
-    # 捷徑檔名一律用英文：中文檔名在非中文系統上會出問題（WScript.Shell 用 ANSI 字碼頁處理路徑）
+    # 開始功能表與桌面捷徑。檔名一律用英文，中文檔名在非中文系統上會出問題。
+    # 中文介面時在「註解」放中文名稱，滑鼠提示會顯示，Windows 搜尋也有機會比對到
     $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
     Remove-Item (Join-Path $programs $LegacyShortcut) -Force -ErrorAction SilentlyContinue
-    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $programs "$AppName.lnk"))
-    $sc.TargetPath = Join-Path $AppDir 'vdswitch.exe'
-    $sc.Save()
-    Write-Host (T "Installed the switch to $AppDir; Start menu shortcut: $AppName" "已安裝開關程式到 $AppDir，開始功能表捷徑：$AppName")
+    foreach ($dir in $programs, $DesktopDir) {
+        New-Shortcut (Join-Path $dir "$AppName.lnk") (Join-Path $AppDir 'vdswitch.exe') `
+            (T 'Plug in or unplug the virtual display and switch resolutions' '虛擬螢幕開關：插入或拔掉虛擬螢幕、切換解析度')
+    }
+    Write-Host (T "Installed the switch to $AppDir; shortcuts on the Start menu and desktop: $AppName" "已安裝開關程式到 $AppDir，開始功能表與桌面捷徑：$AppName")
 } else {
     Write-Host (T "$exe not found and Go is not installed; skipping the switch" "找不到 $exe，也沒有安裝 Go，略過開關程式")
 }

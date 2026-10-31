@@ -52,12 +52,18 @@ func (p Profile) Label() string { return fmt.Sprintf("%d×%d @%dHz", p.Width, p.
 // Size 是不含更新率的名稱，例如 1920×1080。
 func (p Profile) Size() string { return fmt.Sprintf("%d×%d", p.Width, p.Height) }
 
-// Timing 回傳這組解析度的時序：1920×1440@60 沿用 VESA DMT（和 0.2.0 以前相同），其餘用 CVT reduced blanking。
+// Timing 回傳這組解析度的時序：1920×1440@60 沿用 VESA DMT（和 0.2.0 以前相同），
+// 其餘用 CVT reduced blanking，再微調成更新率剛好是整數（CVT 原本會是 59.93 Hz 這類數值，
+// 和 Virtual Display Driver 設定檔的整數更新率不一致時，驅動不會建立螢幕）。
 func (p Profile) Timing() (edid.Timing, error) {
 	if p == (Profile{1920, 1440, 60}) {
 		return edid.DMT1920x1440at60, nil
 	}
-	return edid.CVTReducedBlanking(p.Width, p.Height, float64(p.Refresh))
+	t, err := edid.CVTReducedBlanking(p.Width, p.Height, float64(p.Refresh))
+	if err != nil {
+		return t, err
+	}
+	return edid.ExactRefresh(t, p.Refresh)
 }
 
 // Validate 檢查是否在可以產生 EDID 的範圍內。

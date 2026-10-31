@@ -44,7 +44,7 @@ Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue
 Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue  # 含 uninstaller\
 Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
 $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
-Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs $LegacyShortcut) -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs $LegacyShortcut), (Join-Path $DesktopDir "$AppName.lnk") -Force -ErrorAction SilentlyContinue
 Remove-Item $LanguageKey -Recurse -Force -ErrorAction SilentlyContinue
 # 使用者的設定：存下的解析度、小工具位置、套用結果（移除以同一個使用者的系統管理員身分執行）
 Remove-Item (Join-Path $env:APPDATA 'go-virtual-display') -Recurse -Force -ErrorAction SilentlyContinue
@@ -60,6 +60,8 @@ foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
     }
 }
 Remove-Item $InstallMarker -Force -ErrorAction SilentlyContinue
+# 開啟 VDD 記錄（vdd_settings.xml 的 logging）時，驅動會在設定目錄留下記錄檔
+if (-not (Test-Path (Join-Path $VddConfigDir 'vdd_settings.xml'))) { Remove-Item (Join-Path $VddConfigDir 'Logs') -Recurse -Force -ErrorAction SilentlyContinue }
 if ((Test-Path $VddConfigDir) -and -not (Get-ChildItem $VddConfigDir -Force)) {
     Remove-Item $VddConfigDir -Force
 }

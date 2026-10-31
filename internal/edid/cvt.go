@@ -55,3 +55,34 @@ func cvtVSync(w, h int) int {
 	}
 	return 10
 }
+
+// ExactRefresh 微調 t 的總像素與總行數（加大水平 front porch、垂直 back porch），
+// 讓更新率剛好等於整數 hz。DTD 的 pixel clock 以 10 kHz 為單位，所以要找
+// 「總像素 × 總行數 × hz」是 10000 倍數的最小組合。
+// Virtual Display Driver 以設定檔的整數更新率建立模式，EDID 的首選時序必須完全一致才會建立螢幕。
+func ExactRefresh(t Timing, hz int) (Timing, error) {
+	if hz <= 0 {
+		return t, errors.New("更新率必須大於 0")
+	}
+	h0, v0 := t.HTotal(), t.VTotal()
+	best, bestH, bestV := 0, 0, 0
+	for dv := 0; dv <= 200; dv++ {
+		for dh := 0; dh <= 200 && t.HFront+dh <= 1023; dh++ {
+			h, v := h0+dh, v0+dv
+			if h*v*hz%10000 != 0 {
+				continue
+			}
+			if best == 0 || h*v < best {
+				best, bestH, bestV = h*v, h, v
+			}
+			break // 同一個 dv 只需要最小的 dh
+		}
+	}
+	if best == 0 {
+		return t, errors.New("找不到更新率剛好是整數的時序")
+	}
+	t.HFront += bestH - h0
+	t.VBack += bestV - v0
+	t.PixelClockKHz = bestH * bestV * hz / 1000
+	return t, nil
+}
