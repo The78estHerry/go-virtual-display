@@ -1,0 +1,13 @@
+#!/bin/sh
+# initramfs-tools hook（Debian／Ubuntu）：把虛擬螢幕的 EDID 放進 initramfs，
+# 讓在 initramfs 階段就載入的顯示卡驅動也讀得到 drm.edid_firmware 指定的檔案。
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in
+    prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+. /usr/share/initramfs-tools/hook-functions
+copy_file firmware /lib/firmware/edid/edid_1920x1440.bin

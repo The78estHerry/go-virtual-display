@@ -41,7 +41,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 ### 一鍵安裝
 
-在專案資料夾裡點兩下 **`install.cmd`**，UAC 詢問時按「是」，接著全部自動完成：
+點兩下 **`windows\install.cmd`**，UAC 詢問時按「是」，接著全部自動完成：
 
 1. 下載驅動並驗證 SHA-256
 2. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
@@ -54,7 +54,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 ### 一鍵移除
 
-點兩下 **`uninstall.cmd`**，UAC 詢問時按「是」。這會：
+點兩下 **`windows\uninstall.cmd`**，UAC 詢問時按「是」。這會：
 - 移除驅動、排程工作、開關程式和登入時自動啟動的設定
 - 還原原本的 VDD 設定檔
 
@@ -79,24 +79,37 @@ powershell -ExecutionPolicy Bypass -File .\windows\uninstall.ps1    # 移除
 - polkit（`pkexec`）
 - 系統列圖示需要桌面支援 StatusNotifierItem：KDE 直接支援，GNOME 要裝 AppIndicator 擴充套件
 - 自己編譯時需要 Go 和 Gio 的相依套件（見 `Makefile` 開頭）
+- 開機參數的自動設定支援 GRUB；initramfs 的自動設定支援 initramfs-tools（Debian／Ubuntu）和 dracut（Fedora 等）
 
-### 安裝
+### 一鍵安裝
+
+用一般使用者在終端機執行（不用加 sudo，需要時會自己詢問密碼）：
 
 ```bash
-make linux                                   # 編譯到 dist/linux/
-sudo linux/install.sh                        # 列出接頭，找狀態是 disconnected 的
-sudo linux/install.sh card0-HDMI-A-1         # 安裝
+linux/install.sh
 ```
 
-安裝腳本會印出要加到開機參數的設定，例如：
+接著全部自動完成：
 
+1. 如果還沒編譯但有裝 Go，會先編譯開關程式
+2. 自動挑一個沒接螢幕的外接接頭（HDMI、DP 等，不會選筆電內建面板）。要指定的話用 `linux/install.sh card0-HDMI-A-1`
+3. 安裝 EDID、拔插小幫手和 polkit 規則，之後按開關不用輸入密碼
+4. 把 EDID 加進 initramfs
+5. 在 `/etc/default/grub` 加上開機參數，並重新產生 GRUB 設定。第一次會備份成 `grub.go-virtual-display.bak`
+6. 系統有 debugfs 的話直接套用一次，不用重開機。沒有的話要重新開機
+7. 打開開關程式
+
+可以重複執行，不會重複加參數。換接頭時會把舊接頭的參數清掉。
+
+### 一鍵移除
+
+```bash
+linux/uninstall.sh
 ```
-drm.edid_firmware=HDMI-A-1:edid/edid_1920x1440.bin video=HDMI-A-1:e
-```
 
-把它加到 `/etc/default/grub` 的 `GRUB_CMDLINE_LINUX_DEFAULT`，再執行 `update-grub`，然後重新開機。如果顯示卡驅動在 initramfs 階段就載入，還要重新產生 initramfs。有 debugfs 的系統，安裝時會先直接套用一次，不用重開機也能測試。
+這會移除所有安裝的檔案、開機參數、initramfs 設定和登入時自動啟動的設定，並把接頭恢復成自動偵測。只會移除本專案加的參數，你原本的開機參數不會被動到。重新開機後就完全恢復原狀。
 
-用 `linux/verify.sh` 檢查；移除用 `sudo linux/uninstall.sh`，之後再把開機參數刪掉。
+檢查用 `linux/verify.sh`。
 
 ## 拔插開關（vdswitch）
 
@@ -122,11 +135,9 @@ internal/edid/        EDID 1.4 組裝與解析（含測試）
 internal/display/     各平台的狀態查詢與拔插
 internal/ui/          系統列（fyne.io/systray）、小工具（Gio）、設定、自動啟動
 edid/                 產生好的 EDID
-windows/              Windows 安裝／驗證／移除腳本與 VDD 設定
-linux/                Linux 安裝／驗證／移除腳本、小幫手、polkit 規則
+windows/              Windows 一鍵安裝／移除（install.cmd、uninstall.cmd）、背後的 PowerShell 腳本與 VDD 設定
+linux/                Linux 一鍵安裝／移除（install.sh、uninstall.sh）、檢查、小幫手、polkit 規則、initramfs hook
 build.ps1 / Makefile  編譯
-install.cmd           Windows 一鍵安裝（自動要求系統管理員權限）
-uninstall.cmd         Windows 一鍵移除
 ```
 
 ## 另一種做法（沒有採用）

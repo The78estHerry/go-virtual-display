@@ -1,5 +1,5 @@
 @echo off
-rem One-click uninstall: double-click, then approve the UAC prompt.
+rem One-click install: double-click, then approve the UAC prompt.
 setlocal
 net session >nul 2>&1
 if errorlevel 1 (
@@ -7,6 +7,6 @@ if errorlevel 1 (
     exit /b
 )
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows\uninstall.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" -Launch
 echo.
 pause

@@ -3,3 +3,4 @@ linux/vdswitch-helper text eol=lf
 *.ps1 text eol=crlf
 *.bin binary
 *.cmd text eol=crlf
+linux/* text eol=lf

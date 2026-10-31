@@ -1,72 +1,147 @@
 #!/usr/bin/env bash
-# 在 Linux 上把一個沒接螢幕的顯示卡接頭設成「接著一台 1920x1440 螢幕」，並安裝免密碼的拔插小幫手。
-# 用法：sudo linux/install.sh <接頭>，例如 sudo linux/install.sh card0-HDMI-A-1
-#       不帶參數時列出所有接頭。
+# 一鍵安裝：把一個沒接螢幕的顯示卡接頭設成「接著一台 1920x1440 螢幕」（使用自訂 EDID），
+# 安裝免密碼的拔插小幫手與開關程式，並自動加上開機參數。
+#
+# 用法：linux/install.sh            自動挑選沒接螢幕的外接接頭（HDMI／DP 等）
+#       linux/install.sh <接頭>     指定接頭，例如 card0-HDMI-A-1
+# 以一般使用者執行即可，需要 root 的部分會自動透過 sudo 執行。
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 CONF=/etc/go-virtual-display.conf
 LIBEXEC=/usr/local/libexec/go-virtual-display
 EDID_NAME=edid_1920x1440.bin
+GRUB_DEFAULT_FILE=/etc/default/grub
 
 list_connectors() {
-    echo "目前的顯示接頭（請選 disconnected 的那個）："
     for d in /sys/class/drm/card*-*; do
         [ -f "$d/status" ] && printf '  %-24s %s\n' "$(basename "$d")" "$(cat "$d/status")"
     done
 }
 
-CONNECTOR=${1:-}
-if [ -z "$CONNECTOR" ]; then
-    list_connectors
-    echo
-    echo "用法：sudo $0 <接頭>，例如 sudo $0 card0-HDMI-A-1"
-    exit 1
-fi
+# 挑第一個沒接螢幕的外接接頭；排除筆電內建面板（eDP、LVDS、DSI）與虛擬接頭
+pick_connector() {
+    for d in /sys/class/drm/card*-*; do
+        local n
+        n=$(basename "$d")
+        [ -f "$d/status" ] || continue
+        case "$n" in *-eDP-* | *-LVDS-* | *-DSI-* | *-Writeback-* | *-Virtual-*) continue ;; esac
+        if [ "$(cat "$d/status")" = disconnected ]; then
+            echo "$n"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ---------- 一般使用者階段：編譯、提權、開啟開關程式 ----------
 if [ "$(id -u)" -ne 0 ]; then
-    echo "請用 sudo 執行。" >&2
-    exit 1
+    if [ ! -x "$REPO/dist/linux/vdswitch" ] && command -v go >/dev/null; then
+        echo "==> 編譯開關程式 ..."
+        if ! (cd "$REPO" && make linux); then
+            echo "編譯失敗，繼續安裝但略過開關程式（缺少的套件見 Makefile 開頭）。"
+        fi
+    fi
+    echo "==> 需要系統管理員權限，請輸入密碼："
+    sudo bash "$0" "$@"
+    if [ -x /usr/local/bin/vdswitch ] && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+        pkill -x vdswitch 2>/dev/null || true
+        setsid /usr/local/bin/vdswitch >/dev/null 2>&1 < /dev/null &
+        echo "==> 已開啟虛擬螢幕開關（系統列與桌面小工具）"
+    fi
+    exit 0
+fi
+
+# ---------- root 階段 ----------
+# 只移除本專案加上的參數：指向我們 EDID 的 drm.edid_firmware，以及指定接頭的 video=<接頭>:e
+strip_params() {
+    [ -n "$1" ] || return 0
+    sed -i -E "/^GRUB_CMDLINE_LINUX_DEFAULT=/ { s/ ?drm\.edid_firmware=[^\" ]*$EDID_NAME//g; s/ ?video=$1:e//g; s/=\" /=\"/ }" "$GRUB_DEFAULT_FILE"
+}
+OLD_CONNECTOR=$(sed -n 's/^CONNECTOR=\(card[0-9]*-[A-Za-z0-9-]*\)$/\1/p' "$CONF" 2>/dev/null | head -n 1 || true)
+OLD_KCONN=${OLD_CONNECTOR#*-}
+CONNECTOR=${1:-$OLD_CONNECTOR} # 重新安裝時沿用原本的接頭
+if [ -z "$CONNECTOR" ]; then
+    if ! CONNECTOR=$(pick_connector); then
+        echo "找不到沒接螢幕的外接接頭。目前的接頭：" >&2
+        list_connectors >&2
+        echo "可以用 linux/install.sh <接頭> 指定。沒有實體顯示卡的機器（VM、伺服器）不適用。" >&2
+        exit 1
+    fi
+    echo "==> 自動選擇接頭 $CONNECTOR"
 fi
 if ! [[ "$CONNECTOR" =~ ^card[0-9]+-[A-Za-z0-9-]+$ ]] || [ ! -f "/sys/class/drm/$CONNECTOR/status" ]; then
-    echo "找不到接頭 $CONNECTOR。" >&2
-    list_connectors
+    echo "找不到接頭 $CONNECTOR。目前的接頭：" >&2
+    list_connectors >&2
     exit 1
 fi
-CARD=${CONNECTOR%%-*}      # card0
-KCONN=${CONNECTOR#*-}      # HDMI-A-1（核心參數用的名稱）
-CARDNUM=${CARD#card}
+CARDNUM=${CONNECTOR%%-*}
+CARDNUM=${CARDNUM#card}
+KCONN=${CONNECTOR#*-} # 核心參數用的名稱，例如 HDMI-A-1
+PARAMS="drm.edid_firmware=$KCONN:edid/$EDID_NAME video=$KCONN:e"
 
-# 1. EDID 放到韌體目錄，供核心參數 drm.edid_firmware 讀取
+echo "==> 安裝 EDID、小幫手與 polkit 規則"
 install -D -m 644 "$REPO/edid/$EDID_NAME" "/lib/firmware/edid/$EDID_NAME"
-
-# 2. 設定檔與小幫手、polkit 規則（使用中的本機使用者免密碼）
 echo "CONNECTOR=$CONNECTOR" > "$CONF"
 chmod 644 "$CONF"
 install -D -m 755 "$REPO/linux/vdswitch-helper" "$LIBEXEC/vdswitch-helper"
 install -D -m 644 "$REPO/linux/io.littleherry.vdswitch.policy" /usr/share/polkit-1/actions/io.littleherry.vdswitch.policy
 
-# 3. 開關程式
 if [ -x "$REPO/dist/linux/vdswitch" ]; then
     install -D -m 755 "$REPO/dist/linux/vdswitch" /usr/local/bin/vdswitch
     install -D -m 644 "$REPO/linux/vdswitch.desktop" /usr/share/applications/vdswitch.desktop
-    echo "已安裝開關程式 /usr/local/bin/vdswitch"
+    echo "==> 已安裝開關程式 /usr/local/bin/vdswitch"
 else
-    echo "找不到 dist/linux/vdswitch，略過開關程式（先執行 make linux）"
+    echo "==> 找不到 dist/linux/vdswitch，略過開關程式"
 fi
 
-# 4. 不重開機先套用：有 debugfs 時直接覆寫 EDID 並強制接上
+# 顯示卡驅動若在 initramfs 階段載入，EDID 也必須在 initramfs 裡
+echo "==> 把 EDID 加進 initramfs"
+if command -v update-initramfs >/dev/null; then
+    install -D -m 755 "$REPO/linux/initramfs-hook" /etc/initramfs-tools/hooks/go-virtual-display
+    update-initramfs -u
+elif command -v dracut >/dev/null; then
+    echo "install_items+=\" /lib/firmware/edid/$EDID_NAME \"" > /etc/dracut.conf.d/go-virtual-display.conf
+    dracut -f
+else
+    echo "    無法自動處理（不是 initramfs-tools 或 dracut）。若重開機後沒有生效，請手動把 /lib/firmware/edid/$EDID_NAME 加進 initramfs。"
+fi
+
+echo "==> 設定開機參數：$PARAMS"
+BOOT_OK=0
+if [ -f "$GRUB_DEFAULT_FILE" ]; then
+    [ -f "$GRUB_DEFAULT_FILE.go-virtual-display.bak" ] || cp "$GRUB_DEFAULT_FILE" "$GRUB_DEFAULT_FILE.go-virtual-display.bak"
+    # 先移除舊的設定（含換接頭前的）再加上新的，重複安裝不會累積
+    strip_params "$OLD_KCONN"
+    strip_params "$KCONN"
+    # PARAMS 含有 /，所以這裡用 | 當 sed 的分隔符號
+    sed -i -E "/^GRUB_CMDLINE_LINUX_DEFAULT=/ { s|\"\$| $PARAMS\"|; s|=\" |=\"| }" "$GRUB_DEFAULT_FILE"
+    if command -v update-grub >/dev/null; then
+        update-grub && BOOT_OK=1
+    elif command -v grub2-mkconfig >/dev/null; then
+        grub2-mkconfig -o /boot/grub2/grub.cfg && BOOT_OK=1
+    elif command -v grub-mkconfig >/dev/null; then
+        grub-mkconfig -o /boot/grub/grub.cfg && BOOT_OK=1
+    fi
+fi
+if [ "$BOOT_OK" -ne 1 ]; then
+    echo "    找不到 GRUB，請手動把下列參數加到開機參數：$PARAMS"
+fi
+
+# 有 debugfs 時不用重開機，直接套用一次
 OVERRIDE="/sys/kernel/debug/dri/$CARDNUM/$KCONN/edid_override"
+APPLIED=0
 if [ -w "$OVERRIDE" ]; then
     cat "/lib/firmware/edid/$EDID_NAME" > "$OVERRIDE"
     echo on > "/sys/class/drm/$CONNECTOR/status"
-    echo "已透過 debugfs 立即套用 EDID 並插入虛擬螢幕"
+    APPLIED=1
+    echo "==> 已直接套用 EDID 並插入虛擬螢幕"
 fi
 
 echo
-echo "完成。要讓設定在每次開機都生效，請把下列參數加到開機參數（例如 /etc/default/grub 的 GRUB_CMDLINE_LINUX_DEFAULT）："
-echo
-echo "    drm.edid_firmware=$KCONN:edid/$EDID_NAME video=$KCONN:e"
-echo
-echo "然後執行 update-grub（或 grub2-mkconfig -o /boot/grub2/grub.cfg）。"
-echo "若顯示卡驅動在 initramfs 階段就載入，也要把 EDID 檔加進 initramfs（update-initramfs -u 或 dracut -f，視發行版而定）。"
-echo "之後用 linux/verify.sh 檢查。"
+echo "安裝完成（接頭 $CONNECTOR）。"
+if [ "$APPLIED" -ne 1 ]; then
+    echo "請重新開機讓設定生效，之後可用 linux/verify.sh 檢查。"
+else
+    echo "重新開機後也會自動生效。可用 linux/verify.sh 檢查。"
+fi

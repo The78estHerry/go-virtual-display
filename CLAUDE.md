@@ -30,9 +30,9 @@
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
-| `install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
+| `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
 | `windows/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
-| `linux/` | `install.sh`、`verify.sh`、`uninstall.sh`、`vdswitch-helper`、polkit 規則、`.desktop` |
+| `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）、`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop` |
 | `downloads/` | 下載的 VDD（gitignore） |
 | `dist/` | 編譯產物（gitignore） |
 
@@ -85,8 +85,16 @@ make linux                                                    # 只能在 Linux 
   - 新增 `install.cmd`、`uninstall.cmd`
   - `install.ps1 -Launch`：缺執行檔時自動編譯；裝完先執行 verify，再透過 `explorer.exe` 以一般權限開啟開關程式，避免它繼承系統管理員權限
   - `uninstall.ps1` 會一併刪掉排程工作留下的空資料夾
+- 2026-10-31：依使用者要求把 `install.cmd`／`uninstall.cmd` 搬進 `windows/`（只有 Windows 能用）。Linux 也改成一鍵：
+  - **自動選接頭**：第一個 disconnected 的外接接頭，排除 eDP／LVDS／DSI。重新安裝時沿用 `/etc/go-virtual-display.conf` 的接頭
+  - **自動處理 initramfs**：initramfs-tools 用 hook，dracut 用 `install_items`
+  - **自動改 GRUB**：改 `/etc/default/grub` 的 `GRUB_CMDLINE_LINUX_DEFAULT`，第一次先備份成 `.go-virtual-display.bak`
+    - 只移除本專案加的參數：指向我們 EDID 的 `drm.edid_firmware`，以及指定接頭的 `video=<接頭>:e`，使用者原有的 `video=...` 不會被動到
+    - 加參數的 sed 要用 `|` 當分隔符號，因為參數裡有 `/`（第一版就是在這裡出錯）
+    - 在 Git Bash 用假的 grub 檔模擬過：初次安裝、重複安裝、換接頭、移除都正確
+  - **自動開啟開關程式**：裝完以一般使用者身分 `setsid` 開啟
 - 待辦：
-  - Windows 實機安裝與拔插測試（由使用者點兩下 `install.cmd`）
+  - Windows 實機安裝與拔插測試（由使用者點兩下 `windows\install.cmd`）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
