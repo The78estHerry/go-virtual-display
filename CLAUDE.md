@@ -16,6 +16,10 @@
   - 開關程式和 EDID 產生器用 Go，跨平台共用。使用者偏好 Go，其次 Python，能用 shell 解決更好。
   - 安裝腳本用各平台內建的 shell：Windows PowerShell 5.1、bash。
 - **命名**：Go 專案一律加 `go-` 前綴，所以資料夾、Gitea repo、Go module 都叫 go-virtual-display。
+- **介面語言**：英文和繁體中文（0.2.0 起）。依系統顯示語言決定預設（只有中文語系預設繁中，其他英文），安裝時讓使用者選。
+  - 原因：使用者指出中文在很多電腦上無法使用。
+  - 檔名一律英文，這條規則通用所有專案（見記憶 english-file-names）。
+  - 原始碼註解、開發文件、commit 訊息仍用繁中，`make-edid` 是開發工具也維持中文。
 - **開關介面**：系統列圖示＋桌面小工具（開關式），不做桌面捷徑。
   - 系統列用 `fyne.io/systray`，小工具用 Gio（`gioui.org`）。
   - 在 Windows 上兩者都不需要 cgo。
@@ -29,6 +33,7 @@
 | `edid/edid_1920x1440.bin` | 產出的 EDID，兩個平台共用，commit 進 repo |
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
+| `internal/i18n` | 介面語言：`T(英文, 繁中)`。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
 | `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\scripts\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
 | `windows/scripts/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
@@ -76,8 +81,10 @@ make linux                                                    # 只能在 Linux 
 - **模組根目錄不能有 `vendor/` 資料夾**，Go 會當成 vendoring 而報錯，所以下載目錄叫 `downloads/`。
 - **PowerShell 5.1 讀取沒有 BOM 的 UTF-8 檔案會當成 ANSI（cp950）**，中文會變亂碼。所有 `.ps1` 都存成 UTF-8 with BOM＋CRLF，`.gitattributes` 固定換行。
 - **`schtasks` 的錯誤訊息用系統字碼頁編碼**（不是 UTF-8），所以不放進錯誤字串，只回報 exit code。
-- **`WScript.Shell` 的 `CreateShortcut` 用 ANSI 字碼頁處理路徑**。使用者的字碼頁是 932，「虛」不在裡面，變成 `?` 後 `Save()` 報 FileNotFoundException。`install.ps1` 改成先用英文檔名建立捷徑，再用 `Move-Item` 改名。
-- **Gio 預設字型沒有中文**。Windows 版明確載入 `msjh.ttc`（微軟正黑體）並關閉系統字型掃描，啟動比較快；Linux 版靠系統字型補中文。
+- **`WScript.Shell` 的 `CreateShortcut` 用 ANSI 字碼頁處理路徑**。使用者的字碼頁是 932，「虛」不在裡面，變成 `?` 後 `Save()` 報 FileNotFoundException。0.2.0 起捷徑檔名一律英文（`Virtual Display Switch.lnk`），安裝與移除時也會刪掉 0.1.x 的中文捷徑。
+- **PowerShell 的 `Get-UICulture` 不可靠**。使用者的顯示語言是繁中（`GetUserDefaultUILanguage` = 0x0404），`Get-UICulture` 卻回傳 en-US。所以腳本和 Go 都直接呼叫 `GetUserDefaultUILanguage`，取低 10 位元等於 0x04（LANG_CHINESE）就算中文。
+- **Git Bash 的 `sed -i` 會把 CRLF 檔案改成 LF**。改 `.ps1`、`.cmd` 不要用 `sed -i`，改完要確認仍是 UTF-8 with BOM＋CRLF。
+- **Gio 預設字型沒有中文**。Windows 版在中文介面才載入 `msjh.ttc`（微軟正黑體），並關閉系統字型掃描，啟動比較快；英文介面只用 Go 字型。Linux 版靠系統字型補中文。英文字比較寬，英文介面的小工具寬度是 288 dp（中文 248 dp）。
 
 ## 進度紀錄
 
@@ -128,8 +135,14 @@ make linux                                                    # 只能在 Linux 
   - 系統列的「解除安裝…」（`internal/ui/uninstall_windows.go`）先跳 MessageBox 確認，再執行 `launch-uninstall.ps1`。「設定 > 應用程式」的 UninstallString 也指向它。
   - `launch-uninstall.ps1` 先把 `uninstaller\` 複製到 `%TEMP%\go-virtual-display-uninstall`，再用 `Start-Process cmd -Verb RunAs -Wait` 執行裡面的 `uninstall.cmd`，結束後刪掉暫存資料夾。原因：移除會刪掉 Program Files 裡的資料夾，而 cmd 是逐行從磁碟讀批次檔的，執行中的 `.cmd` 被刪掉會出錯。
   - 版本號改成只寫在 `common.ps1` 的 `$AppVersion`，`release.ps1` 不再需要 `-Version`。
+- 2026-10-31：0.1.1 還沒實測，使用者就要求做英文版，版本改成 0.2.0，0.1.1 的內容併入。
+  - 新增 `internal/i18n`，程式所有介面文字改成 `i18n.T(英文, 繁中)`。
+  - Windows 腳本用 `common.ps1` 的 `T` 函式。`install.ps1` 一開始讓使用者選語言（`-Language` 可直接指定），存到 `HKLM\SOFTWARE\go-virtual-display\Language`。
+  - Linux 腳本共用 `linux/scripts/lang.sh` 的 `t` 函式。`install.sh` 互動執行時讓使用者選語言，用 `--lang` 傳給 root 階段，存進 `/etc/go-virtual-display.conf` 的 `LANGUAGE`。`vdswitch-helper` 只用英文。
+  - 檔名改成英文：安裝包的 `說明.txt` 改成雙語的 `README.txt`，開始功能表捷徑改成 `Virtual Display Switch.lnk`。
+  - 測試：Go vet／test 通過。用強制英文的副本跑過 `verify.ps1`、`install.ps1` 的開頭，輸出是英文。`lang.sh` 在各種 `LANG` 下判斷正確。小工具的英文畫面沒能在這台截圖確認：測試時小工具沒有出現，全螢幕截圖又會拍到使用者其他視窗，所以停止截圖。
 - 待辦：
-  - 0.1.1 實機測試：從安裝包安裝，分別用系統列和「設定 > 應用程式」移除，並檢查是否乾淨。通過後打 tag、發佈 Release
+  - 0.2.0 實機測試：從安裝包安裝（試英文和中文）、看小工具和系統列的文字，分別用系統列和「設定 > 應用程式」移除，並檢查是否乾淨。通過後打 tag、發佈 Release
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude

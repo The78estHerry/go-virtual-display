@@ -9,6 +9,8 @@ import (
 	"gioui.org/font/opentype"
 	"gioui.org/text"
 	"golang.org/x/sys/windows"
+
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 var (
@@ -89,9 +91,12 @@ func bringToFront(hwnd uintptr) {
 	procSetForeground.Call(hwnd)
 }
 
-// newShaper 載入 Go 字型與微軟正黑體；找不到正黑體時改用系統字型。
+// newShaper 英文介面只用 Go 字型；中文介面另外載入微軟正黑體，找不到時改用系統字型。
 func newShaper() *text.Shaper {
 	coll := gofont.Collection()
+	if !i18n.IsChinese() {
+		return text.NewShaper(text.NoSystemFonts(), text.WithCollection(coll))
+	}
 	b, err := os.ReadFile(os.Getenv("WINDIR") + `\Fonts\msjh.ttc`)
 	if err == nil {
 		if faces, err := opentype.ParseCollection(b); err == nil {

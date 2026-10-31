@@ -5,7 +5,7 @@
 ## 版本號
 
 - 用語意化版本 `主.次.修`，例如 `0.1.0`。tag 名稱加 `v`，例如 `v0.1.0`。
-- 修 bug 加修訂號，加功能加次版號。1.0.0 之前可以有不相容的變更。小幅度的功能調整可由使用者決定只加修訂號（例如 0.1.1）。
+- 修 bug 加修訂號，加功能加次版號。1.0.0 之前可以有不相容的變更。小幅度的功能調整可由使用者決定只加修訂號。
 - 版本號只寫在 `windows/scripts/common.ps1` 的 `$AppVersion`：`release.ps1` 以它命名安裝包，「設定 > 應用程式」也顯示它。發新版前先改這裡。
 
 ## 步驟
@@ -40,7 +40,7 @@
 go-virtual-display-<版本>-windows/
 ├── install.cmd               一鍵安裝（windows/install.cmd）
 ├── uninstall.cmd             一鍵移除（windows/uninstall.cmd）
-├── 說明.txt                  使用說明（release.ps1 產生，UTF-8 with BOM＋CRLF）
+├── README.txt                使用說明，英文在前、繁中在後（release.ps1 產生，UTF-8 with BOM＋CRLF）
 └── scripts/
     ├── common.ps1            ┐
     ├── download-vdd.ps1      │
@@ -58,7 +58,7 @@ go-virtual-display-<版本>-windows/
   - Go 原始碼、`go.mod`、`build.ps1`、`release.ps1`、`Makefile`
   - `make-edid.exe`：使用者用不到
   - `linux/`
-  - `README.md`、`CLAUDE.md`、`RELEASING.md`：改放精簡的 `說明.txt`
+  - `README.md`、`CLAUDE.md`、`RELEASING.md`：改放精簡的 `README.txt`
   - Virtual Display Driver 本體：安裝時才下載並驗證 SHA-256，不重新散布
 - 新增會在安裝時用到的檔案時，要同時改 `release.ps1` 和這份清單。
 
@@ -74,7 +74,7 @@ Linux 版的開關程式需要 cgo，要在 Linux 上編譯，目前也還沒實
 | 版本 | 日期 | 安裝包 | 摘要 |
 |---|---|---|---|
 | 0.1.0 | 2026-10-31 | windows | 第一個版本。Windows 已從安裝包實機測試（安裝、拔插、移除乾淨），Linux 未測 |
-| 0.1.1 | 2026-10-31 | windows | 可從系統列「解除安裝…」或「設定 > 應用程式」移除，安裝資料夾刪掉也能移除 |
+| 0.2.0 | 2026-10-31 | windows | 英文／繁中雙語介面，安裝時選擇，預設依系統顯示語言；檔名一律英文；可從系統列「解除安裝…」或「設定 > 應用程式」移除，安裝資料夾刪掉也能移除（原訂 0.1.1，未發佈，併入本版） |
 
 ## 打包準則（所有專案共用）
 
@@ -85,3 +85,4 @@ Linux 版的開關程式需要 cgo，要在 Linux 上編譯，目前也還沒實
 5. **用腳本產生安裝包**（例如 `release.ps1`），不手動組。腳本最後列出包進去的檔案。
 6. **在專案裡記錄**每個平台的安裝包內容（像本檔），新增或移除檔案時一起更新。
 7. **發佈前從安裝包實際裝一次**，不要只在原始碼目錄測試。
+8. **檔名一律用英文**：安裝包裡的檔案、資料夾、說明檔、捷徑都是。使用者介面要提供英文版，依系統顯示語言決定預設（只有中文語系預設繁中），安裝時讓使用者選。

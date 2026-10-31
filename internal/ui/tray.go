@@ -6,6 +6,7 @@ import (
 	"fyne.io/systray"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 func trayIcon(s Snapshot) []byte {
@@ -17,22 +18,22 @@ func trayIcon(s Snapshot) []byte {
 }
 
 func (a *App) trayReady() {
-	systray.SetTitle("虛擬螢幕開關")
+	systray.SetTitle(i18n.T("Virtual Display Switch", "虛擬螢幕開關"))
 	systray.SetOnTapped(a.model.Toggle) // 左鍵點一下切換；右鍵開選單
 
 	mStatus := systray.AddMenuItem("", "")
 	mStatus.Disable()
 	systray.AddSeparator()
-	mToggle := systray.AddMenuItem("插入", "")
-	mWidget := systray.AddMenuItemCheckbox("顯示桌面小工具", "", a.widget.Visible())
-	mTop := systray.AddMenuItemCheckbox("小工具固定在最上層", "", LoadSettings().TopMost)
-	mAuto := systray.AddMenuItemCheckbox("登入時自動啟動", "", AutostartEnabled())
+	mToggle := systray.AddMenuItem(i18n.T("Plug in", "插入"), "")
+	mWidget := systray.AddMenuItemCheckbox(i18n.T("Show desktop widget", "顯示桌面小工具"), "", a.widget.Visible())
+	mTop := systray.AddMenuItemCheckbox(i18n.T("Keep widget on top", "小工具固定在最上層"), "", LoadSettings().TopMost)
+	mAuto := systray.AddMenuItemCheckbox(i18n.T("Start at sign-in", "登入時自動啟動"), "", AutostartEnabled())
 	systray.AddSeparator()
-	mUninstall := systray.AddMenuItem("解除安裝…", "")
+	mUninstall := systray.AddMenuItem(i18n.T("Uninstall…", "解除安裝…"), "")
 	if !uninstallSupported() {
 		mUninstall.Hide()
 	}
-	mQuit := systray.AddMenuItem("結束", "")
+	mQuit := systray.AddMenuItem(i18n.T("Exit", "結束"), "")
 
 	setCheck := func(m *systray.MenuItem, on bool) {
 		if on {
@@ -45,17 +46,17 @@ func (a *App) trayReady() {
 
 	a.model.Subscribe(func(s Snapshot) {
 		systray.SetIcon(trayIcon(s))
-		text := "虛擬螢幕 1920×1440：" + statusText(s)
+		text := i18n.T("Virtual display 1920×1440: ", "虛擬螢幕 1920×1440：") + statusText(s)
 		systray.SetTooltip(text)
 		mStatus.SetTitle(text)
 		switch {
 		case s.Busy || s.State == display.Unknown:
 			mToggle.Disable()
 		case s.State == display.Plugged:
-			mToggle.SetTitle("拔掉")
+			mToggle.SetTitle(i18n.T("Unplug", "拔掉"))
 			mToggle.Enable()
 		default:
-			mToggle.SetTitle("插入")
+			mToggle.SetTitle(i18n.T("Plug in", "插入"))
 			mToggle.Enable()
 		}
 	})

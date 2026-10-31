@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 func autostartFile() (string, error) {
@@ -45,6 +47,7 @@ func SetAutostart(on bool) error {
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 		return err
 	}
-	desktop := fmt.Sprintf("[Desktop Entry]\nType=Application\nName=虛擬螢幕開關\nExec=%q\nX-GNOME-Autostart-enabled=true\n", exe)
+	desktop := fmt.Sprintf("[Desktop Entry]\nType=Application\nName=%s\nExec=%q\nX-GNOME-Autostart-enabled=true\n",
+		i18n.T("Virtual Display Switch", "虛擬螢幕開關"), exe)
 	return os.WriteFile(p, []byte(desktop), 0o644)
 }

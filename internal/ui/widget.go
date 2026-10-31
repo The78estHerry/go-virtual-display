@@ -18,13 +18,21 @@ import (
 	"gioui.org/widget/material"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 const (
-	widgetW = 248
 	widgetH = 64
 	animDur = 160 * time.Millisecond
 )
+
+// widgetW 英文字比較寬，寬度依介面語言決定
+var widgetW = func() float32 {
+	if i18n.IsChinese() {
+		return 248
+	}
+	return 288
+}()
 
 var (
 	colorCard  = color.NRGBA{R: 0x22, G: 0x25, B: 0x2B, A: 0xFF}
@@ -77,7 +85,7 @@ func (w *widgetMgr) Show() {
 	s := LoadSettings()
 	win := new(app.Window)
 	win.Option(
-		app.Title("虛擬螢幕開關"),
+		app.Title(i18n.T("Virtual Display Switch", "虛擬螢幕開關")),
 		app.Size(unit.Dp(widgetW), unit.Dp(widgetH)),
 		app.MinSize(unit.Dp(widgetW), unit.Dp(widgetH)),
 		app.MaxSize(unit.Dp(widgetW), unit.Dp(widgetH)),
@@ -190,7 +198,7 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 				area.Pop()
 				return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceAround}.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						l := material.Label(w.theme, unit.Sp(14), "虛擬螢幕 1920×1440")
+						l := material.Label(w.theme, unit.Sp(14), i18n.T("Virtual display 1920×1440", "虛擬螢幕 1920×1440"))
 						l.Color = colorTitle
 						l.MaxLines = 1
 						return l.Layout(gtx)
@@ -218,15 +226,15 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 func statusText(s Snapshot) string {
 	switch {
 	case s.Busy:
-		return "切換中…"
+		return i18n.T("Switching…", "切換中…")
 	case s.Err != nil:
 		return s.Err.Error()
 	case s.State == display.Plugged:
-		return "已插入"
+		return i18n.T("Plugged in", "已插入")
 	case s.State == display.Unplugged:
-		return "已拔掉"
+		return i18n.T("Unplugged", "已拔掉")
 	}
-	return "狀態未知"
+	return i18n.T("Unknown state", "狀態未知")
 }
 
 // drawSwitch 畫出滑動開關；knob 介於 0（左）與 1（右）之間。

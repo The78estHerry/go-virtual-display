@@ -1,19 +1,20 @@
 #!/bin/sh
 # 以 root 執行（透過 pkexec）：把設定好的接頭強制設為接上（on）或拔掉（off）。
 # 只接受 on／off，接頭名稱只從 root 擁有的 /etc/go-virtual-display.conf 讀取。
+# 訊息只用英文：這是內部小幫手，錯誤會附在開關程式的錯誤訊息後面。
 set -eu
 
 case "${1:-}" in
     on | off) ;;
     *)
-        echo "用法：vdswitch-helper on|off" >&2
+        echo "usage: vdswitch-helper on|off" >&2
         exit 2
         ;;
 esac
 
 CONNECTOR=$(sed -n 's/^CONNECTOR=\(card[0-9][0-9]*-[A-Za-z0-9-]*\)$/\1/p' /etc/go-virtual-display.conf | head -n 1)
 if [ -z "$CONNECTOR" ] || [ ! -f "/sys/class/drm/$CONNECTOR/status" ]; then
-    echo "/etc/go-virtual-display.conf 的接頭設定無效" >&2
+    echo "invalid connector setting in /etc/go-virtual-display.conf" >&2
     exit 1
 fi
 echo "$1" > "/sys/class/drm/$CONNECTOR/status"

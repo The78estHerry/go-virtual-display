@@ -21,7 +21,8 @@ if ($Packaged) {
     $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
     $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
 }
-$AppVersion   = '0.1.1'  # 發佈版本；release.ps1 以此為準
+$AppVersion   = '0.2.0'  # 發佈版本；release.ps1 以此為準
+$AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名一律英文）
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除
 $UninstallKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\go-virtual-display'  # 「設定 > 應用程式」
@@ -30,11 +31,27 @@ $RunKey       = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $RunValue     = 'go-virtual-display'
 # 拔插後要重新啟動的服務：這些程式只在啟動時讀取桌面大小，螢幕增減後滑鼠位置會算錯
 $RestartServices = @('Synergy Core Daemon')
+$LanguageKey  = 'HKLM:\SOFTWARE\go-virtual-display'  # 安裝時選的介面語言（Language = en／zh-TW），開關程式也讀這裡
+$LegacyShortcut = '虛擬螢幕開關.lnk'  # 0.1.x 用的中文捷徑名稱，安裝與移除時一併刪除
+
+# 系統顯示語言是中文時回傳 zh-TW，其他一律 en。
+# PowerShell 的 Get-UICulture 可能和實際顯示語言不同（例如顯示語言是中文卻回傳 en-US），所以直接查 API。
+function Get-SystemLanguage {
+    if (-not ('GoVirtualDisplay.Lang' -as [type])) {
+        Add-Type -Namespace GoVirtualDisplay -Name Lang -MemberDefinition '[DllImport("kernel32.dll")] public static extern ushort GetUserDefaultUILanguage();'
+    }
+    if (([GoVirtualDisplay.Lang]::GetUserDefaultUILanguage() -band 0x3ff) -eq 0x04) { 'zh-TW' } else { 'en' }
+}
+$Lang = (Get-ItemProperty $LanguageKey -Name Language -ErrorAction SilentlyContinue).Language
+if ($Lang -notin 'en', 'zh-TW') { $Lang = Get-SystemLanguage }
+
+# 依介面語言回傳英文或繁體中文的字串
+function T([string]$En, [string]$Zh) { if ($Lang -eq 'zh-TW') { $Zh } else { $En } }
 
 function Assert-Admin {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
     if (-not (New-Object Security.Principal.WindowsPrincipal $id).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        throw '請用「以系統管理員身分執行」的 PowerShell 執行這個腳本。'
+        throw (T 'Please run this script from PowerShell started with "Run as administrator".' '請用「以系統管理員身分執行」的 PowerShell 執行這個腳本。')
     }
 }
 
@@ -48,5 +65,5 @@ function Restart-DisplayDependentServices {
     if (-not $services) { return }
     Start-Sleep -Seconds 3  # 等螢幕建立或移除完成
     Restart-Service -Name $services -Force
-    Write-Host "已重新啟動：$($services -join '、')"
+    Write-Host ((T 'Restarted: ' '已重新啟動：') + ($services -join ', '))
 }

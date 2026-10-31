@@ -4,11 +4,29 @@ param(
     # 排程工作要以哪個使用者執行；預設為目前登入桌面的使用者
     [string]$User = (Get-CimInstance Win32_ComputerSystem).UserName,
     # 安裝完成後執行檢查，並以一般權限開啟開關程式（install.cmd 使用）
-    [switch]$Launch
+    [switch]$Launch,
+    # 介面語言；不指定時讓使用者選，預設依系統顯示語言（或上次安裝時的選擇）
+    [ValidateSet('en', 'zh-TW')][string]$Language
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 Assert-Admin
+
+# 0. 介面語言（安裝過程、開關程式、移除都用這個）
+if (-not $Language) {
+    $default = if ($Lang -eq 'zh-TW') { '2' } else { '1' }
+    Write-Host ''
+    Write-Host 'Select language / 選擇語言'
+    Write-Host '  1) English'
+    Write-Host '  2) 繁體中文'
+    $answer = Read-Host "Enter 1 or 2 [default: $default]"
+    $Language = switch ("$answer".Trim()) { '1' { 'en' } '2' { 'zh-TW' } default { $Lang } }
+}
+$Lang = $Language
+New-Item -Force $LanguageKey | Out-Null
+Set-ItemProperty $LanguageKey -Name Language -Value $Lang
+Write-Host (T 'Language: English' '語言：繁體中文')
+Write-Host ''
 
 # 1. 下載驅動
 & (Join-Path $PSScriptRoot 'download-vdd.ps1')
@@ -25,7 +43,7 @@ if (-not (Test-Path $InstallMarker)) {
         $path = Join-Path $VddConfigDir $name
         if (Test-Path $path) {
             Copy-Item $path "$path.go-virtual-display.bak" -Force
-            Write-Host "已備份原有的 $name"
+            Write-Host (T "Backed up the existing $name" "已備份原有的 $name")
         }
     }
     Set-Content $InstallMarker 'go-virtual-display'
@@ -34,17 +52,17 @@ Copy-Item (Join-Path $PSScriptRoot 'vdd_settings.xml') (Join-Path $VddConfigDir 
 Copy-Item $EdidFile (Join-Path $VddConfigDir 'user_edid.bin') -Force
 New-Item -Force $VddRegKey | Out-Null
 Set-ItemProperty $VddRegKey -Name VDDPATH -Value $VddConfigDir
-Write-Host "已套用設定與 EDID 到 $VddConfigDir"
+Write-Host (T "Applied settings and EDID to $VddConfigDir" "已套用設定與 EDID 到 $VddConfigDir")
 
 # 3. 安裝驅動，或在已安裝時重新載入
 if (Get-VddDevice) {
-    Write-Host '驅動已安裝，更新驅動套件並重新載入裝置 ...'
+    Write-Host (T 'Driver already installed; updating the driver package and reloading the device ...' '驅動已安裝，更新驅動套件並重新載入裝置 ...')
     pnputil /add-driver "$inf" /install | Out-Null
     pnputil /restart-device /deviceid "$VddHardwareId" | Out-Null
 } else {
-    Write-Host '安裝 Virtual Display Driver ...'
+    Write-Host (T 'Installing Virtual Display Driver ...' '安裝 Virtual Display Driver ...')
     & $devcon install "$inf" "$VddHardwareId"
-    if ($LASTEXITCODE -ne 0) { throw "devcon 安裝失敗（代碼 $LASTEXITCODE）" }
+    if ($LASTEXITCODE -ne 0) { throw (T "devcon install failed (code $LASTEXITCODE)" "devcon 安裝失敗（代碼 $LASTEXITCODE）") }
 }
 Restart-DisplayDependentServices
 
@@ -63,13 +81,13 @@ foreach ($t in @(@{ Name = 'Plug'; Verb = '/enable-device' }, @{ Name = 'Unplug'
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskPath $TaskPath -TaskName $t.Name -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 }
-Write-Host "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用者：$User）"
-if ($services) { Write-Host "拔插後會自動重新啟動：$($services -join '、')" }
+Write-Host (T "Created scheduled tasks $($TaskPath)Plug, $($TaskPath)Unplug (user: $User)" "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用者：$User）")
+if ($services) { Write-Host ((T 'Will restart after plugging/unplugging: ' '拔插後會自動重新啟動：') + ($services -join ', ')) }
 
 # 5. 開關程式
 $exe = $AppExe
 if (-not $Packaged -and -not (Test-Path $exe) -and (Get-Command go -ErrorAction SilentlyContinue)) {
-    Write-Host '找不到開關程式執行檔，用 Go 編譯 ...'
+    Write-Host (T 'Switch executable not found; building it with Go ...' '找不到開關程式執行檔，用 Go 編譯 ...')
     & (Join-Path $RepoRoot 'build.ps1')
 }
 if (Test-Path $exe) {
@@ -78,18 +96,15 @@ if (Test-Path $exe) {
     Copy-Item $exe $AppDir -Force
     # 從網路下載的安裝包會帶「來自網路」標記，解除後開啟時才不會被 SmartScreen 擋下
     Unblock-File (Join-Path $AppDir 'vdswitch.exe')
-    # WScript.Shell 用系統 ANSI 字碼頁處理路徑，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?，
-    # 所以先用英文檔名建立，再用 PowerShell 改名
+    # 捷徑檔名一律用英文：中文檔名在非中文系統上會出問題（WScript.Shell 用 ANSI 字碼頁處理路徑）
     $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
-    $lnk = Join-Path $programs '虛擬螢幕開關.lnk'
-    $tmp = Join-Path $programs 'go-virtual-display.lnk'
-    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($tmp)
+    Remove-Item (Join-Path $programs $LegacyShortcut) -Force -ErrorAction SilentlyContinue
+    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $programs "$AppName.lnk"))
     $sc.TargetPath = Join-Path $AppDir 'vdswitch.exe'
     $sc.Save()
-    Move-Item $tmp $lnk -Force
-    Write-Host "已安裝開關程式到 $AppDir，開始功能表捷徑：虛擬螢幕開關"
+    Write-Host (T "Installed the switch to $AppDir; Start menu shortcut: $AppName" "已安裝開關程式到 $AppDir，開始功能表捷徑：$AppName")
 } else {
-    Write-Host "找不到 $exe，也沒有安裝 Go，略過開關程式"
+    Write-Host (T "$exe not found and Go is not installed; skipping the switch" "找不到 $exe，也沒有安裝 Go，略過開關程式")
 }
 
 # 6. 移除用的檔案複製到安裝位置，並登記到「設定 > 應用程式」，安裝資料夾刪掉後仍能移除
@@ -101,7 +116,7 @@ Get-ChildItem $UninstallerDir -Recurse -File | Unblock-File
 $launcher = Join-Path $UninstallerDir 'scripts\launch-uninstall.ps1'
 New-Item -Force $UninstallKey | Out-Null
 $entry = @{
-    DisplayName     = '虛擬螢幕開關（go-virtual-display）'
+    DisplayName     = (T 'Virtual Display Switch (go-virtual-display)' '虛擬螢幕開關（go-virtual-display）')
     DisplayVersion  = $AppVersion
     Publisher       = 'go-virtual-display'
     InstallLocation = $AppDir
@@ -114,19 +129,19 @@ Set-ItemProperty $UninstallKey -Name NoModify -Value 1 -Type DWord
 Set-ItemProperty $UninstallKey -Name NoRepair -Value 1 -Type DWord
 $sizeKB = [int]((Get-ChildItem $AppDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
 Set-ItemProperty $UninstallKey -Name EstimatedSize -Value $sizeKB -Type DWord
-Write-Host '已登記到「設定 > 應用程式」，也可從系統列圖示的「解除安裝…」移除'
+Write-Host (T 'Registered in Settings > Apps; you can also uninstall from the tray icon (Uninstall…)' '已登記到「設定 > 應用程式」，也可從系統列圖示的「解除安裝…」移除')
 
 Write-Host ''
 if (-not $Launch) {
-    Write-Host '完成。執行 verify.ps1 檢查結果。'
+    Write-Host (T 'Done. Run verify.ps1 to check the result.' '完成。執行 verify.ps1 檢查結果。')
     return
 }
-Write-Host '安裝完成，檢查結果：'
+Write-Host (T 'Installation complete. Checking:' '安裝完成，檢查結果：')
 Start-Sleep -Seconds 3  # 等驅動把螢幕建立好
 & (Join-Path $PSScriptRoot 'verify.ps1')
 $installed = Join-Path $AppDir 'vdswitch.exe'
 if (Test-Path $installed) {
     # 透過 explorer 啟動，開關程式才會以一般權限執行，而不是繼承這裡的系統管理員權限
     Start-Process explorer.exe -ArgumentList "`"$installed`""
-    Write-Host '已開啟虛擬螢幕開關（桌面右下角與系統列）'
+    Write-Host (T 'Opened Virtual Display Switch (bottom-right of the desktop and the tray)' '已開啟虛擬螢幕開關（桌面右下角與系統列）')
 }

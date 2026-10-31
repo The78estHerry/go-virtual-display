@@ -8,17 +8,17 @@ Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
 
 if (Get-VddDevice) {
     pnputil /remove-device /deviceid "$VddHardwareId" | Out-Null
-    Write-Host '已移除虛擬螢幕裝置'
+    Write-Host (T 'Removed the virtual display device' '已移除虛擬螢幕裝置')
     Restart-DisplayDependentServices
 }
 Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*\mttvdd.inf' } | ForEach-Object {
     pnputil /delete-driver $_.Driver /uninstall /force | Out-Null
-    Write-Host "已刪除驅動套件 $($_.Driver)"
+    Write-Host (T "Deleted driver package $($_.Driver)" "已刪除驅動套件 $($_.Driver)")
 }
 # 驅動移除後，Windows 仍會留著虛擬螢幕的「已不存在的螢幕」裝置與它的縮放設定
 Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.InstanceId -like "$VddMonitorId\*" } | ForEach-Object {
     pnputil /remove-device "$($_.InstanceId)" | Out-Null
-    Write-Host "已移除殘留的螢幕裝置 $($_.InstanceId)"
+    Write-Host (T "Removed leftover monitor device $($_.InstanceId)" "已移除殘留的螢幕裝置 $($_.InstanceId)")
 }
 $scaleKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers\ScaleFactors'
 Get-ChildItem $scaleKey -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like "$(Split-Path $VddMonitorId -Leaf)*" } |
@@ -38,19 +38,21 @@ try {
     $svc.Connect()
     $svc.GetFolder('\').DeleteFolder($TaskPath.Trim('\'), 0)  # 刪掉留下的空資料夾
 } catch {}
-Write-Host '已刪除排程工作'
+Write-Host (T 'Deleted scheduled tasks' '已刪除排程工作')
 
 Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue
 Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue  # 含 uninstaller\
 Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\虛擬螢幕開關.lnk') -Force -ErrorAction SilentlyContinue
-Write-Host '已移除開關程式與開機啟動項'
+$programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
+Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs $LegacyShortcut) -Force -ErrorAction SilentlyContinue
+Remove-Item $LanguageKey -Recurse -Force -ErrorAction SilentlyContinue
+Write-Host (T 'Removed the switch and its sign-in startup entry' '已移除開關程式與開機啟動項')
 
 foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
     $path = Join-Path $VddConfigDir $name
     if (Test-Path "$path.go-virtual-display.bak") {
         Move-Item "$path.go-virtual-display.bak" $path -Force
-        Write-Host "已還原原有的 $name"
+        Write-Host (T "Restored the original $name" "已還原原有的 $name")
     } else {
         Remove-Item $path -Force -ErrorAction SilentlyContinue
     }
@@ -59,4 +61,4 @@ Remove-Item $InstallMarker -Force -ErrorAction SilentlyContinue
 if ((Test-Path $VddConfigDir) -and -not (Get-ChildItem $VddConfigDir -Force)) {
     Remove-Item $VddConfigDir -Force
 }
-Write-Host '完成。'
+Write-Host (T 'Done.' '完成。')

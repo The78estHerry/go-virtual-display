@@ -18,29 +18,50 @@ Copy-Item windows\scripts\*.ps1, windows\scripts\vdd_settings.xml $stage\scripts
 Copy-Item edid\edid_1920x1440.bin, dist\windows\vdswitch.exe $stage\scripts
 
 $readme = @"
-go-virtual-display $Version（Windows）
+go-virtual-display $Version (Windows)
+
+[English]
+
+Makes Windows believe a 1920x1440 monitor with a custom EDID is connected, even
+when no physical monitor is attached. Includes a one-click plug/unplug switch
+(tray icon and desktop widget).
+
+Install:   Double-click install.cmd and click "Yes" in the UAC prompt.
+           You can choose English or Traditional Chinese during installation.
+           The signed Virtual Display Driver $VddVersion is downloaded and its
+           SHA-256 is verified automatically.
+Uninstall: Right-click the tray icon and choose "Uninstall...", or remove
+           "Virtual Display Switch" in Settings > Apps. You can also
+           double-click uninstall.cmd. The first two still work after this
+           folder has been deleted.
+
+Requires Windows 10/11 x64 and the Microsoft Visual C++ Redistributable.
+If Synergy is installed, it is restarted automatically after each plug/unplug.
+The scripts folder contains installer files; you do not need to open it.
+
+[繁體中文]
 
 讓電腦在沒有接實體螢幕時，以為接著一台 1920x1440 的螢幕（使用自訂 EDID），
 並附系統列圖示與桌面小工具的一鍵拔插開關。
 
-安裝：點兩下 install.cmd，UAC 詢問時按「是」。
-      會自動下載已簽章的 Virtual Display Driver $((Select-String -Path windows\scripts\common.ps1 -Pattern "VddVersion\s*=\s*'(.+)'").Matches[0].Groups[1].Value) 並驗證 SHA-256。
+安裝：點兩下 install.cmd，UAC 詢問時按「是」。安裝時可選英文或繁體中文。
+      會自動下載已簽章的 Virtual Display Driver $VddVersion 並驗證 SHA-256。
 移除：在系統列圖示按右鍵選「解除安裝…」，或到「設定 > 應用程式」移除「虛擬螢幕開關」。
       也可以點兩下 uninstall.cmd。安裝後就算刪掉這個資料夾，前兩種方式仍然可以移除。
 
 需求：Windows 10／11 x64、Microsoft Visual C++ Redistributable。
 有裝 Synergy 的話，每次拔插後會自動重新啟動它。
-
 scripts 資料夾是安裝用的檔案，不需要直接開啟。
-原始碼與完整說明：https://gitea.littleherry.work/The78estWorld/go-virtual-display
+
+Source / 原始碼：https://gitea.littleherry.work/The78estWorld/go-virtual-display
 "@
-# 用 UTF-8 with BOM 和 CRLF，記事本才會正確顯示中文
-[IO.File]::WriteAllText((Join-Path $stage '說明.txt'), ($readme -replace "`r?`n", "`r`n"), (New-Object Text.UTF8Encoding $true))
+# 檔名一律英文；內容用 UTF-8 with BOM 和 CRLF，記事本才會正確顯示中文
+[IO.File]::WriteAllText((Join-Path $stage 'README.txt'), ($readme -replace "`r?`n", "`r`n"), (New-Object Text.UTF8Encoding $true))
 
 $zip = Join-Path 'dist\release' "$name.zip"
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
 # 不用 Compress-Archive：Windows PowerShell 5.1 版會把路徑分隔寫成 \
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path $stage).Path, (Join-Path (Resolve-Path 'dist\release').Path "$name.zip"), 'Optimal', $true)
-Write-Host "完成：$zip"
+Write-Host "Done: $zip"
 Get-ChildItem $stage -Recurse -File | ForEach-Object { '  ' + $_.FullName.Substring((Resolve-Path $stage).Path.Length + 1) }

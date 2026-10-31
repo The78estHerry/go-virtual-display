@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 const (
@@ -136,6 +137,8 @@ func (m *Model) Toggle() {
 
 type timeoutError struct{}
 
-func (timeoutError) Error() string { return "切換逾時，狀態沒有改變" }
+func (timeoutError) Error() string {
+	return i18n.T("Timed out; the state did not change", "切換逾時，狀態沒有改變")
+}
 
 var errTimeout error = timeoutError{}

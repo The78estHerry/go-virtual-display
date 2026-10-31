@@ -7,6 +7,8 @@ import (
 	"syscall"
 
 	"golang.org/x/sys/windows"
+
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
 )
 
 const (
@@ -46,7 +48,7 @@ func (winController) Status() (State, error) {
 		case status&windows.DN_STARTED != 0:
 			return Plugged, nil
 		default:
-			return Unknown, fmt.Errorf("虛擬螢幕裝置有問題（代碼 %d）", problem)
+			return Unknown, fmt.Errorf(i18n.T("Virtual display device error (code %d)", "虛擬螢幕裝置有問題（代碼 %d）"), problem)
 		}
 	}
 	return Unknown, ErrNotInstalled
@@ -70,7 +72,7 @@ func runTask(name string) error {
 	cmd := exec.Command("schtasks.exe", "/run", "/tn", taskPath+name)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: createNoWindow}
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("無法執行排程工作 %s%s（請重新執行 install.ps1）：%v", taskPath, name, err)
+		return fmt.Errorf(i18n.T("Cannot run scheduled task %s%s (please reinstall): %v", "無法執行排程工作 %s%s（請重新安裝）：%v"), taskPath, name, err)
 	}
 	return nil
 }

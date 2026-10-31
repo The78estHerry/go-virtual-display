@@ -43,13 +43,14 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 點兩下 **`windows\install.cmd`**，UAC 詢問時按「是」，接著全部自動完成：
 
-1. 下載驅動並驗證 SHA-256
-2. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
-3. 安裝驅動
-4. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
-5. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「虛擬螢幕開關」。如果還沒編譯但有裝 Go，會先自動編譯
-6. 複製移除用的檔案，並登記到「設定 > 應用程式」
-7. 執行檢查，並打開開關程式
+1. 選擇介面語言（English／繁體中文），直接按 Enter 用預設值（見下方「介面語言」）
+2. 下載驅動並驗證 SHA-256
+3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
+4. 安裝驅動
+5. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
+6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「Virtual Display Switch」。如果還沒編譯但有裝 Go，會先自動編譯
+7. 複製移除用的檔案，並登記到「設定 > 應用程式」
+8. 執行檢查，並打開開關程式
 
 可以重複執行，例如改了 EDID 之後再跑一次就會更新。
 
@@ -57,7 +58,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 三種方式擇一，都會跳 UAC 詢問，按「是」：
 - 在系統列圖示按右鍵，選「**解除安裝…**」
-- 到「**設定 > 應用程式**」，找到「虛擬螢幕開關（go-virtual-display）」並移除
+- 到「**設定 > 應用程式**」，找到「虛擬螢幕開關（go-virtual-display）」（英文介面是「Virtual Display Switch (go-virtual-display)」）並移除
 - 點兩下 `windows\uninstall.cmd`
 
 安裝時會把移除用的檔案複製到 `C:\Program Files\go-virtual-display\uninstaller`，所以就算刪掉當初的安裝資料夾，前兩種方式仍然可以移除。移除會：
@@ -124,6 +125,15 @@ linux/uninstall.sh
 
 檢查用 `linux/scripts/verify.sh`。
 
+## 介面語言
+
+開關程式、安裝和移除的訊息都有英文和繁體中文兩種。
+
+- **預設**：依系統的顯示語言決定。只有中文（不分繁簡）預設繁體中文，其他一律英文。
+- **安裝時可以選**：Windows 的 `install.cmd`、Linux 的 `install.sh` 一開始會詢問，直接按 Enter 用預設值。重新安裝時，預設是上次選的語言。
+- **選擇存在**：Windows 是登錄檔 `HKLM\SOFTWARE\go-virtual-display` 的 `Language`，Linux 是 `/etc/go-virtual-display.conf` 的 `LANGUAGE`（`en` 或 `zh-TW`）。移除時一併刪除。
+- 檔名一律用英文（包括開始功能表捷徑「Virtual Display Switch」和安裝包裡的 `README.txt`），避免在非中文系統上出問題。
+
 ## 拔插開關（vdswitch）
 
 - **桌面小工具**：
@@ -145,6 +155,7 @@ linux/uninstall.sh
 cmd/make-edid/        產生／檢查 EDID
 cmd/vdswitch/         拔插開關主程式（含單一執行個體）
 internal/edid/        EDID 1.4 組裝與解析（含測試）
+internal/i18n/        介面語言判斷與英文／繁中翻譯
 internal/display/     各平台的狀態查詢與拔插
 internal/ui/          系統列（fyne.io/systray）、小工具（Gio）、設定、自動啟動
 edid/                 產生好的 EDID

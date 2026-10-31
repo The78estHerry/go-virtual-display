@@ -4,11 +4,13 @@
 set -euo pipefail
 
 GRUB_DEFAULT_FILE=/etc/default/grub
+# shellcheck source=scripts/lang.sh
+. "$(cd "$(dirname "$0")" && pwd)/scripts/lang.sh" # 設定檔刪掉前先讀出安裝時選的語言
 
 if [ "$(id -u)" -ne 0 ]; then
     pkill -x vdswitch 2>/dev/null || true
     rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/go-virtual-display.desktop"
-    echo "==> 需要系統管理員權限，請輸入密碼："
+    t "==> Administrator permission is required. Please enter your password:" "==> 需要系統管理員權限，請輸入密碼："
     exec sudo bash "$0" "$@"
 fi
 
@@ -18,7 +20,7 @@ if [ -n "$CONNECTOR" ] && [ -f "/sys/class/drm/$CONNECTOR/status" ]; then
 fi
 pkill -x vdswitch 2>/dev/null || true
 
-echo "==> 移除檔案"
+t "==> Removing files" "==> 移除檔案"
 rm -f /etc/go-virtual-display.conf \
     /usr/share/polkit-1/actions/io.littleherry.vdswitch.policy \
     /usr/local/bin/vdswitch \
@@ -26,7 +28,7 @@ rm -f /etc/go-virtual-display.conf \
     /lib/firmware/edid/edid_1920x1440.bin
 rm -rf /usr/local/libexec/go-virtual-display
 
-echo "==> 移除開機參數"
+t "==> Removing kernel parameters" "==> 移除開機參數"
 if [ -f "$GRUB_DEFAULT_FILE" ]; then
     # 只移除本專案加上的參數
     KCONN=${CONNECTOR#*-}
@@ -41,7 +43,7 @@ if [ -f "$GRUB_DEFAULT_FILE" ]; then
     fi
 fi
 
-echo "==> 移除 initramfs 設定"
+t "==> Removing initramfs settings" "==> 移除 initramfs 設定"
 if [ -f /etc/initramfs-tools/hooks/go-virtual-display ]; then
     rm -f /etc/initramfs-tools/hooks/go-virtual-display
     update-initramfs -u
@@ -52,4 +54,4 @@ if [ -f /etc/dracut.conf.d/go-virtual-display.conf ]; then
 fi
 
 echo
-echo "移除完成。重新開機後就完全恢復原狀。"
+t "Uninstall complete. Everything is back to the original state after a reboot." "移除完成。重新開機後就完全恢復原狀。"

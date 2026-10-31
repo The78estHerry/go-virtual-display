@@ -8,7 +8,7 @@ $extracted = Join-Path $VendorDir 'extracted'
 
 New-Item -ItemType Directory -Force $VendorDir | Out-Null
 if (-not (Test-Path $zip) -or (Get-FileHash $zip -Algorithm SHA256).Hash -ne $VddSha256) {
-    Write-Host "下載 Virtual Display Driver $VddVersion ..."
+    Write-Host (T "Downloading Virtual Display Driver $VddVersion ..." "下載 Virtual Display Driver $VddVersion ...")
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = 'SilentlyContinue'  # Windows PowerShell 5.1 顯示進度條時下載會慢上數十倍
     Invoke-WebRequest -Uri $VddUrl -OutFile $zip -UseBasicParsing
@@ -16,11 +16,11 @@ if (-not (Test-Path $zip) -or (Get-FileHash $zip -Algorithm SHA256).Hash -ne $Vd
 $hash = (Get-FileHash $zip -Algorithm SHA256).Hash
 if ($hash -ne $VddSha256) {
     Remove-Item $zip -Force
-    throw "SHA-256 不符（$hash），已刪除下載的檔案。"
+    throw (T "SHA-256 mismatch ($hash); the download was deleted." "SHA-256 不符（$hash），已刪除下載的檔案。")
 }
-Write-Host "SHA-256 正確：$hash"
+Write-Host (T "SHA-256 OK: $hash" "SHA-256 正確：$hash")
 
 if (-not (Test-Path (Join-Path $extracted 'SignedDrivers'))) {
     Expand-Archive -Path $zip -DestinationPath $extracted -Force
 }
-Write-Host "已解壓縮到 $extracted"
+Write-Host (T "Extracted to $extracted" "已解壓縮到 $extracted")
