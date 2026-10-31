@@ -9,6 +9,7 @@ Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
 if (Get-VddDevice) {
     pnputil /remove-device /deviceid "$VddHardwareId" | Out-Null
     Write-Host '已移除虛擬螢幕裝置'
+    Restart-DisplayDependentServices
 }
 Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*\mttvdd.inf' } | ForEach-Object {
     pnputil /delete-driver $_.Driver /uninstall /force | Out-Null

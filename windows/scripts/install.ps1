@@ -46,6 +46,7 @@ if (Get-VddDevice) {
     & $devcon install "$inf" "$VddHardwareId"
     if ($LASTEXITCODE -ne 0) { throw "devcon 安裝失敗（代碼 $LASTEXITCODE）" }
 }
+Restart-DisplayDependentServices
 
 # 4. 拔插用排程工作：以最高權限執行，之後按開關不會跳 UAC
 #    有裝 Synergy 等服務時，再加一個動作：等螢幕建立好後重新啟動它（排程工作的多個動作會依序執行）

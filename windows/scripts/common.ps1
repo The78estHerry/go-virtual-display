@@ -29,3 +29,12 @@ function Assert-Admin {
 function Get-VddDevice {
     Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.HardwareID -contains $VddHardwareId }
 }
+
+# 安裝／移除驅動也會增減螢幕，和拔插一樣要重新啟動 $RestartServices
+function Restart-DisplayDependentServices {
+    $services = @($RestartServices | Where-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue })
+    if (-not $services) { return }
+    Start-Sleep -Seconds 3  # 等螢幕建立或移除完成
+    Restart-Service -Name $services -Force
+    Write-Host "已重新啟動：$($services -join '、')"
+}
