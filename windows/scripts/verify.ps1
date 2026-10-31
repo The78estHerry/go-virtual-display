@@ -50,8 +50,12 @@ $screens = [System.Windows.Forms.Screen]::AllScreens
 foreach ($s in $screens) {
     Write-Host ((T '[i] Display {0}: {1}x{2}{3}' '[i] 螢幕 {0}：{1}x{2}{3}') -f $s.DeviceName, $s.Bounds.Width, $s.Bounds.Height, $(if ($s.Primary) { T ' (primary)' '（主螢幕）' } else { '' }))
 }
-if (-not ($screens | Where-Object { $_.Bounds.Width -eq 1920 -and $_.Bounds.Height -eq 1440 })) {
-    Write-Host (T '[!] No 1920x1440 display (with display scaling on, the scaled size is shown here)' '[!] 沒有 1920x1440 的螢幕（若有開啟顯示縮放，這裡顯示的是縮放後的大小）') -ForegroundColor Yellow
+# 目前使用中的解析度（vdswitch.exe --apply 寫在 VDD 設定檔裡）
+$xml = Get-Content (Join-Path $VddConfigDir 'vdd_settings.xml') -Raw -ErrorAction SilentlyContinue
+$w = if ($xml -match '<width>(\d+)</width>') { [int]$Matches[1] } else { 1920 }
+$h = if ($xml -match '<height>(\d+)</height>') { [int]$Matches[1] } else { 1080 }
+if (-not ($screens | Where-Object { $_.Bounds.Width -eq $w -and $_.Bounds.Height -eq $h })) {
+    Write-Host (T "[!] No ${w}x${h} display (with display scaling on, the scaled size is shown here)" "[!] 沒有 ${w}x${h} 的螢幕（若有開啟顯示縮放，這裡顯示的是縮放後的大小）") -ForegroundColor Yellow
 }
 
 $tasks = Get-ScheduledTask -TaskPath $TaskPath -ErrorAction SilentlyContinue
