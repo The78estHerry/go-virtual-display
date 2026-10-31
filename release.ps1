@@ -32,7 +32,7 @@ Install:   Double-click install.cmd and click "Yes" in the UAC prompt.
            SHA-256 is verified automatically.
 Upgrade:   Just run the new install.cmd. If a version is already installed,
            it shows both versions and asks before uninstalling the old one.
-           Your resolutions and language are kept.
+           Your resolutions, language and "Start at sign-in" are kept.
 Uninstall: Right-click the tray icon and choose "Uninstall...", or remove
            "Virtual Display Switch" in Settings > Apps. You can also
            double-click uninstall.cmd. The first two still work after this
@@ -55,7 +55,7 @@ The scripts folder contains installer files; you do not need to open it.
 安裝：點兩下 install.cmd，UAC 詢問時按「是」。安裝時可選英文或繁體中文。
       會自動下載已簽章的 Virtual Display Driver $VddVersion 並驗證 SHA-256。
 升級：直接執行新版的 install.cmd。已經安裝過時，會顯示目前和要安裝的版本，
-      確認後先移除舊版再安裝。你新增的解析度和選的語言會保留。
+      確認後先移除舊版再安裝。你新增的解析度、選的語言和「登入時自動啟動」會保留。
 移除：在系統列圖示按右鍵選「解除安裝…」，或到「設定 > 應用程式」移除「虛擬螢幕開關」。
       也可以點兩下 uninstall.cmd。安裝後就算刪掉這個資料夾，前兩種方式仍然可以移除。
       移除時會一併刪掉你新增的解析度和選的語言。

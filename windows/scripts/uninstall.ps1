@@ -1,7 +1,8 @@
 ﻿# 移除虛擬螢幕驅動、排程工作、開關程式與開機啟動項，並還原原本的 VDD 設定檔。
 # 需要系統管理員權限。
 param(
-    # 保留使用者的設定（解析度清單、小工具位置、介面語言）。install.ps1 覆蓋安裝時先移除舊版會用到
+    # 保留使用者的設定（解析度清單、小工具位置、介面語言、登入時自動啟動）。install.ps1 覆蓋安裝時先移除舊版會用到
+    # 自動啟動的 Run 機碼指向 Program Files 裡的 vdswitch.exe，重新安裝後路徑相同，所以可以留著
     [switch]$KeepUserSettings
 )
 $ErrorActionPreference = 'Stop'
@@ -44,7 +45,7 @@ try {
 } catch {}
 Write-Host (T 'Deleted scheduled tasks' '已刪除排程工作')
 
-Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue
+if (-not $KeepUserSettings) { Remove-ItemProperty $RunKey -Name $RunValue -ErrorAction SilentlyContinue }
 Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue  # 含 uninstaller\
 Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
 $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
@@ -54,7 +55,11 @@ if (-not $KeepUserSettings) {
     # 使用者的設定：存下的解析度、小工具位置、套用結果（移除以同一個使用者的系統管理員身分執行）
     Remove-Item (Join-Path $env:APPDATA 'go-virtual-display') -Recurse -Force -ErrorAction SilentlyContinue
 }
-Write-Host (T 'Removed the switch and its sign-in startup entry' '已移除開關程式與開機啟動項')
+if ($KeepUserSettings) {
+    Write-Host (T 'Removed the switch (your settings are kept)' '已移除開關程式（保留你的設定）')
+} else {
+    Write-Host (T 'Removed the switch and its sign-in startup entry' '已移除開關程式與開機啟動項')
+}
 
 foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {
     $path = Join-Path $VddConfigDir $name

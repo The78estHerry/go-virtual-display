@@ -94,7 +94,7 @@ if [ "$(id -u)" -ne 0 ]; then
                     t "  Warning: the installed version is newer; this will downgrade it." "  注意：目前的版本比較新，繼續會降版。"
                 fi
             fi
-            t "  Your resolution list and language are kept." "  你新增的解析度和選的語言會保留。"
+            t '  Your resolutions, language and "Start at sign-in" setting are kept.' "  你新增的解析度、選的語言和「登入時自動啟動」會保留。"
             echo
             read -r -p "$(t 'Uninstall the current version and install this one? (y/N) : ' '要先移除目前的版本，再安裝這個版本嗎？(y/N) : ')" answer || true
             case "$answer" in

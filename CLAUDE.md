@@ -232,8 +232,9 @@ make linux                                                    # 只能在 Linux 
   - `--keep-user-settings` 保留 `~/.config/go-virtual-display` 和登入時自動啟動，並且不印「移除完成」。Windows 的 `-KeepUserSettings` 仍會刪掉 Run 機碼，兩邊不一致；Linux 保留是因為它也算使用者的設定。
   - 沒有終端機（`[ -t 0 ]` 不成立）時不詢問，直接覆蓋安裝（install.sh 可以重複執行）。
   - 測試：`linux/tests/run.ps1` 在 Docker 跑兩支腳本。`simulate.sh` 40 項（原本的），`reinstall.sh` 26 項（新增）：一般使用者＋真的 sudo、用 `script` 提供終端機，涵蓋 n 取消、y 移除再安裝（保留接頭、語言、設定）、降版、升級、沒有 VERSION、沒有終端機、一般移除。全部通過。
+- 2026-11-01：依使用者要求發佈 **v0.4.1**（Gitea Release id 16），Release 說明標明 Linux 沒有實機測過。附件 SHA-256：Windows `CCBBC194…EB45058B`、Linux `A4A6C176…EA2A9980`。
+- 2026-11-01：0.4.2 開發：使用者要求重新安裝時兩邊都保留「登入時自動啟動」。Windows 的 `uninstall.ps1 -KeepUserSettings` 改成不刪 Run 機碼（指向 Program Files 裡的 vdswitch.exe，重新安裝後路徑相同）。兩邊的提示文字和 README 都改成「解析度、語言和登入時自動啟動會保留」。**Windows 待實機確認**：設好自動啟動 → 再執行 install.cmd 回答 y → Run 機碼 `HKCU\...\Run\go-virtual-display` 還在。
 - 待辦：
-  - 0.4.1 要不要發佈由使用者決定（Windows 沒有變更，只有 Linux 的安裝流程）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude

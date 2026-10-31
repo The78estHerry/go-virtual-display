@@ -26,7 +26,7 @@ if ($installedVersion -or (Test-Path $AppDir)) {
         if ($iv -eq $pv) { Write-Host (T '  (Same version: this will reinstall it.)' '  （版本相同，會重新安裝）') }
         elseif ($iv -gt $pv) { Write-Host (T '  Warning: the installed version is newer; this will downgrade it.' '  注意：目前的版本比較新，繼續會降版。') -ForegroundColor Yellow }
     }
-    Write-Host (T '  Your resolution list and language are kept.' '  你新增的解析度和選的語言會保留。')
+    Write-Host (T '  Your resolutions, language and "Start at sign-in" setting are kept.' '  你新增的解析度、選的語言和「登入時自動啟動」會保留。')
     Write-Host ''
     Write-Host (T 'Uninstall the current version and install this one? (y/N) : ' '要先移除目前的版本，再安裝這個版本嗎？(y/N) : ') -NoNewline
     $answer = [Console]::ReadLine()
