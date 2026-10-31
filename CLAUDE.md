@@ -187,7 +187,13 @@ make linux                                                    # 只能在 Linux 
   - 修正：拿掉註解裡的 `--`，logging 改回 false。`setVDDResolution` 寫入前用 `encoding/xml` 檢查格式，測試也會檢查範本格式。`.gitattributes` 加上 `*.xml text eol=crlf`，0.3.0 之前的安裝包是 CRLF，之後被改成 LF 了（實測 LF 也能用，只是保持一致）。
   - 重新產生測試用安裝包 `dist\release\go-virtual-display-0.3.0-windows.zip`，等使用者移除 0.1.1 後重裝測試。
   - 0.3.0 還沒驗證的項目：切換解析度和管理視窗、桌面捷徑和搜尋「虛擬螢幕」、新圖示、安裝時語言選單的排版（`e4006e3` 改用 `Console.ReadLine`）、移除是否乾淨。通過後照 `RELEASING.md` 打 v0.3.0 tag 並發佈。
-  - 另外要查：0.1.1 重開機後插入時，虛擬螢幕變成主螢幕（在 (0,0)，實體螢幕被排到右邊）。
+  - 另外要查：0.1.1 重開機後插入時，虛擬螢幕變成主螢幕（在 (0,0)，實體螢幕被排到右邊）。之後裝 0.3.0 時實體螢幕維持主螢幕，可能是 Windows 沿用上次的排列，先觀察。
+- 2026-11-01：使用者用修正後的安裝包（英文介面）安裝 0.3.0，虛擬螢幕正常出現。驗證通過：切換解析度、管理視窗、桌面捷徑、新圖示，移除後全部乾淨。英文介面搜尋「Virtual Display Switch」找得到，搜尋中文找不到，這是預期的行為。
+- 2026-11-01：使用者要求在已安裝時重複安裝要先提醒：
+  - `install.ps1` 一開始先看「應用程式」登記的 `DisplayVersion`，或程式資料夾是否存在（0.1.0 沒有登記）。不看 VDD 裝置，因為可能是使用者自己另外裝的。
+  - 已安裝時顯示目前版本和要安裝的版本（相同版本或降版會另外提示），問 `y/N`。回答 y 才執行套件裡的 `uninstall.ps1 -KeepUserSettings`，再全新安裝；其他回答就取消。
+  - `-KeepUserSettings`：不刪 `%APPDATA%\go-virtual-display`（解析度清單、小工具位置）和 `HKLM\SOFTWARE\go-virtual-display`（語言）。一般移除仍會全部刪掉。
+  - 已重產 0.3.0 安裝包，等使用者實測：先裝好，再執行一次 install.cmd。
 - 待辦：
   - Linux 版的解析度功能（Windows 確認後）：
     - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改

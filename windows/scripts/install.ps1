@@ -12,6 +12,35 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 Assert-Admin
 
+# 已經安裝過：告訴使用者目前和要安裝的版本，同意後先移除舊版（保留解析度清單和語言），再全新安裝
+# 0.1.0 沒有登記到「設定 > 應用程式」，所以也看程式資料夾。不看 VDD 裝置：可能是使用者自己另外裝的，不能幫他移除
+$installedVersion = (Get-ItemProperty $UninstallKey -Name DisplayVersion -ErrorAction SilentlyContinue).DisplayVersion
+if ($installedVersion -or (Test-Path $AppDir)) {
+    $shown = if ($installedVersion) { $installedVersion } else { T 'unknown (0.1.0 or earlier)' '不明（0.1.0 以前）' }
+    Write-Host ''
+    Write-Host (T 'Virtual Display Switch is already installed.' '虛擬螢幕開關已經安裝了。') -ForegroundColor Yellow
+    Write-Host ((T '  Installed version: ' '  目前版本：') + $shown)
+    Write-Host ((T '  This package:      ' '  要安裝的版本：') + $AppVersion)
+    $iv = $null; $pv = $null
+    if ([version]::TryParse("$installedVersion", [ref]$iv) -and [version]::TryParse($AppVersion, [ref]$pv)) {
+        if ($iv -eq $pv) { Write-Host (T '  (Same version: this will reinstall it.)' '  （版本相同，會重新安裝）') }
+        elseif ($iv -gt $pv) { Write-Host (T '  Warning: the installed version is newer; this will downgrade it.' '  注意：目前的版本比較新，繼續會降版。') -ForegroundColor Yellow }
+    }
+    Write-Host (T '  Your resolution list and language are kept.' '  你新增的解析度和選的語言會保留。')
+    Write-Host ''
+    Write-Host (T 'Uninstall the current version and install this one? (y/N) : ' '要先移除目前的版本，再安裝這個版本嗎？(y/N) : ') -NoNewline
+    $answer = [Console]::ReadLine()
+    if ("$answer".Trim() -notmatch '^(y|yes)$') {
+        Write-Host (T 'Cancelled. Nothing was changed.' '已取消，沒有做任何變更。')
+        return
+    }
+    Write-Host ''
+    Write-Host (T 'Uninstalling the current version ...' '移除目前的版本 ...')
+    & (Join-Path $PSScriptRoot 'uninstall.ps1') -KeepUserSettings
+    Write-Host ''
+    Write-Host ((T 'Installing version ' '安裝版本 ') + $AppVersion + ' ...')
+}
+
 # 0. 介面語言（安裝過程、開關程式、移除都用這個）
 if (-not $Language) {
     $default = if ($Lang -eq 'zh-TW') { '2' } else { '1' }
