@@ -46,7 +46,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 1. 下載驅動並驗證 SHA-256
 2. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
 3. 安裝驅動
-4. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC
+4. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
 5. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「虛擬螢幕開關」。如果還沒編譯但有裝 Go，會先自動編譯
 6. 執行檢查，並打開開關程式
 
@@ -68,6 +68,12 @@ powershell -ExecutionPolicy Bypass -File .\windows\install.ps1      # 安裝
 powershell -ExecutionPolicy Bypass -File .\windows\verify.ps1       # 檢查（不需要系統管理員）
 powershell -ExecutionPolicy Bypass -File .\windows\uninstall.ps1    # 移除
 ```
+
+### 搭配 Synergy
+
+Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。所以安裝時如果偵測到 Synergy 的服務（`Synergy Core Daemon`），拔插用的排程工作會在拔插 3 秒後自動重新啟動它，Synergy 會斷線一下再自動連回。
+
+Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd` 就會加上。其他需要重新啟動的服務可以加到 `windows\common.ps1` 的 `$RestartServices`。
 
 > ⚠️ 更新顯示卡或晶片組驅動之前，建議先移除虛擬螢幕驅動（VDD 官方建議）。如果開機後黑畫面，請進安全模式移除。
 

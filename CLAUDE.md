@@ -60,6 +60,7 @@ make linux                                                    # 只能在 Linux 
 - **Windows 拔插**：
   - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
   - 排程工作的動作用 `conhost.exe --headless pnputil.exe ...`，避免閃出主控台視窗。
+  - 偵測到 `$RestartServices`（目前只有 `Synergy Core Daemon`）裡的服務時，排程工作多一個動作：`Start-Sleep 3` 後 `Restart-Service`。排程工作的多個動作會依序執行。
   - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
 - **使用者的電腦**：
   - Windows 11 Pro 26200，zh-TW 語系，1920×1080 螢幕。
@@ -96,8 +97,14 @@ make linux                                                    # 只能在 Linux 
     - 在 Git Bash 用假的 grub 檔模擬過：初次安裝、重複安裝、換接頭、移除都正確
   - **自動開啟開關程式**：裝完以一般使用者身分 `setsid` 開啟
 - 2026-10-31：第一次實機執行 `windows\install.cmd`：驅動下載、安裝、排程工作都成功，但建立開始功能表捷徑時失敗（見踩過的坑的 WScript.Shell），已修正，待使用者重跑。
+- 2026-10-31：重跑後安裝成功，小工具和拔插都正常。使用者同時用 Synergy 3（這台是子機，設在主機左邊）和 RustDesk：
+  - **Synergy**：插入虛擬螢幕（排在真實螢幕左邊）後，從主機移過來的滑鼠落進虛擬螢幕的右邊緣，而不是真實螢幕。
+    - 原因：Synergy 子機沒有在顯示設定改變後更新桌面大小。左邊界已變成 −1920，寬度卻還是舊的，算出的右邊緣變成 −1。
+    - 使用者重新啟動 Synergy 後就正常，所以讓拔插的排程工作自動重新啟動 `Synergy Core Daemon` 服務，它會帶起 `synergy-core.exe`。
+    - Synergy 的紀錄在 `C:\ProgramData\Synergy\logs\synergy.log`，設定在 `C:\ProgramData\Synergy\config\synergy.conf`。
+  - **RustDesk**：遠端畫面上看不到本機的滑鼠移動。沒有虛擬螢幕時也一樣，所以是 RustDesk 本身的問題，不在本專案範圍。
 - 待辦：
-  - Windows 實機安裝與拔插測試（修正捷徑後重跑 `windows\install.cmd`）
+  - 確認自動重啟 Synergy 有效（使用者重跑 `windows\install.cmd` 後實際拔插）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude

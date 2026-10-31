@@ -14,6 +14,8 @@ $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $TaskPath     = '\go-virtual-display\'
 $RunKey       = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $RunValue     = 'go-virtual-display'
+# 拔插後要重新啟動的服務：這些程式只在啟動時讀取桌面大小，螢幕增減後滑鼠位置會算錯
+$RestartServices = @('Synergy Core Daemon')
 
 function Assert-Admin {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()

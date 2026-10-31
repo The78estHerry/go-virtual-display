@@ -44,14 +44,22 @@ if (Get-VddDevice) {
 }
 
 # 4. 拔插用排程工作：以最高權限執行，之後按開關不會跳 UAC
+#    有裝 Synergy 等服務時，再加一個動作：等螢幕建立好後重新啟動它（排程工作的多個動作會依序執行）
+$services = @($RestartServices | Where-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue })
 foreach ($t in @(@{ Name = 'Plug'; Verb = '/enable-device' }, @{ Name = 'Unplug'; Verb = '/disable-device' })) {
-    $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
-        -Argument "--headless $env:SystemRoot\System32\pnputil.exe $($t.Verb) /deviceid `"$VddHardwareId`""
+    $action = @(New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
+        -Argument "--headless $env:SystemRoot\System32\pnputil.exe $($t.Verb) /deviceid `"$VddHardwareId`"")
+    if ($services) {
+        $names = ($services | ForEach-Object { "'$_'" }) -join ','
+        $action += New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
+            -Argument "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Start-Sleep -Seconds 3; Restart-Service -Name $names -Force`""
+    }
     $principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskPath $TaskPath -TaskName $t.Name -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 }
 Write-Host "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用者：$User）"
+if ($services) { Write-Host "拔插後會自動重新啟動：$($services -join '、')" }
 
 # 5. 開關程式
 $exe = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
