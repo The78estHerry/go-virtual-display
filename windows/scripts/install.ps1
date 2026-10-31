@@ -15,11 +15,15 @@ Assert-Admin
 # 0. 介面語言（安裝過程、開關程式、移除都用這個）
 if (-not $Language) {
     $default = if ($Lang -eq 'zh-TW') { '2' } else { '1' }
+    # 不用 Read-Host：Windows PowerShell 5.1 在 UTF-8 主控台（chcp 65001）用 Read-Host 時，
+    # 前面的中文會被畫錯位置。改成先印完選單，再用 Console.ReadLine 讀取
     Write-Host ''
     Write-Host 'Select language / 選擇語言'
     Write-Host '  1) English'
-    Write-Host '  2) 繁體中文'
-    $answer = Read-Host "Enter 1 or 2 [default: $default]"
+    Write-Host '  2) 繁體中文 (Traditional Chinese)'
+    Write-Host ''
+    Write-Host "Enter 1 or 2, or press Enter for $default : " -NoNewline
+    $answer = [Console]::ReadLine()
     $Language = switch ("$answer".Trim()) { '1' { 'en' } '2' { 'zh-TW' } default { $Lang } }
 }
 $Lang = $Language
