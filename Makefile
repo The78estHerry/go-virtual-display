@@ -10,6 +10,7 @@ linux: test
 
 edid:
 	go run ./cmd/make-edid -o edid/edid_1920x1440.bin
+	go run ./cmd/make-edid -w 1920 -h 1080 -o edid/edid_1920x1080.bin
 
 test:
 	go test ./...

@@ -1,8 +1,8 @@
 # go-virtual-display
 
-讓電腦在**沒有接實體螢幕**的情況下，以為接著一台 **1920×1440（4:3）** 的螢幕，而且這台螢幕回報的是我們自己產生的 EDID。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
+讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除（Windows），預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
 
-適合用在無頭主機的遠端桌面或串流、錄影，以及需要固定 4:3 畫面的測試。
+適合用在無頭主機的遠端桌面或串流、錄影，以及需要特定解析度的測試。
 
 支援 **Windows 10／11** 和 **Linux**（需要顯示卡上有一個空的接頭）。macOS 不支援。
 
@@ -18,18 +18,33 @@
 
 ## EDID 內容
 
-`edid/edid_1920x1440.bin`，由 `cmd/make-edid` 產生：
+每一組解析度產生一份 EDID（`internal/profile`）：
 
 - EDID 1.4，128 bytes，沒有擴充區塊
-- 首選時序：VESA DMT 1920×1440 @ 60 Hz（pixel clock 234.00 MHz；H 1920/128/208/344；V 1440/1/3/56）
-- 廠商代碼 `VDS`、產品代碼 `0x1440`、名稱 `VirtualDisp`、序號字串 `GVD-1920x1440`、尺寸 40×30 cm、sRGB
+- 首選時序用 VESA CVT reduced blanking，也就是現代 LCD 常用的時序。1920×1440@60 例外，沿用 VESA DMT，和舊版相同
+- 名稱 `VirtualDisp`，序號字串 `GVD-<寬>x<高>`（例如 `GVD-1920x1080`），sRGB
+- 實體尺寸以 96 DPI 換算（1920×1080 → 51×29 cm），Windows 預設縮放會是 100%
+- Virtual Display Driver 會把廠商／產品代碼換成 `MTT`／`0x1337`，所以每種解析度靠序號字串區分。Windows 會分別記住每種解析度的排列和縮放
+
+repo 裡有兩份產好的 EDID：
+- `edid/edid_1920x1080.bin`：Windows 安裝時的預設
+- `edid/edid_1920x1440.bin`：Linux 版目前固定使用
 
 ```
-go run ./cmd/make-edid -o edid/edid_1920x1440.bin      # 重新產生
-go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
+go run ./cmd/make-edid -w 2560 -h 1440 -hz 60 -o out.bin   # 產生指定解析度
+go run ./cmd/make-edid -check edid/edid_1920x1080.bin      # 檢查並列出內容
 ```
 
-要改名稱或時序，修改 `internal/edid/edid.go` 的 `Default`。
+## 解析度（Windows）
+
+- **切換**：系統列圖示按右鍵 →「解析度」，點一下要用的解析度。虛擬螢幕會短暫重新啟動，有裝 Synergy 的話也會自動重新啟動。在拔掉狀態下切換，下次插入時生效。
+- **管理**：同一個子選單的「管理解析度…」會打開視窗：
+  - 已存的解析度可以「使用」或「刪除」，使用中的不能刪
+  - 常見解析度按一下就加入（都是 60 Hz）：1920×1080、2560×1440、3840×2160、1280×720、1920×1200、2560×1600、3840×2400、640×480、1024×768、1600×1200、1920×1440、1280×1024、2560×1080、1080×1920
+  - 也可以手動輸入寬、高、更新率。寬高 320–4095，更新率 24–240 Hz；太高而無法用 EDID 表示時會顯示錯誤
+- 剛安裝時只有 1920×1080@60。清單存在 `%APPDATA%\go-virtual-display\profiles.json`，重新安裝時會保留原本選的解析度。
+- 切換由最高權限排程工作 `\go-virtual-display\Apply` 執行 `vdswitch.exe --apply`，它會產生 EDID、改寫 `C:\VirtualDisplayDriver` 的設定，所以不會跳 UAC。
+- Linux 版還不支援，目前固定 1920×1440。
 
 ## Windows
 
@@ -45,9 +60,9 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 1. 選擇介面語言（English／繁體中文），直接按 Enter 用預設值（見下方「介面語言」）
 2. 下載驅動並驗證 SHA-256
-3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）
+3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）。EDID 依你存的解析度產生，新安裝是 1920×1080
 4. 安裝驅動
-5. 建立拔插用的排程工作（`\go-virtual-display\Plug`、`\go-virtual-display\Unplug`），之後按開關不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
+5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
 6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表建立「Virtual Display Switch」。如果還沒編譯但有裝 Go，會先自動編譯
 7. 複製移除用的檔案，並登記到「設定 > 應用程式」
 8. 執行檢查，並打開開關程式
@@ -144,7 +159,7 @@ linux/uninstall.sh
 - **系統列圖示**：
   - 圖示顏色和小工具相同
   - **左鍵點一下切換**
-  - 右鍵選單：插入／拔掉、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、解除安裝…（只有 Windows）、結束
+  - 右鍵選單：插入／拔掉、解析度（只有 Windows）、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、解除安裝…（只有 Windows）、結束
 - 狀態每 2 秒同步一次。從其他地方（裝置管理員、VDD 的控制程式）改變狀態時，兩邊都會跟著更新。
 - 只會執行一份。重複開啟時會把小工具叫出來。
 - 設定存在 `%APPDATA%\go-virtual-display\widget.json`（Linux 是 `~/.config/go-virtual-display/widget.json`）。
@@ -156,6 +171,7 @@ cmd/make-edid/        產生／檢查 EDID
 cmd/vdswitch/         拔插開關主程式（含單一執行個體）
 internal/edid/        EDID 1.4 組裝與解析（含測試）
 internal/i18n/        介面語言判斷與英文／繁中翻譯
+internal/profile/     解析度清單（profiles.json）與每組解析度的 EDID
 internal/display/     各平台的狀態查詢與拔插
 internal/ui/          系統列（fyne.io/systray）、小工具（Gio）、設定、自動啟動
 edid/                 產生好的 EDID

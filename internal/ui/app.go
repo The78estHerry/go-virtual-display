@@ -14,6 +14,7 @@ import (
 type App struct {
 	model    *Model
 	widget   *widgetMgr
+	manager  *managerWin
 	quitting bool
 	onWidget func(bool) // 小工具顯示狀態改變時更新系統列選單
 }
@@ -24,6 +25,7 @@ func Run(show <-chan struct{}) {
 	ctrl, err := display.New()
 	a := &App{model: NewModel(ctrl, err)}
 	a.widget = newWidgetMgr(a.model, a.widgetClosed)
+	a.manager = newManagerWin(a.model)
 
 	go func() {
 		// systray 在 Windows 上需要同一個執行緒建立視窗並處理訊息

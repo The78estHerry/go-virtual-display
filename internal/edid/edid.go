@@ -142,6 +142,9 @@ func validate(p Params) error {
 	if t.HFront > 1023 || t.HSync > 1023 || t.VFront > 63 || t.VSync > 63 {
 		return errors.New("porch 或 sync 寬度超出 DTD 可表示的範圍")
 	}
+	if _, _, maxV, maxH := rangeLimits(t); maxV > 510 || maxH > 510 {
+		return errors.New("更新率或水平頻率超出 Range Limits 可表示的範圍")
+	}
 	return nil
 }
 
@@ -216,14 +219,39 @@ func putDTD(b []byte, t Timing, wmm, hmm int) {
 	b[17] = flags
 }
 
-func putRangeLimits(b []byte, t Timing) {
-	b[3] = 0xFD
+// rangeLimits 回傳 Range Limits 描述子的垂直（Hz）與水平（kHz）上下限，在首選時序附近留些餘裕。
+func rangeLimits(t Timing) (minV, minH, maxV, maxH int) {
 	hz := int(t.RefreshHz() + 0.5)
 	khz := int(t.HFreqKHz() + 0.5)
-	b[5] = byte(hz - 10)
-	b[6] = byte(hz + 15)
-	b[7] = byte(khz - 30)
-	b[8] = byte(khz + 10)
+	return max(hz-10, 1), max(khz-30, 1), hz + 15, khz + 10
+}
+
+func putRangeLimits(b []byte, t Timing) {
+	b[3] = 0xFD
+	minV, minH, maxV, maxH := rangeLimits(t)
+	// 超過 255 時用 EDID 1.4 的 offset 旗標（byte 4）：bit 1／3 表示上限 +255，bit 0／2 表示下限 +255
+	var offsets byte
+	if maxV > 255 {
+		offsets |= 0x02
+		maxV -= 255
+		if minV > 255 {
+			offsets |= 0x01
+			minV -= 255
+		}
+	}
+	if maxH > 255 {
+		offsets |= 0x08
+		maxH -= 255
+		if minH > 255 {
+			offsets |= 0x04
+			minH -= 255
+		}
+	}
+	b[4] = offsets
+	b[5] = byte(minV)
+	b[6] = byte(maxV)
+	b[7] = byte(minH)
+	b[8] = byte(maxH)
 	b[9] = byte((t.PixelClockKHz+9999)/10000 + 1) // 單位 10 MHz，無條件進位並留餘裕
 	b[10] = 0x01                                  // 只提供範圍限制，不支援 GTF/CVT 公式
 	b[11] = 0x0A

@@ -15,7 +15,7 @@ New-Item -ItemType Directory -Force (Join-Path $stage 'scripts') | Out-Null
 
 Copy-Item windows\install.cmd, windows\uninstall.cmd $stage
 Copy-Item windows\scripts\*.ps1, windows\scripts\vdd_settings.xml $stage\scripts
-Copy-Item edid\edid_1920x1440.bin, dist\windows\vdswitch.exe $stage\scripts
+Copy-Item edid\edid_1920x1080.bin, dist\windows\vdswitch.exe $stage\scripts
 
 $readme = @"
 go-virtual-display $Version (Windows)
@@ -35,6 +35,10 @@ Uninstall: Right-click the tray icon and choose "Uninstall...", or remove
            double-click uninstall.cmd. The first two still work after this
            folder has been deleted.
 
+Resolution: The default is 1920x1080. Right-click the tray icon and choose
+           "Resolution" to switch, or "Manage resolutions..." to add (common
+           presets or your own width/height/refresh) and delete resolutions.
+
 Requires Windows 10/11 x64 and the Microsoft Visual C++ Redistributable.
 If Synergy is installed, it is restarted automatically after each plug/unplug.
 The scripts folder contains installer files; you do not need to open it.
@@ -48,6 +52,9 @@ The scripts folder contains installer files; you do not need to open it.
       會自動下載已簽章的 Virtual Display Driver $VddVersion 並驗證 SHA-256。
 移除：在系統列圖示按右鍵選「解除安裝…」，或到「設定 > 應用程式」移除「虛擬螢幕開關」。
       也可以點兩下 uninstall.cmd。安裝後就算刪掉這個資料夾，前兩種方式仍然可以移除。
+
+解析度：預設 1920x1080。在系統列圖示按右鍵選「解析度」切換，或選「管理解析度…」
+        新增（常見解析度或自己輸入寬、高、更新率）和刪除。
 
 需求：Windows 10／11 x64、Microsoft Visual C++ Redistributable。
 有裝 Synergy 的話，每次拔插後會自動重新啟動它。

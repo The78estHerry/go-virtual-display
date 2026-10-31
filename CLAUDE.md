@@ -4,7 +4,7 @@
 
 ## 目的
 
-讓 Windows（以及 Linux）在沒有實體螢幕時，以為接著一台回報自訂 EDID 的 1920×1440 螢幕，並提供系統列圖示＋桌面小工具形式的一鍵軟體拔插開關。
+讓 Windows（以及 Linux）在沒有實體螢幕時，以為接著一台回報自訂 EDID 的螢幕（Windows 0.3.0 起解析度可自選，預設 1920×1080；Linux 固定 1920×1440），並提供系統列圖示＋桌面小工具形式的一鍵軟體拔插開關。
 
 ## 已做的決定與原因
 
@@ -28,9 +28,10 @@
 
 | 路徑 | 用途 |
 |---|---|
-| `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、預設參數 `Default`（DMT 1920×1440@60） |
+| `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、`CVTReducedBlanking`（cvt.go）、舊版固定參數 `Default`（DMT 1920×1440@60，Linux 版用） |
+| `internal/profile` | 解析度清單 `profiles.json`（`Load`／`Add`／`Remove`／`SetActive`）、14 組 `Presets`、每組的 `EDID()`、`Validate()` |
 | `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
-| `edid/edid_1920x1440.bin` | 產出的 EDID，兩個平台共用，commit 進 repo |
+| `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是 Windows 安裝的預設，後者是 Linux 版固定使用（和 0.2.0 以前完全相同） |
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `internal/i18n` | 介面語言：`T(英文, 繁中)`。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
@@ -62,7 +63,7 @@ make linux                                                    # 只能在 Linux 
   - 設定目錄預設 `C:\VirtualDisplayDriver`，可用登錄檔 `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH` 指定。
   - 自訂 EDID：在 `vdd_settings.xml` 設 `<CustomEdid>true</CustomEdid>`，檔案命名為 `user_edid.bin` 放在設定目錄。驅動會檢查 checksum。
   - **驅動會改掉 EDID 的 byte 8–11**：廠商／產品代碼一律換成 `MTT`／`0x1337`，再重算 byte 127 的 checksum，其餘 byte 不變。`PreventSpoof=false` 也一樣。所以螢幕裝置是 `DISPLAY\MTT1337\...`，`verify.ps1` 比對時略過這幾個 byte。
-  - 解析度仍以 XML 的 `<resolutions>` 為準，EDID 不會「模擬解析度」，所以 XML 只留 1920×1440@60，global refresh 只留 60。
+  - 解析度仍以 XML 的 `<resolutions>` 為準，EDID 不會「模擬解析度」，所以 XML 只留一組（`vdswitch.exe --apply` 改寫成使用中的解析度），global refresh 只留 60。
   - 有 named pipe `\\.\pipe\MTTVirtualDisplayPipe`，可用來重新載入等，目前沒用到。
 - **Windows 拔插**：
   - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
@@ -143,7 +144,20 @@ make linux                                                    # 只能在 Linux 
   - 測試：Go vet／test 通過。用強制英文的副本跑過 `verify.ps1`、`install.ps1` 的開頭，輸出是英文。`lang.sh` 在各種 `LANG` 下判斷正確。小工具的英文畫面沒能在這台截圖確認：測試時小工具沒有出現，全螢幕截圖又會拍到使用者其他視窗，所以停止截圖。
 - 2026-10-31 18:33：使用者從 0.2.0 安裝包安裝測試後，從「設定 > 應用程式」移除。紀錄顯示流程正確：Program Files 的 `launch-uninstall.ps1` → `%TEMP%` 副本的 `uninstall.ps1` → 結束後暫存資料夾已刪除。移除後檢查全部乾淨，包括語言登錄機碼、「應用程式」登記、新舊捷徑。
 - 2026-10-31 18:36：使用者確認英文和繁中介面都正常，小工具的字沒有被截斷。再用系統列的「Uninstall…」移除，檢查同樣全部乾淨。發佈 **v0.2.0**。
+- 2026-10-31：0.3.0 開發：可新增、切換、刪除解析度（只做 Windows，使用者要求 Linux 等 Windows 確認後再做）。
+  - 預設清單由使用者選定 14 組（都是 60 Hz）；剛安裝只有 1920×1080@60。
+  - 介面：系統列「解析度」子選單＋「管理解析度」視窗（`internal/ui/manager.go`）。手動輸入可填更新率。
+  - 套用：開關程式存 `profiles.json` 後觸發排程工作 `Apply`。它以最高權限執行 `vdswitch.exe --apply`（`internal/display/apply_windows.go`）：產生 EDID、用 regexp 改寫 XML 的 `<resolutions>` 和 `<g_refresh_rate>`、插入狀態下 `pnputil /restart-device`，再把結果寫到 `apply-result.json`。開關程式輪詢這個檔案，最多 30 秒。
+  - 系統列子選單的分隔線無法移除（`AddSeparator` 沒有回傳值），所以「管理解析度…」放最上面、分隔線固定，下面的解析度項目用 `Remove()` 重建。
+  - 修正 Range Limits：水平頻率超過 255 kHz 時用 EDID 1.4 的 offset 旗標（之前會溢位）。
+  - 移除時一併刪掉 `%APPDATA%\go-virtual-display`：之前會留下 widget.json，這次修正。
+  - 使用者另外要求設計「夢境裡想著一個螢幕」的程式圖示，給「安裝的程式」使用。先畫三個方案讓使用者選。
 - 待辦：
+  - Linux 版的解析度功能（Windows 確認後）：
+    - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
+    - helper 新增 `edid <檔案>`：驗證 128 bytes、header、checksum
+    - 用 debugfs 立即套用，背景重建 initramfs
+    - `strip_params` 同時清掉舊檔名的參數
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude

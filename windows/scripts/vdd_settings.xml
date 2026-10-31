@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!-- go-virtual-display：以 Virtual Display Driver 25.7.23 附帶的 vdd_settings.xml 為底修改 -->
-<!-- 只留一台螢幕、只提供 1920x1440@60，並啟用 user_edid.bin（edid/edid_1920x1440.bin） -->
+<!-- 只留一台螢幕、預設只提供 1920x1080@60，並啟用 user_edid.bin；切換解析度時由 vdswitch.exe --apply 改寫 resolutions 與 g_refresh_rate -->
 <vdd_settings>
     <monitors>
         <count>1</count>
@@ -15,7 +15,7 @@
     <resolutions>
         <resolution>
             <width>1920</width>
-            <height>1440</height>
+            <height>1080</height>
             <refresh_rate>60</refresh_rate>
         </resolution>
     </resolutions>

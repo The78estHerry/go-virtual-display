@@ -1,0 +1,156 @@
+package display
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"syscall"
+	"time"
+
+	"golang.org/x/sys/windows/registry"
+
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+)
+
+const (
+	applyTimeout  = 30 * time.Second
+	applyInterval = 300 * time.Millisecond
+)
+
+// applyResult 是 --apply 寫給開關程式看的結果。
+type applyResult struct {
+	Time  time.Time `json:"time"`
+	Error string    `json:"error,omitempty"`
+}
+
+func resultPath() (string, error) {
+	p, err := profile.Path()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(filepath.Dir(p), "apply-result.json"), nil
+}
+
+// ApplyActive 觸發最高權限排程工作 Apply（執行 vdswitch.exe --apply），並等它寫回結果。
+func (winController) ApplyActive() error {
+	start := time.Now()
+	if err := runTask("Apply"); err != nil {
+		return err
+	}
+	path, err := resultPath()
+	if err != nil {
+		return err
+	}
+	for deadline := start.Add(applyTimeout); time.Now().Before(deadline); time.Sleep(applyInterval) {
+		b, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var r applyResult
+		if json.Unmarshal(b, &r) != nil || r.Time.Before(start) {
+			continue // 還是上一次的結果，或正在寫入
+		}
+		if r.Error != "" {
+			return errors.New(r.Error)
+		}
+		return nil
+	}
+	return errors.New(i18n.T("Timed out while applying the resolution", "套用解析度逾時"))
+}
+
+// ApplyElevated 由 vdswitch.exe --apply 呼叫（以系統管理員身分執行）：
+// 依 profiles.json 使用中的解析度產生 EDID、改寫 VDD 設定，插入狀態下重新啟動裝置。
+// 只從使用者的設定讀取三個整數並驗證範圍，寫入的位置固定。結果同時寫到 apply-result.json。
+func ApplyElevated() error {
+	err := applyElevated()
+	r := applyResult{Time: time.Now()}
+	if err != nil {
+		r.Error = err.Error()
+	}
+	if path, perr := resultPath(); perr == nil {
+		if b, merr := json.Marshal(r); merr == nil {
+			_ = os.MkdirAll(filepath.Dir(path), 0o755)
+			_ = os.WriteFile(path, b, 0o644)
+		}
+	}
+	return err
+}
+
+func applyElevated() error {
+	p := profile.Load().ActiveProfile()
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	b, err := p.EDID()
+	if err != nil {
+		return err
+	}
+	dir := vddConfigDir()
+	if err := writeFileAtomic(filepath.Join(dir, "user_edid.bin"), b); err != nil {
+		return err
+	}
+	if err := setVDDResolution(filepath.Join(dir, "vdd_settings.xml"), p); err != nil {
+		return err
+	}
+	if st, _ := (winController{}).Status(); st == Plugged {
+		cmd := exec.Command("pnputil.exe", "/restart-device", "/deviceid", hardwareID)
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: createNoWindow}
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf(i18n.T("Cannot restart the virtual display: %v", "無法重新啟動虛擬螢幕：%v"), err)
+		}
+	}
+	return nil
+}
+
+// vddConfigDir 回傳 VDD 的設定目錄（安裝腳本寫在登錄檔 VDDPATH）。
+func vddConfigDir() string {
+	if k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\MikeTheTech\VirtualDisplayDriver`, registry.QUERY_VALUE|registry.WOW64_64KEY); err == nil {
+		defer k.Close()
+		if v, _, err := k.GetStringValue("VDDPATH"); err == nil && v != "" {
+			return v
+		}
+	}
+	return `C:\VirtualDisplayDriver`
+}
+
+var (
+	reResolutions = regexp.MustCompile(`(?s)<resolutions>.*?</resolutions>`)
+	reRefresh     = regexp.MustCompile(`<g_refresh_rate>\s*\d+\s*</g_refresh_rate>`)
+)
+
+// setVDDResolution 把 vdd_settings.xml 的解析度清單和 global 更新率改成只有 p 這一組。
+func setVDDResolution(path string, p profile.Profile) error {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	s := string(b)
+	if !reResolutions.MatchString(s) || !reRefresh.MatchString(s) {
+		return fmt.Errorf(i18n.T("Unexpected format in %s; please reinstall", "%s 的格式不符，請重新安裝"), path)
+	}
+	s = reResolutions.ReplaceAllLiteralString(s, fmt.Sprintf(
+		"<resolutions>\n        <resolution>\n            <width>%d</width>\n            <height>%d</height>\n            <refresh_rate>%d</refresh_rate>\n        </resolution>\n    </resolutions>",
+		p.Width, p.Height, p.Refresh))
+	first := true
+	s = reRefresh.ReplaceAllStringFunc(s, func(string) string {
+		if first {
+			first = false
+			return fmt.Sprintf("<g_refresh_rate>%d</g_refresh_rate>", p.Refresh)
+		}
+		return "" // 只留一個 global 更新率
+	})
+	return writeFileAtomic(path, []byte(s))
+}
+
+func writeFileAtomic(path string, b []byte) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}

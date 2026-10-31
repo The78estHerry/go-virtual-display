@@ -49,9 +49,16 @@ if (-not (Test-Path $InstallMarker)) {
     Set-Content $InstallMarker 'go-virtual-display'
 }
 Copy-Item (Join-Path $PSScriptRoot 'vdd_settings.xml') (Join-Path $VddConfigDir 'vdd_settings.xml') -Force
-Copy-Item $EdidFile (Join-Path $VddConfigDir 'user_edid.bin') -Force
 New-Item -Force $VddRegKey | Out-Null
 Set-ItemProperty $VddRegKey -Name VDDPATH -Value $VddConfigDir
+# 依使用者存的解析度產生 EDID 並改寫設定（新安裝是 1920x1080；重新安裝保留原本選的）。沒有執行檔時用預設 EDID
+$applied = $false
+if (Test-Path $AppExe) {
+    $p = Start-Process $AppExe -ArgumentList '--apply' -Wait -PassThru
+    $applied = $p.ExitCode -eq 0
+    if (-not $applied) { Write-Host (T 'Could not apply the saved resolution; using the default 1920x1080' '無法套用存下的解析度，改用預設的 1920x1080') -ForegroundColor Yellow }
+}
+if (-not $applied) { Copy-Item $EdidFile (Join-Path $VddConfigDir 'user_edid.bin') -Force }
 Write-Host (T "Applied settings and EDID to $VddConfigDir" "已套用設定與 EDID 到 $VddConfigDir")
 
 # 3. 安裝驅動，或在已安裝時重新載入
@@ -66,12 +73,16 @@ if (Get-VddDevice) {
 }
 Restart-DisplayDependentServices
 
-# 4. 拔插用排程工作：以最高權限執行，之後按開關不會跳 UAC
+# 4. 排程工作：以最高權限執行，之後按開關、切換解析度都不會跳 UAC
+#    Plug／Unplug 啟用或停用裝置；Apply 執行 vdswitch.exe --apply 套用使用者選的解析度
 #    有裝 Synergy 等服務時，再加一個動作：等螢幕建立好後重新啟動它（排程工作的多個動作會依序執行）
 $services = @($RestartServices | Where-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue })
-foreach ($t in @(@{ Name = 'Plug'; Verb = '/enable-device' }, @{ Name = 'Unplug'; Verb = '/disable-device' })) {
-    $action = @(New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
-        -Argument "--headless $env:SystemRoot\System32\pnputil.exe $($t.Verb) /deviceid `"$VddHardwareId`"")
+$pnputil = "--headless $env:SystemRoot\System32\pnputil.exe {0} /deviceid `"$VddHardwareId`""
+foreach ($t in @(
+        @{ Name = 'Plug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/enable-device') },
+        @{ Name = 'Unplug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/disable-device') },
+        @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' })) {
+    $action = @(New-ScheduledTaskAction -Execute $t.Exe -Argument $t.Arg)
     if ($services) {
         $names = ($services | ForEach-Object { "'$_'" }) -join ','
         $action += New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
@@ -81,8 +92,8 @@ foreach ($t in @(@{ Name = 'Plug'; Verb = '/enable-device' }, @{ Name = 'Unplug'
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskPath $TaskPath -TaskName $t.Name -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 }
-Write-Host (T "Created scheduled tasks $($TaskPath)Plug, $($TaskPath)Unplug (user: $User)" "已建立排程工作 $($TaskPath)Plug、$($TaskPath)Unplug（使用者：$User）")
-if ($services) { Write-Host ((T 'Will restart after plugging/unplugging: ' '拔插後會自動重新啟動：') + ($services -join ', ')) }
+Write-Host (T "Created scheduled tasks $($TaskPath)Plug, Unplug, Apply (user: $User)" "已建立排程工作 $($TaskPath)Plug、Unplug、Apply（使用者：$User）")
+if ($services) { Write-Host ((T 'Will restart after plugging/unplugging or switching resolution: ' '拔插或切換解析度後會自動重新啟動：') + ($services -join ', ')) }
 
 # 5. 開關程式
 $exe = $AppExe

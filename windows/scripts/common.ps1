@@ -9,19 +9,20 @@ $VddRegKey    = 'HKLM:\SOFTWARE\MikeTheTech\VirtualDisplayDriver'
 $VddMonitorId = 'DISPLAY\MTT1337'  # 驅動建立的螢幕裝置（驅動會把 EDID 的廠商／產品代碼換成 MTT／0x1337）
 $InstallMarker = Join-Path $VddConfigDir '.go-virtual-display'
 
-# 兩種配置：Release 安裝包把 EDID 和 vdswitch.exe 放在 scripts\ 裡；原始碼則各在 edid\、dist\windows\
-$Packaged     = Test-Path (Join-Path $PSScriptRoot 'edid_1920x1440.bin')
+# 兩種配置：Release 安裝包把預設 EDID 和 vdswitch.exe 放在 scripts\ 裡；原始碼則各在 edid\、dist\windows\
+# 預設 EDID（1920×1080）只在沒有 vdswitch.exe 時使用；有的話由 vdswitch.exe --apply 依使用者選的解析度產生
+$Packaged     = Test-Path (Join-Path $PSScriptRoot 'edid_1920x1080.bin')
 if ($Packaged) {
     $VendorDir = Join-Path $PSScriptRoot "downloads\vdd-$VddVersion"
-    $EdidFile  = Join-Path $PSScriptRoot 'edid_1920x1440.bin'
+    $EdidFile  = Join-Path $PSScriptRoot 'edid_1920x1080.bin'
     $AppExe    = Join-Path $PSScriptRoot 'vdswitch.exe'
 } else {
     $RepoRoot  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $VendorDir = Join-Path $RepoRoot "downloads\vdd-$VddVersion"
-    $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1440.bin'
+    $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1080.bin'
     $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
 }
-$AppVersion   = '0.2.0'  # 發佈版本；release.ps1 以此為準
+$AppVersion   = '0.3.0'  # 發佈版本；release.ps1 以此為準
 $AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名一律英文）
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除

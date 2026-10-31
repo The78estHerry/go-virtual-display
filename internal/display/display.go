@@ -36,5 +36,12 @@ type Controller interface {
 	Unplug() error
 }
 
+// ProfileApplier 由支援切換解析度的平台實作（目前只有 Windows）。
+// 使用前先用 profile 套件把要用的解析度設為使用中。
+type ProfileApplier interface {
+	// ApplyActive 讓虛擬螢幕改用 profiles.json 裡使用中的解析度，完成或失敗後才返回。
+	ApplyActive() error
+}
+
 // New 回傳目前平台的 Controller。
 func New() (Controller, error) { return newController() }

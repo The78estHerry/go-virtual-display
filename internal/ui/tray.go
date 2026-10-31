@@ -2,11 +2,13 @@ package ui
 
 import (
 	"runtime"
+	"sync"
 
 	"fyne.io/systray"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
 )
 
 func trayIcon(s Snapshot) []byte {
@@ -25,6 +27,10 @@ func (a *App) trayReady() {
 	mStatus.Disable()
 	systray.AddSeparator()
 	mToggle := systray.AddMenuItem(i18n.T("Plug in", "插入"), "")
+	var res *resolutionMenu
+	if a.model.ProfilesSupported() {
+		res = a.newResolutionMenu()
+	}
 	mWidget := systray.AddMenuItemCheckbox(i18n.T("Show desktop widget", "顯示桌面小工具"), "", a.widget.Visible())
 	mTop := systray.AddMenuItemCheckbox(i18n.T("Keep widget on top", "小工具固定在最上層"), "", LoadSettings().TopMost)
 	mAuto := systray.AddMenuItemCheckbox(i18n.T("Start at sign-in", "登入時自動啟動"), "", AutostartEnabled())
@@ -46,8 +52,11 @@ func (a *App) trayReady() {
 
 	a.model.Subscribe(func(s Snapshot) {
 		systray.SetIcon(trayIcon(s))
-		text := i18n.T("Virtual display 1920×1440: ", "虛擬螢幕 1920×1440：") + statusText(s)
+		text := i18n.T("Virtual display ", "虛擬螢幕 ") + s.Profiles.ActiveProfile().Size() + i18n.T(": ", "：") + statusText(s)
 		systray.SetTooltip(text)
+		if res != nil {
+			res.update(s)
+		}
 		mStatus.SetTitle(text)
 		switch {
 		case s.Busy || s.State == display.Unknown:
@@ -83,5 +92,75 @@ func (a *App) trayReady() {
 			a.quit()
 			return
 		}
+	}
+}
+
+// resolutionMenu 是系統列的「解析度」子選單：最上面是「管理解析度…」，分隔線下面列出存下的解析度，
+// 使用中的打勾，點一下就切換。清單改變時移除舊項目重建（分隔線無法移除，所以放在固定項目之後）。
+type resolutionMenu struct {
+	app    *App
+	parent *systray.MenuItem
+
+	mu    sync.Mutex
+	key   string // 上次建立時的清單與使用中狀態
+	busy  bool
+	items []*systray.MenuItem
+	stop  chan struct{}
+}
+
+func (a *App) newResolutionMenu() *resolutionMenu {
+	parent := systray.AddMenuItem(i18n.T("Resolution", "解析度"), "")
+	manage := parent.AddSubMenuItem(i18n.T("Manage resolutions…", "管理解析度…"), "")
+	parent.AddSeparator()
+	go func() {
+		for range manage.ClickedCh {
+			a.manager.Show()
+		}
+	}()
+	return &resolutionMenu{app: a, parent: parent}
+}
+
+func (r *resolutionMenu) update(s Snapshot) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if key := profilesKey(s.Profiles); key != r.key {
+		r.rebuild(s.Profiles)
+		r.key = key
+	}
+	if s.Busy != r.busy {
+		for _, it := range r.items {
+			if s.Busy {
+				it.Disable()
+			} else {
+				it.Enable()
+			}
+		}
+		r.busy = s.Busy
+	}
+}
+
+func (r *resolutionMenu) rebuild(l profile.List) {
+	if r.stop != nil {
+		close(r.stop)
+	}
+	for _, it := range r.items {
+		it.Remove()
+	}
+	r.items = r.items[:0]
+	r.stop = make(chan struct{})
+	r.busy = false
+	for _, p := range l.Profiles {
+		it := r.parent.AddSubMenuItemCheckbox(p.Label(), "", p.Key() == l.Active)
+		r.items = append(r.items, it)
+		go func(p profile.Profile, it *systray.MenuItem, stop chan struct{}) {
+			for {
+				select {
+				case <-it.ClickedCh:
+					r.app.model.UseProfile(p)
+				case <-stop:
+					return
+				}
+			}
+		}(p, it, r.stop)
 	}
 }

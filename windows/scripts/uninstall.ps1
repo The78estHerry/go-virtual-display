@@ -46,6 +46,8 @@ Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
 $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
 Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs $LegacyShortcut) -Force -ErrorAction SilentlyContinue
 Remove-Item $LanguageKey -Recurse -Force -ErrorAction SilentlyContinue
+# 使用者的設定：存下的解析度、小工具位置、套用結果（移除以同一個使用者的系統管理員身分執行）
+Remove-Item (Join-Path $env:APPDATA 'go-virtual-display') -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host (T 'Removed the switch and its sign-in startup entry' '已移除開關程式與開機啟動項')
 
 foreach ($name in 'vdd_settings.xml', 'user_edid.bin') {

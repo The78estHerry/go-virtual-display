@@ -1,7 +1,8 @@
-// make-edid 產生或檢查 1920×1440 虛擬螢幕用的 EDID。
+// make-edid 產生或檢查虛擬螢幕用的 EDID。
 //
-//	make-edid -o edid/edid_1920x1440.bin
-//	make-edid -check edid/edid_1920x1440.bin
+//	make-edid -w 1920 -h 1080 -hz 60 -o edid/edid_1920x1080.bin   指定解析度（和開關程式產生的相同）
+//	make-edid -o edid/edid_1920x1440.bin                          不指定時產生 0.2.0 以前固定使用的 1920×1440（Linux 版仍在用）
+//	make-edid -check edid/edid_1920x1080.bin
 package main
 
 import (
@@ -11,11 +12,15 @@ import (
 	"strings"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/edid"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
 )
 
 func main() {
 	out := flag.String("o", "", "輸出的 .bin 路徑")
 	check := flag.String("check", "", "要檢查的 EDID 檔案")
+	w := flag.Int("w", 0, "寬（不指定時產生舊版固定的 1920×1440）")
+	h := flag.Int("h", 0, "高")
+	hz := flag.Int("hz", 60, "更新率")
 	flag.Parse()
 
 	switch {
@@ -29,7 +34,16 @@ func main() {
 		}
 		report(b)
 	case *out != "":
-		b, err := edid.Build(edid.Default)
+		var b []byte
+		var err error
+		if *w > 0 {
+			p := profile.Profile{Width: *w, Height: *h, Refresh: *hz}
+			if err = p.Validate(); err == nil {
+				b, err = p.EDID()
+			}
+		} else {
+			b, err = edid.Build(edid.Default)
+		}
 		if err != nil {
 			fail(err)
 		}

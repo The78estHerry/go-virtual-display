@@ -198,7 +198,7 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 				area.Pop()
 				return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceAround}.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						l := material.Label(w.theme, unit.Sp(14), i18n.T("Virtual display 1920×1440", "虛擬螢幕 1920×1440"))
+						l := material.Label(w.theme, unit.Sp(14), i18n.T("Virtual display ", "虛擬螢幕 ")+snap.Profiles.ActiveProfile().Size())
 						l.Color = colorTitle
 						l.MaxLines = 1
 						return l.Layout(gtx)
@@ -225,6 +225,8 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 
 func statusText(s Snapshot) string {
 	switch {
+	case s.Applying:
+		return i18n.T("Applying…", "套用中…")
 	case s.Busy:
 		return i18n.T("Switching…", "切換中…")
 	case s.Err != nil:

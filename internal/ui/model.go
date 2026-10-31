@@ -2,11 +2,13 @@
 package ui
 
 import (
+	"strings"
 	"sync"
 	"time"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
 )
 
 const (
@@ -17,9 +19,21 @@ const (
 
 // Snapshot 是某一刻的狀態，供介面繪製。
 type Snapshot struct {
-	State display.State
-	Busy  bool  // 切換中
-	Err   error // 最近一次查詢或切換的錯誤
+	State    display.State
+	Busy     bool         // 切換中（插入／拔掉或套用解析度）
+	Applying bool         // 正在套用解析度
+	Err      error        // 最近一次查詢或切換的錯誤
+	Profiles profile.List // 存下的解析度與使用中的那一組
+}
+
+// profilesKey 用來判斷解析度清單或使用中的那一組是否改變。
+func profilesKey(l profile.List) string {
+	var b strings.Builder
+	b.WriteString(l.Active)
+	for _, p := range l.Profiles {
+		b.WriteString("|" + p.Key())
+	}
+	return b.String()
 }
 
 // Model 保存虛擬螢幕狀態，定期查詢並在改變時通知所有介面。
@@ -33,7 +47,7 @@ type Model struct {
 
 // NewModel 建立 Model 並開始定期查詢狀態。ctrl 可以是 nil（平台初始化失敗時），此時 initErr 會顯示在介面上。
 func NewModel(ctrl display.Controller, initErr error) *Model {
-	m := &Model{ctrl: ctrl, snap: Snapshot{Err: initErr}}
+	m := &Model{ctrl: ctrl, snap: Snapshot{Err: initErr, Profiles: profile.Load()}}
 	if ctrl != nil {
 		m.refresh()
 		go func() {
@@ -68,7 +82,8 @@ func (m *Model) set(update func(*Snapshot)) {
 	s := m.snap
 	ls := append([]func(Snapshot){}, m.listeners...)
 	m.mu.Unlock()
-	if s.State != old.State || s.Busy != old.Busy || errText(s.Err) != errText(old.Err) {
+	if s.State != old.State || s.Busy != old.Busy || s.Applying != old.Applying ||
+		errText(s.Err) != errText(old.Err) || profilesKey(s.Profiles) != profilesKey(old.Profiles) {
 		for _, f := range ls {
 			f(s)
 		}
@@ -142,3 +157,56 @@ func (timeoutError) Error() string {
 }
 
 var errTimeout error = timeoutError{}
+
+// ProfilesSupported 回傳這個平台能不能切換解析度（目前只有 Windows）。
+func (m *Model) ProfilesSupported() bool {
+	_, ok := m.ctrl.(display.ProfileApplier)
+	return ok
+}
+
+// UseProfile 讓虛擬螢幕改用 p 這組解析度；套用失敗時恢復原本使用中的那一組。
+func (m *Model) UseProfile(p profile.Profile) {
+	ap, ok := m.ctrl.(display.ProfileApplier)
+	if !ok {
+		return
+	}
+	m.mu.Lock()
+	if m.snap.Busy || m.snap.Profiles.Active == p.Key() {
+		m.mu.Unlock()
+		return
+	}
+	prev := m.snap.Profiles.ActiveProfile()
+	m.mu.Unlock()
+
+	l, err := profile.SetActive(p)
+	if err != nil {
+		m.set(func(s *Snapshot) { s.Err = err })
+		return
+	}
+	m.set(func(s *Snapshot) { s.Busy, s.Applying, s.Err, s.Profiles = true, true, nil, l })
+	go func() {
+		err := ap.ApplyActive()
+		if err != nil {
+			l, _ = profile.SetActive(prev)
+		}
+		st, serr := m.ctrl.Status()
+		if err == nil {
+			err = serr
+		}
+		m.set(func(s *Snapshot) { s.Busy, s.Applying, s.State, s.Err, s.Profiles = false, false, st, err, l })
+	}()
+}
+
+// AddProfile 把 p 加入清單。
+func (m *Model) AddProfile(p profile.Profile) error {
+	l, err := profile.Add(p)
+	m.set(func(s *Snapshot) { s.Profiles = l })
+	return err
+}
+
+// RemoveProfile 從清單刪除 p（使用中的不能刪）。
+func (m *Model) RemoveProfile(p profile.Profile) error {
+	l, err := profile.Remove(p)
+	m.set(func(s *Snapshot) { s.Profiles = l })
+	return err
+}

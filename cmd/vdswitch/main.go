@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
+	if runSubcommand() {
+		return
+	}
 	show, ok := acquireSingleInstance()
 	if !ok {
 		return // 已有一份在執行，已通知它顯示小工具

@@ -1,4 +1,4 @@
-﻿# 檢查虛擬螢幕：裝置狀態、系統讀到的 EDID 是否與 edid\edid_1920x1440.bin 相同、目前的螢幕解析度。
+﻿# 檢查虛擬螢幕：裝置狀態、系統讀到的 EDID 是否與 edid\user_edid.bin 相同、目前的螢幕解析度。
 # 不需要系統管理員權限。
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -14,7 +14,10 @@ if ($dev.Status -ne 'OK') {
     Write-Host (T '[!] The device is not enabled (currently unplugged); the checks below may not find the display' '[!] 裝置不是啟用狀態（目前是拔掉），以下檢查可能找不到螢幕') -ForegroundColor Yellow
 }
 
-$want = [IO.File]::ReadAllBytes($EdidFile)
+# 和目前使用中的 EDID 比對（切換解析度時由 vdswitch.exe --apply 寫入）
+$activeEdid = Join-Path $VddConfigDir 'user_edid.bin'
+if (-not (Test-Path $activeEdid)) { $activeEdid = $EdidFile }
+$want = [IO.File]::ReadAllBytes($activeEdid)
 # VDD 會把 byte 8–11（廠商代碼、產品代碼）換成自己的 MTT／0x1337，再重算 byte 127 的 checksum，比對時略過這幾個 byte
 $ignored = 8, 9, 10, 11, 127
 $found = $false
@@ -25,10 +28,10 @@ foreach ($key in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Enum\DISPLAY' -Er
         $diff = @(0..127 | Where-Object { $edid[$_] -ne $want[$_] })
         $where = "DISPLAY\$($key.PSChildName)\$($inst.PSChildName)"
         if ($diff.Count -eq 0) {
-            Write-Host (T "[O] The EDID recorded by Windows is identical to edid_1920x1440.bin ($where)" "[O] 系統記錄的 EDID 與 edid_1920x1440.bin 完全相同（$where）") -ForegroundColor Green
+            Write-Host (T "[O] The EDID recorded by Windows is identical to user_edid.bin ($where)" "[O] 系統記錄的 EDID 與 user_edid.bin 完全相同（$where）") -ForegroundColor Green
             $found = $true
         } elseif (-not ($diff | Where-Object { $_ -notin $ignored })) {
-            Write-Host (T "[O] The EDID recorded by Windows matches edid_1920x1440.bin; only the vendor/product ID was replaced by the driver with $($key.PSChildName) ($where)" "[O] 系統記錄的 EDID 與 edid_1920x1440.bin 相同，只有廠商／產品代碼被驅動換成 $($key.PSChildName)（$where）") -ForegroundColor Green
+            Write-Host (T "[O] The EDID recorded by Windows matches user_edid.bin; only the vendor/product ID was replaced by the driver with $($key.PSChildName) ($where)" "[O] 系統記錄的 EDID 與 user_edid.bin 相同，只有廠商／產品代碼被驅動換成 $($key.PSChildName)（$where）") -ForegroundColor Green
             $found = $true
         }
     }

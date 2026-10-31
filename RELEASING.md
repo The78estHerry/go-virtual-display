@@ -49,11 +49,11 @@ go-virtual-display-<版本>-windows/
     ├── uninstall.ps1         │
     ├── verify.ps1            │
     ├── vdd_settings.xml      ┘
-    ├── edid_1920x1440.bin    edid/edid_1920x1440.bin
+    ├── edid_1920x1080.bin    edid/edid_1920x1080.bin（沒有 vdswitch.exe 時才用的預設 EDID）
     └── vdswitch.exe          dist/windows/vdswitch.exe（build.ps1 編譯）
 ```
 
-- 腳本靠 `scripts\edid_1920x1440.bin` 是否存在判斷自己在安裝包裡（`common.ps1` 的 `$Packaged`）。在安裝包裡時，EDID 和開關程式從 `scripts\` 讀取，驅動下載到 `scripts\downloads\`。
+- 腳本靠 `scripts\edid_1920x1080.bin` 是否存在判斷自己在安裝包裡（`common.ps1` 的 `$Packaged`）。在安裝包裡時，EDID 和開關程式從 `scripts\` 讀取，驅動下載到 `scripts\downloads\`。
 - **不放**：
   - Go 原始碼、`go.mod`、`build.ps1`、`release.ps1`、`Makefile`
   - `make-edid.exe`：使用者用不到
