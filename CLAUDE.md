@@ -4,7 +4,7 @@
 
 ## 目的
 
-讓 Windows（以及 Linux）在沒有實體螢幕時，以為接著一台回報自訂 EDID 的螢幕（Windows 0.3.0 起解析度可自選，預設 1920×1080；Linux 固定 1920×1440），並提供系統列圖示＋桌面小工具形式的一鍵軟體拔插開關。
+讓 Windows（以及 Linux）在沒有實體螢幕時，以為接著一台回報自訂 EDID 的螢幕（解析度可自選，預設 1920×1080：Windows 0.3.0 起、Linux 0.4.0 起；Linux 0.3.0 以前固定 1920×1440），並提供系統列圖示＋桌面小工具形式的一鍵軟體拔插開關。
 
 ## 已做的決定與原因
 
@@ -28,11 +28,11 @@
 
 | 路徑 | 用途 |
 |---|---|
-| `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、`CVTReducedBlanking`（cvt.go）、舊版固定參數 `Default`（DMT 1920×1440@60，Linux 版用） |
+| `internal/edid` | EDID 1.4 組裝（`Build`）、解析（`Parse`）、`CVTReducedBlanking`（cvt.go）、舊版固定參數 `Default`（DMT 1920×1440@60，0.3.0 以前的 Linux 版用） |
 | `assets/` | 程式圖示：`icon.svg`（方案 A1，原始檔）、`icon.ico`、`icon-256.png`、`make-icon.ps1`（用 Edge headless 轉 PNG 再組 ICO，用 windres 產生 `cmd/vdswitch/rsrc_windows_amd64.syso`） |
 | `internal/profile` | 解析度清單 `profiles.json`（`Load`／`Add`／`Remove`／`SetActive`）、14 組 `Presets`、每組的 `EDID()`、`Validate()` |
 | `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
-| `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是 Windows 安裝的預設，後者是 Linux 版固定使用（和 0.2.0 以前完全相同） |
+| `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是安裝時的預設（Windows、Linux），後者是 0.3.0 以前 Linux 版使用的（和 0.2.0 以前完全相同） |
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
 | `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `internal/i18n` | 介面語言：`T(英文, 繁中)`。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
@@ -204,13 +204,28 @@ make linux                                                    # 只能在 Linux 
   - 已知問題：0.3.0 的 Linux 版系統列文字顯示 `profile.Default` 的 1920×1080，實際是 1920×1440。
   - Git Bash 裡的 Python 讀 stdin、印出中文會用 cp932，看起來像亂碼。要用 `PYTHONUTF8=1` 並從檔案讀寫，不要從 stdin 讀中文。
 - 使用者問 icon 三個方案的比較網頁：上一個工作階段的暫存資料夾已經清掉，只剩定案的 A1（`assets/icon.svg`）。
+- 2026-11-01：使用者要求 Gitea 的 README 顯示程式圖示：README 最上方放 `assets/icon-256.png`（相對路徑，Gitea 會直接顯示）。
+- 2026-11-01：0.4.0 開發：**Linux 版也能切換解析度**（`$AppVersion` 已改成 0.4.0，還沒發佈）。
+  - 開關程式的解析度選單和管理視窗本來就是跨平台的（看 `ProfileApplier`），Linux 只要實作 `ApplyActive`。
+  - `ApplyActive`：產生 EDID，`pkexec vdswitch-helper edid` 從 **stdin** 傳入。用 stdin 而不是檔案路徑，root 就不用讀使用者指定的路徑。
+  - 小幫手 `edid`：讀 129 bytes 判斷是否剛好 128、檢查 header 和 checksum，寫到 `/lib/firmware/edid/go-virtual-display.bin`。
+    - 有 debugfs 時寫進 `edid_override`；插入中的話先 `off` 再 `on`，因為 force 狀態沒變時核心不會重新讀取模式。
+    - 印出 `applied` 或 `reboot-required`。
+    - 背景用 `setsid flock … update-initramfs -u`（或 `dracut -f`）重建 initramfs。輸出要全部導走，否則 Go 的 `CombinedOutput` 會等它結束。
+  - `reboot-required` 對應 `display.ErrRebootRequired`：不算失敗，不還原使用中的解析度。`Snapshot.RebootPending` 讓小工具顯示「重新開機後套用」。不能放在 `Err`，因為 `Err` 每 2 秒的輪詢會被蓋掉。
+  - `vdswitch --write-edid <檔案>`（Linux）：install.sh 的一般使用者階段用它依 `~/.config/go-virtual-display/profiles.json` 產生 EDID，用 `--edid` 傳給 root 階段。優先順序：使用者的 → 重新安裝時原本的 → 預設的 1080。
+  - 升級：`strip_params` 和 uninstall 用 `(go-virtual-display|edid_1920x1440)\.bin` 同時清掉新舊檔名，並刪掉舊的 `edid_1920x1440.bin`。uninstall 也刪 `~/.config/go-virtual-display`，和 Windows 一致。
+  - 安裝包改成扁平配置：`install.sh`、`uninstall.sh` 放最上層，其餘在 `scripts/`。`install.sh` 依 `scripts/edid_1920x1080.bin` 是否存在判斷自己在安裝包裡。`release-linux.ps1` 依版本自動選配置，`-Ref v0.3.0` 仍會產生舊配置。
+  - 測試（都在 Docker 的 `ubuntu:22.04`）：
+    - 模擬測試：把 `/sys`、`/lib/firmware`、`/etc` 等換成假目錄，40 項全部通過。涵蓋從 0.3.0 升級、重新安裝、小幫手的立即套用和需要重開機兩種情況、拒絕錯誤的 EDID、verify、移除、安裝包配置。
+    - `release-linux.ps1` 在容器裡用 cgo 編譯成功，所以 Linux 的介面程式碼也能編譯。
+    - 真的執行檔 `--write-edid`：預設產生 1080，有 profiles.json 時依使用者選的產生。
+    - **沒測到**：一般使用者階段的 sudo 流程、真正的 DRM、debugfs、polkit、Gio 的畫面。
+  - 測試用安裝包：`dist\release\go-virtual-display-0.4.0-linux-amd64.tar.gz`。
 - 待辦：
-  - Linux 版的解析度功能（Windows 確認後）：
-    - 韌體檔名改成固定的 `go-virtual-display.bin`，開機參數不用隨解析度改
-    - helper 新增 `edid <檔案>`：驗證 128 bytes、header、checksum
-    - 用 debugfs 立即套用，背景重建 initramfs
-    - `strip_params` 同時清掉舊檔名的參數
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
+  - 決定 0.4.0 什麼時候發佈：Linux 沒有實機測過。Windows 的變更只有共用的 `model.go`，功能沒變
+  - Linux 的 install.sh 還沒有「已安裝時先提醒」（Windows 0.3.0 才有）
 
 ## 給之後的 Claude
 
