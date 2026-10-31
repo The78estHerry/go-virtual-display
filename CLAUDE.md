@@ -39,7 +39,7 @@
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
 | `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\scripts\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
 | `windows/scripts/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
-| `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）。其餘在 `linux/scripts/`：`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop` |
+| `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）。其餘在 `linux/scripts/`：`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop`。`linux/tests/`：Docker 模擬測試（`run.ps1` 一鍵執行） |
 | `downloads/` | 下載的 VDD（gitignore） |
 | `dist/` | 編譯產物（gitignore），`dist/release/` 是安裝包 |
 | `release.ps1`、`RELEASING.md` | 產生 Release 安裝包；發佈步驟與各平台安裝包的檔案清單 |
@@ -227,7 +227,13 @@ make linux                                                    # 只能在 Linux 
   - `go-virtual-display-0.4.0-linux-amd64.tar.gz`（SHA-256 `2292AD6D…01BFB18E`）
 - 待辦：
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
-  - Linux 的 install.sh 還沒有「已安裝時先提醒」（Windows 0.3.0 才有）
+- 2026-11-01：0.4.1 開發：Linux 的 `install.sh` 也加上「已安裝時先提醒」（`$AppVersion` 已改成 0.4.1，還沒發佈）。
+  - 版本號：安裝包是 `release-linux.ps1` 寫的 `scripts/VERSION`；原始碼則用 sed 讀 `windows/scripts/common.ps1` 的 `$AppVersion`，仍然只有一個來源。安裝時寫進 `/etc/go-virtual-display.conf` 的 `VERSION=`，0.4.0 以前沒有記錄，顯示「不明（0.4.0 以前）」。
+  - 判斷已安裝：`/etc/go-virtual-display.conf` 存在（每個版本都會寫）。在一般使用者階段詢問，比較版本用 `sort -V`。
+  - 回答 y：先記下原本的接頭，執行同一個資料夾裡的 `uninstall.sh --keep-user-settings`，再安裝。沒有指定接頭時沿用原本的，因為移除會刪掉設定檔。語言在 `lang.sh` 載入時已從設定檔讀出，所以語言選單的預設值仍是原本的。
+  - `--keep-user-settings` 保留 `~/.config/go-virtual-display` 和登入時自動啟動，並且不印「移除完成」。Windows 的 `-KeepUserSettings` 仍會刪掉 Run 機碼，兩邊不一致；Linux 保留是因為它也算使用者的設定。
+  - 沒有終端機（`[ -t 0 ]` 不成立）時不詢問，直接覆蓋安裝（install.sh 可以重複執行）。
+  - 測試：`linux/tests/run.ps1` 在 Docker 跑兩支腳本。`simulate.sh` 40 項（原本的），`reinstall.sh` 26 項（新增）：一般使用者＋真的 sudo、用 `script` 提供終端機，涵蓋 n 取消、y 移除再安裝（保留接頭、語言、設定）、降版、升級、沒有 VERSION、沒有終端機、一般移除。全部通過。
 
 ## 給之後的 Claude
 

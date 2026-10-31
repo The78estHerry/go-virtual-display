@@ -2,7 +2,11 @@
 # 一鍵移除：移除 install.sh 安裝的所有檔案、開機參數與 initramfs 設定，並把接頭恢復為自動偵測。
 # 也會刪掉使用者的設定（存下的解析度、小工具位置），和 Windows 版一致。
 # 以一般使用者執行即可，需要 root 的部分會自動透過 sudo 執行。
+#   --keep-user-settings  保留使用者的設定（存下的解析度、小工具位置、登入時自動啟動）。install.sh 覆蓋安裝時先移除舊版會用到
 set -euo pipefail
+
+KEEP_USER_SETTINGS=0
+[ "${1:-}" = --keep-user-settings ] && KEEP_USER_SETTINGS=1
 
 GRUB_DEFAULT_FILE=/etc/default/grub
 # shellcheck source=scripts/lang.sh
@@ -10,8 +14,10 @@ GRUB_DEFAULT_FILE=/etc/default/grub
 
 if [ "$(id -u)" -ne 0 ]; then
     pkill -x vdswitch 2>/dev/null || true
-    rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/go-virtual-display.desktop"
-    rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/go-virtual-display" # 存下的解析度、小工具位置
+    if [ "$KEEP_USER_SETTINGS" -ne 1 ]; then
+        rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/go-virtual-display.desktop"
+        rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/go-virtual-display" # 存下的解析度、小工具位置
+    fi
     t "==> Administrator permission is required. Please enter your password:" "==> 需要系統管理員權限，請輸入密碼："
     exec sudo bash "$0" "$@"
 fi
@@ -57,5 +63,7 @@ if [ -f /etc/dracut.conf.d/go-virtual-display.conf ]; then
     dracut -f
 fi
 
-echo
-t "Uninstall complete. Everything is back to the original state after a reboot." "移除完成。重新開機後就完全恢復原狀。"
+if [ "$KEEP_USER_SETTINGS" -ne 1 ]; then
+    echo
+    t "Uninstall complete. Everything is back to the original state after a reboot." "移除完成。重新開機後就完全恢復原狀。"
+fi

@@ -83,6 +83,7 @@ go-virtual-display-<版本>-linux-amd64/
 ├── README.txt                使用說明，英文在前、繁中在後（release-linux.ps1 產生，UTF-8＋LF）
 └── scripts/                  linux/scripts/ 的所有檔案，加上：
     ├── edid_1920x1080.bin    edid/edid_1920x1080.bin（預設 EDID）
+    ├── VERSION               版本號（release-linux.ps1 寫入，0.4.1 起）。install.sh 顯示並記到 /etc/go-virtual-display.conf
     └── vdswitch              開關程式（容器內編譯）
 ```
 

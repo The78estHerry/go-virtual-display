@@ -151,6 +151,8 @@ if [ "$LAYOUT" = flat ]; then
     cp linux/install.sh linux/uninstall.sh "$stage/"
     cp linux/scripts/* "$stage/scripts/"
     cp edid/edid_1920x1080.bin "$stage/scripts/"
+    printf '%s\n' "$VERSION" > "$stage/scripts/VERSION" # install.sh 顯示與記錄版本用（0.4.1 起）
+    chmod 644 "$stage/scripts/VERSION"
     install -m 755 /tmp/vdswitch "$stage/scripts/vdswitch"
     cp /work/README.txt "$stage/"
     chmod 755 "$stage"/*.sh "$stage"/scripts/verify.sh "$stage"/scripts/vdswitch-helper "$stage"/scripts/initramfs-hook
@@ -170,7 +172,7 @@ tar -tvzf "/out/$NAME.tar.gz"
 [IO.File]::WriteAllText((Join-Path $work 'build.sh'), ($build -replace "`r`n", "`n"), (New-Object Text.UTF8Encoding $false))
 
 docker run --rm --platform linux/amd64 `
-    -e "GO_VERSION=$GoVersion" -e "NAME=$name" -e "LAYOUT=$layout" `
+    -e "GO_VERSION=$GoVersion" -e "NAME=$name" -e "LAYOUT=$layout" -e "VERSION=$Version" `
     -v "${work}:/work:ro" -v "$(Join-Path $PSScriptRoot 'dist\release'):/out" `
     debian:bullseye bash /work/build.sh
 if ($LASTEXITCODE -ne 0) { throw "容器內編譯失敗（代碼 $LASTEXITCODE）" }

@@ -27,6 +27,14 @@ EDID_NAME=go-virtual-display.bin
 OLD_EDID_NAME=edid_1920x1440.bin
 FIRMWARE=/lib/firmware/edid/$EDID_NAME
 GRUB_DEFAULT_FILE=/etc/default/grub
+# 版本號：安裝包裡是 release-linux.ps1 寫的 scripts/VERSION；原始碼則讀 windows/scripts/common.ps1 的 $AppVersion（唯一的來源）
+APP_VERSION=""
+if [ -f "$SCRIPTS/VERSION" ]; then
+    APP_VERSION=$(head -n 1 "$SCRIPTS/VERSION" | tr -d '\r')
+elif [ -n "$REPO" ] && [ -f "$REPO/windows/scripts/common.ps1" ]; then
+    APP_VERSION=$(sed -n "s/^\$AppVersion *= *'\([^']*\)'.*/\1/p" "$REPO/windows/scripts/common.ps1" | head -n 1)
+fi
+APP_VERSION=${APP_VERSION:-unknown}
 
 # root 階段的參數由一般使用者階段帶入：--lang <語言>、--edid <依使用者解析度產生的 EDID>
 EDID_IN=""
@@ -67,8 +75,50 @@ pick_connector() {
     return 1
 }
 
-# ---------- 一般使用者階段：選語言、編譯、提權、開啟開關程式 ----------
+# ---------- 一般使用者階段：已安裝時先確認、選語言、編譯、提權、開啟開關程式 ----------
 if [ "$(id -u)" -ne 0 ]; then
+    # 已經安裝過：告訴使用者目前和要安裝的版本，同意後先移除舊版（保留解析度清單和語言），再全新安裝。
+    # 0.4.0 以前沒有在設定檔記錄版本
+    if [ -f "$CONF" ]; then
+        installed=$(sed -n 's/^VERSION=//p' "$CONF" | head -n 1)
+        shown=${installed:-$(t 'unknown (0.4.0 or earlier)' '不明（0.4.0 以前）')}
+        if [ -t 0 ]; then
+            echo
+            t "Virtual Display Switch is already installed." "虛擬螢幕開關已經安裝了。"
+            t "  Installed version: $shown" "  目前版本：$shown"
+            t "  This package:      $APP_VERSION" "  要安裝的版本：$APP_VERSION"
+            if [ -n "$installed" ] && [ "$APP_VERSION" != unknown ]; then
+                if [ "$installed" = "$APP_VERSION" ]; then
+                    t "  (Same version: this will reinstall it.)" "  （版本相同，會重新安裝）"
+                elif [ "$(printf '%s\n%s\n' "$installed" "$APP_VERSION" | sort -V | tail -n 1)" = "$installed" ]; then
+                    t "  Warning: the installed version is newer; this will downgrade it." "  注意：目前的版本比較新，繼續會降版。"
+                fi
+            fi
+            t "  Your resolution list and language are kept." "  你新增的解析度和選的語言會保留。"
+            echo
+            read -r -p "$(t 'Uninstall the current version and install this one? (y/N) : ' '要先移除目前的版本，再安裝這個版本嗎？(y/N) : ')" answer || true
+            case "$answer" in
+                y | Y | yes | Yes | YES) ;;
+                *)
+                    t "Cancelled. Nothing was changed." "已取消，沒有做任何變更。"
+                    exit 0
+                    ;;
+            esac
+            # 移除會刪掉設定檔，先記下原本的接頭；沒有指定接頭時沿用它
+            old_connector=$(sed -n 's/^CONNECTOR=\(card[0-9]*-[A-Za-z0-9-]*\)$/\1/p' "$CONF" | head -n 1)
+            echo
+            t "==> Uninstalling the current version ..." "==> 移除目前的版本 ..."
+            bash "$HERE/uninstall.sh" --keep-user-settings
+            echo
+            t "==> Installing version $APP_VERSION ..." "==> 安裝版本 $APP_VERSION ..."
+            if [ $# -eq 0 ] && [ -n "$old_connector" ]; then
+                set -- "$old_connector"
+            fi
+        else
+            # 沒有終端機可以詢問時，直接覆蓋安裝（install.sh 可以重複執行）
+            t "==> Already installed ($shown); installing $APP_VERSION over it ..." "==> 已經安裝（$shown），直接覆蓋安裝 $APP_VERSION ..."
+        fi
+    fi
     if [ -t 0 ]; then
         default=1
         [ "$GVD_LANG" = zh-TW ] && default=2
@@ -146,7 +196,7 @@ elif [ ! -f "$FIRMWARE" ]; then
     install -D -m 644 "$DEFAULT_EDID" "$FIRMWARE"
 fi
 rm -f "/lib/firmware/edid/$OLD_EDID_NAME" # 0.3.0 以前的檔名
-printf 'CONNECTOR=%s\nLANGUAGE=%s\n' "$CONNECTOR" "$GVD_LANG" > "$CONF"
+printf 'CONNECTOR=%s\nLANGUAGE=%s\nVERSION=%s\n' "$CONNECTOR" "$GVD_LANG" "$APP_VERSION" > "$CONF"
 chmod 644 "$CONF"
 install -D -m 755 "$SCRIPTS/vdswitch-helper" "$LIBEXEC/vdswitch-helper"
 install -D -m 644 "$SCRIPTS/io.littleherry.vdswitch.policy" /usr/share/polkit-1/actions/io.littleherry.vdswitch.policy
