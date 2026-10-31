@@ -141,9 +141,9 @@ make linux                                                    # 只能在 Linux 
   - Linux 腳本共用 `linux/scripts/lang.sh` 的 `t` 函式。`install.sh` 互動執行時讓使用者選語言，用 `--lang` 傳給 root 階段，存進 `/etc/go-virtual-display.conf` 的 `LANGUAGE`。`vdswitch-helper` 只用英文。
   - 檔名改成英文：安裝包的 `說明.txt` 改成雙語的 `README.txt`，開始功能表捷徑改成 `Virtual Display Switch.lnk`。
   - 測試：Go vet／test 通過。用強制英文的副本跑過 `verify.ps1`、`install.ps1` 的開頭，輸出是英文。`lang.sh` 在各種 `LANG` 下判斷正確。小工具的英文畫面沒能在這台截圖確認：測試時小工具沒有出現，全螢幕截圖又會拍到使用者其他視窗，所以停止截圖。
-- 2026-10-31 18:33：使用者從 0.2.0 安裝包安裝測試後，從「設定 > 應用程式」移除。紀錄顯示流程正確：Program Files 的 `launch-uninstall.ps1` → `%TEMP%` 副本的 `uninstall.ps1` → 結束後暫存資料夾已刪除。移除後檢查全部乾淨，包括語言登錄機碼、「應用程式」登記、新舊捷徑。系統列的「Uninstall…」還沒實測。
+- 2026-10-31 18:33：使用者從 0.2.0 安裝包安裝測試後，從「設定 > 應用程式」移除。紀錄顯示流程正確：Program Files 的 `launch-uninstall.ps1` → `%TEMP%` 副本的 `uninstall.ps1` → 結束後暫存資料夾已刪除。移除後檢查全部乾淨，包括語言登錄機碼、「應用程式」登記、新舊捷徑。
+- 2026-10-31 18:36：使用者確認英文和繁中介面都正常，小工具的字沒有被截斷。再用系統列的「Uninstall…」移除，檢查同樣全部乾淨。發佈 **v0.2.0**。
 - 待辦：
-  - 0.2.0 實機測試：從安裝包安裝（試英文和中文）、看小工具和系統列的文字，分別用系統列和「設定 > 應用程式」移除，並檢查是否乾淨。通過後打 tag、發佈 Release
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
