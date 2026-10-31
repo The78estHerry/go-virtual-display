@@ -74,7 +74,19 @@ powershell -ExecutionPolicy Bypass -File .\release-linux.ps1 -Ref v0.3.0   # 預
 - 需要 Docker Desktop（Linux 容器）。用 `debian:bullseye`（glibc 2.31）編譯，Ubuntu 20.04／Debian 11 以後都能執行。Go 從 go.dev 下載並比對 SHA-256。
 - Debian 11 的安全更新已經搬到 `archive.debian.org`，腳本會改寫 apt 來源。
 - 用 tar 才能保留執行權限。檔案擁有者固定為 root（0/0）。
-- 0.3.0 的腳本以原始碼的目錄配置找檔案，所以安裝包也沿用這個配置：
+- 0.4.0 起是扁平配置（和 Windows 一樣），`install.sh` 依 `scripts/edid_1920x1080.bin` 是否存在判斷自己在安裝包裡：
+
+```
+go-virtual-display-<版本>-linux-amd64/
+├── install.sh                一鍵安裝（linux/install.sh）
+├── uninstall.sh              一鍵移除（linux/uninstall.sh）
+├── README.txt                使用說明，英文在前、繁中在後（release-linux.ps1 產生，UTF-8＋LF）
+└── scripts/                  linux/scripts/ 的所有檔案，加上：
+    ├── edid_1920x1080.bin    edid/edid_1920x1080.bin（預設 EDID）
+    └── vdswitch              開關程式（容器內編譯）
+```
+
+- 0.3.0 的腳本只認得原始碼的目錄配置，`release-linux.ps1 -Ref v0.3.0` 會自動改用這個配置：
 
 ```
 go-virtual-display-<版本>-linux-amd64/
@@ -87,7 +99,6 @@ go-virtual-display-<版本>-linux-amd64/
 └── dist/linux/vdswitch       開關程式（容器內編譯）
 ```
 
-- 之後改了 Linux 腳本時，可以改成和 Windows 一樣的扁平配置（install.sh、uninstall.sh 放最上層），要同時改 `release-linux.ps1` 和這份清單。
 - 打包後，用 `ubuntu:22.04` 容器檢查：腳本 `bash -n`、`readelf -d` 看依賴的函式庫、`ldd` 沒有 not found。
 
 ## 版本紀錄

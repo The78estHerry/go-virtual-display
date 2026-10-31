@@ -1,6 +1,8 @@
+<p align="center"><img src="assets/icon-256.png" width="160" alt="go-virtual-display 圖示：夢的泡泡裡想著一台彩虹螢幕"></p>
+
 # go-virtual-display
 
-讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除（Windows），預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
+讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除，預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
 
 適合用在無頭主機的遠端桌面或串流、錄影，以及需要特定解析度的測試。
 
@@ -11,7 +13,7 @@
 | | Windows | Linux |
 |---|---|---|
 | 虛擬螢幕來源 | [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver)（已簽章的開源 IddCx 驅動，MIT） | 核心內建的 DRM EDID 覆寫，讓空接頭被當成接著螢幕 |
-| 自訂 EDID | 驅動讀取 `C:\VirtualDisplayDriver\user_edid.bin` | 開機參數 `drm.edid_firmware=` |
+| 自訂 EDID | 驅動讀取 `C:\VirtualDisplayDriver\user_edid.bin` | 開機參數 `drm.edid_firmware=` 指向 `/lib/firmware/edid/go-virtual-display.bin`；切換解析度時寫入 debugfs 的 `edid_override` 立即生效 |
 | 拔插 | 停用／啟用驅動裝置（`pnputil`），由「最高權限」排程工作執行，按開關不跳 UAC | 寫入 `/sys/class/drm/<接頭>/status`（`on`／`off`），由 polkit 允許使用中的使用者免密碼執行 |
 
 驅動本體**不放在這個 repo**，安裝腳本會下載固定版本（25.7.23）並驗證 SHA-256。
@@ -27,24 +29,26 @@
 - Virtual Display Driver 會把廠商／產品代碼換成 `MTT`／`0x1337`，所以每種解析度靠序號字串區分。Windows 會分別記住每種解析度的排列和縮放
 
 repo 裡有兩份產好的 EDID：
-- `edid/edid_1920x1080.bin`：Windows 安裝時的預設
-- `edid/edid_1920x1440.bin`：Linux 版目前固定使用
+- `edid/edid_1920x1080.bin`：安裝時的預設（Windows、Linux）
+- `edid/edid_1920x1440.bin`：0.3.0 以前的 Linux 版使用，留著當作 DMT 時序的參考
 
 ```
 go run ./cmd/make-edid -w 2560 -h 1440 -hz 60 -o out.bin   # 產生指定解析度
 go run ./cmd/make-edid -check edid/edid_1920x1080.bin      # 檢查並列出內容
 ```
 
-## 解析度（Windows）
+## 解析度
 
-- **切換**：系統列圖示按右鍵 →「解析度」，點一下要用的解析度。虛擬螢幕會短暫重新啟動，有裝 Synergy 的話也會自動重新啟動。在拔掉狀態下切換，下次插入時生效。
+- **切換**：系統列圖示按右鍵 →「解析度」，點一下要用的解析度。虛擬螢幕會短暫重新啟動，Windows 有裝 Synergy 的話也會自動重新啟動。在拔掉狀態下切換，下次插入時生效。
 - **管理**：同一個子選單的「管理解析度…」會打開視窗：
   - 已存的解析度可以「使用」或「刪除」，使用中的不能刪
   - 常見解析度按一下就加入（都是 60 Hz）：1920×1080、2560×1440、3840×2160、1280×720、1920×1200、2560×1600、3840×2400、640×480、1024×768、1600×1200、1920×1440、1280×1024、2560×1080、1080×1920
   - 也可以手動輸入寬、高、更新率。寬高 320–4095，更新率 24–240 Hz；太高而無法用 EDID 表示時會顯示錯誤
-- 剛安裝時只有 1920×1080@60。清單存在 `%APPDATA%\go-virtual-display\profiles.json`。覆蓋安裝（升級或重裝）時會保留；移除時會一併刪掉。
-- 切換由最高權限排程工作 `\go-virtual-display\Apply` 執行 `vdswitch.exe --apply`，它會產生 EDID、改寫 `C:\VirtualDisplayDriver` 的設定，所以不會跳 UAC。
-- Linux 版還不支援，目前固定 1920×1440。
+- 剛安裝時只有 1920×1080@60。清單存在 `%APPDATA%\go-virtual-display\profiles.json`（Linux 是 `~/.config/go-virtual-display/profiles.json`）。覆蓋安裝（升級或重裝）時會保留；移除時會一併刪掉。
+- **Windows**：切換由最高權限排程工作 `\go-virtual-display\Apply` 執行 `vdswitch.exe --apply`，它會產生 EDID、改寫 `C:\VirtualDisplayDriver` 的設定，所以不會跳 UAC。
+- **Linux**：開關程式產生 EDID，透過 polkit 交給小幫手（`vdswitch-helper edid`，免密碼）。小幫手檢查長度、標頭和 checksum 後換掉 `/lib/firmware/edid/go-virtual-display.bin`，並在背景重建 initramfs。開機參數固定指向這個檔名，所以不用改 GRUB。
+  - 系統有 debugfs（`/sys/kernel/debug/dri/<卡>/<接頭>/edid_override`）時立即生效
+  - 沒有的話（例如開了 Secure Boot 的 lockdown），小工具會顯示「重新開機後套用」
 
 ## Windows
 
@@ -118,20 +122,21 @@ Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd
 用一般使用者在終端機執行（不用加 sudo，需要時會自己詢問密碼）：
 
 ```bash
-linux/install.sh
+linux/install.sh        # 原始碼
+./install.sh            # Release 安裝包（go-virtual-display-<版本>-linux-amd64.tar.gz 解壓縮後）
 ```
 
 接著全部自動完成：
 
-1. 如果還沒編譯但有裝 Go，會先編譯開關程式
+1. 如果還沒編譯但有裝 Go，會先編譯開關程式（只有原始碼需要；安裝包已附編好的）
 2. 自動挑一個沒接螢幕的外接接頭（HDMI、DP 等，不會選筆電內建面板）。要指定的話用 `linux/install.sh card0-HDMI-A-1`
-3. 安裝 EDID、拔插小幫手和 polkit 規則，之後按開關不用輸入密碼
+3. 依你存的解析度產生 EDID（新安裝是 1920×1080），安裝 EDID、小幫手和 polkit 規則，之後拔插、切換解析度都不用輸入密碼
 4. 把 EDID 加進 initramfs
 5. 在 `/etc/default/grub` 加上開機參數，並重新產生 GRUB 設定。第一次會備份成 `grub.go-virtual-display.bak`
 6. 系統有 debugfs 的話直接套用一次，不用重開機。沒有的話要重新開機
 7. 打開開關程式
 
-可以重複執行，不會重複加參數。換接頭時會把舊接頭的參數清掉。
+可以重複執行，不會重複加參數，也會保留你選的解析度。換接頭時會把舊接頭的參數清掉。從 0.3.0 以前的版本升級時，會把舊的 `edid_1920x1440.bin` 和它的開機參數換成新的檔名。
 
 ### 一鍵移除
 
@@ -139,7 +144,7 @@ linux/install.sh
 linux/uninstall.sh
 ```
 
-這會移除所有安裝的檔案、開機參數、initramfs 設定和登入時自動啟動的設定，並把接頭恢復成自動偵測。只會移除本專案加的參數，你原本的開機參數不會被動到。重新開機後就完全恢復原狀。
+這會移除所有安裝的檔案、開機參數、initramfs 設定、登入時自動啟動的設定和你存的解析度（`~/.config/go-virtual-display`），並把接頭恢復成自動偵測。只會移除本專案加的參數，你原本的開機參數不會被動到。重新開機後就完全恢復原狀。
 
 檢查用 `linux/scripts/verify.sh`。
 

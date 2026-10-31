@@ -22,7 +22,7 @@ if ($Packaged) {
     $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1080.bin'
     $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
 }
-$AppVersion   = '0.3.0'  # 發佈版本；release.ps1 以此為準
+$AppVersion   = '0.4.0'  # 發佈版本；release.ps1、release-linux.ps1 以此為準
 $AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名一律英文）
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $DesktopDir   = [Environment]::GetFolderPath('Desktop')  # 安裝與移除都以同一個使用者的系統管理員身分執行

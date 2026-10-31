@@ -1,20 +1,75 @@
 #!/bin/sh
-# 以 root 執行（透過 pkexec）：把設定好的接頭強制設為接上（on）或拔掉（off）。
-# 只接受 on／off，接頭名稱只從 root 擁有的 /etc/go-virtual-display.conf 讀取。
+# 以 root 執行（透過 pkexec）。接頭名稱只從 root 擁有的 /etc/go-virtual-display.conf 讀取。
+#   vdswitch-helper on|off   把設定好的接頭強制設為接上或拔掉
+#   vdswitch-helper edid     從 stdin 讀入 128 bytes 的 EDID，驗證後換掉虛擬螢幕的 EDID：
+#                            寫到 /lib/firmware/edid/go-virtual-display.bin（開機參數指向這個檔名），
+#                            有 debugfs 時立即套用並印出 applied，否則印出 reboot-required；
+#                            initramfs 在背景重建，讓重新開機後也用新的 EDID。
 # 訊息只用英文：這是內部小幫手，錯誤會附在開關程式的錯誤訊息後面。
 set -eu
 
+FIRMWARE=/lib/firmware/edid/go-virtual-display.bin
+
+fail() {
+    echo "$1" >&2
+    exit 1
+}
+
 case "${1:-}" in
-    on | off) ;;
+    on | off | edid) ;;
     *)
-        echo "usage: vdswitch-helper on|off" >&2
+        echo "usage: vdswitch-helper on|off|edid" >&2
         exit 2
         ;;
 esac
 
 CONNECTOR=$(sed -n 's/^CONNECTOR=\(card[0-9][0-9]*-[A-Za-z0-9-]*\)$/\1/p' /etc/go-virtual-display.conf | head -n 1)
-if [ -z "$CONNECTOR" ] || [ ! -f "/sys/class/drm/$CONNECTOR/status" ]; then
-    echo "invalid connector setting in /etc/go-virtual-display.conf" >&2
-    exit 1
+STATUS="/sys/class/drm/$CONNECTOR/status"
+if [ -z "$CONNECTOR" ] || [ ! -f "$STATUS" ]; then
+    fail "invalid connector setting in /etc/go-virtual-display.conf"
 fi
-echo "$1" > "/sys/class/drm/$CONNECTOR/status"
+
+if [ "$1" != edid ]; then
+    echo "$1" > "$STATUS"
+    exit 0
+fi
+
+# ---------- edid ----------
+mkdir -p "$(dirname "$FIRMWARE")"
+TMP=$(mktemp "$FIRMWARE.XXXXXX")
+trap 'rm -f "$TMP"' EXIT
+head -c 129 > "$TMP" # 多讀 1 byte，才能分辨超過 128 bytes 的輸入
+[ "$(wc -c < "$TMP")" -eq 128 ] || fail "EDID must be exactly 128 bytes"
+[ "$(head -c 8 "$TMP" | od -An -tx1 | tr -d ' \n')" = 00ffffffffffff00 ] || fail "invalid EDID header"
+[ "$(od -An -tu1 -v "$TMP" | tr -s ' ' '\n' | awk 'NF { s += $1 } END { print s % 256 }')" -eq 0 ] || fail "invalid EDID checksum"
+chmod 644 "$TMP"
+mv -f "$TMP" "$FIRMWARE"
+trap - EXIT
+
+# 立即套用：寫進 debugfs 的 edid_override。插入中的話先拔再插，核心才會重新讀取解析度
+CARDNUM=${CONNECTOR%%-*}
+CARDNUM=${CARDNUM#card}
+OVERRIDE="/sys/kernel/debug/dri/$CARDNUM/${CONNECTOR#*-}/edid_override"
+RESULT=reboot-required
+if [ -w "$OVERRIDE" ] && cat "$FIRMWARE" > "$OVERRIDE" 2>/dev/null; then
+    if [ "$(cat "$STATUS")" = connected ]; then
+        echo off > "$STATUS"
+        sleep 1
+        echo on > "$STATUS"
+    fi
+    RESULT=applied
+fi
+
+# 背景重建 initramfs（裡面有一份 EDID）。輸出全部導走，開關程式才不會等它結束；
+# 用 flock 讓連續切換時一次只跑一個
+if [ -f /etc/initramfs-tools/hooks/go-virtual-display ] && command -v update-initramfs > /dev/null; then
+    REBUILD="update-initramfs -u"
+elif [ -f /etc/dracut.conf.d/go-virtual-display.conf ] && command -v dracut > /dev/null; then
+    REBUILD="dracut -f"
+else
+    REBUILD=""
+fi
+if [ -n "$REBUILD" ]; then
+    setsid flock /run/go-virtual-display-initramfs.lock $REBUILD < /dev/null > /dev/null 2>&1 &
+fi
+echo "$RESULT"

@@ -224,6 +224,9 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 }
 
 func statusText(s Snapshot) string {
+	if s.RebootPending && !s.Busy && s.Err == nil {
+		return i18n.T("Reboot to apply", "重新開機後套用")
+	}
 	switch {
 	case s.Applying:
 		return i18n.T("Applying…", "套用中…")

@@ -2,6 +2,7 @@
 package ui
 
 import (
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +25,9 @@ type Snapshot struct {
 	Applying bool         // 正在套用解析度
 	Err      error        // 最近一次查詢或切換的錯誤
 	Profiles profile.List // 存下的解析度與使用中的那一組
+	// RebootPending 表示選了新的解析度，但要重新開機才會生效（Linux 沒有 debugfs 時）。
+	// 不放在 Err：Err 每次輪詢都會被狀態查詢的結果蓋掉
+	RebootPending bool
 }
 
 // profilesKey 用來判斷解析度清單或使用中的那一組是否改變。
@@ -82,7 +86,7 @@ func (m *Model) set(update func(*Snapshot)) {
 	s := m.snap
 	ls := append([]func(Snapshot){}, m.listeners...)
 	m.mu.Unlock()
-	if s.State != old.State || s.Busy != old.Busy || s.Applying != old.Applying ||
+	if s.State != old.State || s.Busy != old.Busy || s.Applying != old.Applying || s.RebootPending != old.RebootPending ||
 		errText(s.Err) != errText(old.Err) || profilesKey(s.Profiles) != profilesKey(old.Profiles) {
 		for _, f := range ls {
 			f(s)
@@ -158,7 +162,7 @@ func (timeoutError) Error() string {
 
 var errTimeout error = timeoutError{}
 
-// ProfilesSupported 回傳這個平台能不能切換解析度（目前只有 Windows）。
+// ProfilesSupported 回傳這個平台能不能切換解析度（Windows、Linux）。
 func (m *Model) ProfilesSupported() bool {
 	_, ok := m.ctrl.(display.ProfileApplier)
 	return ok
@@ -186,14 +190,22 @@ func (m *Model) UseProfile(p profile.Profile) {
 	m.set(func(s *Snapshot) { s.Busy, s.Applying, s.Err, s.Profiles = true, true, nil, l })
 	go func() {
 		err := ap.ApplyActive()
-		if err != nil {
+		pending := false
+		if errors.Is(err, display.ErrRebootRequired) {
+			pending, err = true, nil // 已存好，只是要重新開機才生效：不還原使用中的解析度
+		} else if err != nil {
 			l, _ = profile.SetActive(prev)
 		}
 		st, serr := m.ctrl.Status()
 		if err == nil {
 			err = serr
 		}
-		m.set(func(s *Snapshot) { s.Busy, s.Applying, s.State, s.Err, s.Profiles = false, false, st, err, l })
+		m.set(func(s *Snapshot) {
+			s.Busy, s.Applying, s.State, s.Err, s.Profiles = false, false, st, err, l
+			if err == nil {
+				s.RebootPending = pending
+			}
+		})
 	}()
 }
 

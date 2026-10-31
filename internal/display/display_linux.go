@@ -2,6 +2,7 @@ package display
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
 )
 
 const (
@@ -59,14 +61,41 @@ func (c linuxController) Status() (State, error) {
 	return Unknown, fmt.Errorf(i18n.T("Unknown connector status: %q", "接頭狀態不明：%q"), strings.TrimSpace(string(b)))
 }
 
-func (linuxController) Plug() error   { return runHelper("on") }
-func (linuxController) Unplug() error { return runHelper("off") }
+func (linuxController) Plug() error   { _, err := runHelper(nil, "on"); return err }
+func (linuxController) Unplug() error { _, err := runHelper(nil, "off"); return err }
 
-// runHelper 透過 polkit（pkexec）以 root 執行小幫手；install.sh 已設定為使用中的本機使用者免密碼。
-func runHelper(arg string) error {
-	out, err := exec.Command("pkexec", helperPath, arg).CombinedOutput()
+// ApplyActive 依 profiles.json 使用中的解析度產生 EDID，從 stdin 交給小幫手：
+// 小幫手驗證後寫到 /lib/firmware/edid/go-virtual-display.bin，有 debugfs 時立即套用，並在背景重建 initramfs。
+// 開機參數固定指向這個檔名，所以換解析度不用改 GRUB。
+func (linuxController) ApplyActive() error {
+	p := profile.Load().ActiveProfile()
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	b, err := p.EDID()
 	if err != nil {
-		return fmt.Errorf(i18n.T("Switch failed: %v %s", "切換失敗：%v %s"), err, strings.TrimSpace(string(out)))
+		return err
+	}
+	out, err := runHelper(b, "edid")
+	if err != nil {
+		return err
+	}
+	if strings.Contains(out, "reboot-required") {
+		return ErrRebootRequired
 	}
 	return nil
+}
+
+// runHelper 透過 polkit（pkexec）以 root 執行小幫手；install.sh 已設定為使用中的本機使用者免密碼。
+// stdin 不是 nil 時會送給小幫手。回傳小幫手的輸出。
+func runHelper(stdin []byte, arg string) (string, error) {
+	cmd := exec.Command("pkexec", helperPath, arg)
+	if stdin != nil {
+		cmd.Stdin = bytes.NewReader(stdin)
+	}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf(i18n.T("Switch failed: %v %s", "切換失敗：%v %s"), err, strings.TrimSpace(string(out)))
+	}
+	return string(out), nil
 }

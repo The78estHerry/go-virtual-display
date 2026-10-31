@@ -10,4 +10,4 @@ case "$1" in
         ;;
 esac
 . /usr/share/initramfs-tools/hook-functions
-copy_file firmware /lib/firmware/edid/edid_1920x1440.bin
+copy_file firmware /lib/firmware/edid/go-virtual-display.bin
