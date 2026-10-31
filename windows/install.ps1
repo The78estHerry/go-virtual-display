@@ -63,10 +63,15 @@ if (Test-Path $exe) {
     Get-Process vdswitch -ErrorAction SilentlyContinue | Stop-Process -Force
     New-Item -ItemType Directory -Force $AppDir | Out-Null
     Copy-Item $exe $AppDir -Force
-    $lnk = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\虛擬螢幕開關.lnk'
-    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+    # WScript.Shell 用系統 ANSI 字碼頁處理路徑，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?，
+    # 所以先用英文檔名建立，再用 PowerShell 改名
+    $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
+    $lnk = Join-Path $programs '虛擬螢幕開關.lnk'
+    $tmp = Join-Path $programs 'go-virtual-display.lnk'
+    $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($tmp)
     $sc.TargetPath = Join-Path $AppDir 'vdswitch.exe'
     $sc.Save()
+    Move-Item $tmp $lnk -Force
     Write-Host "已安裝開關程式到 $AppDir，開始功能表捷徑：虛擬螢幕開關"
 } else {
     Write-Host "找不到 $exe，也沒有安裝 Go，略過開關程式"

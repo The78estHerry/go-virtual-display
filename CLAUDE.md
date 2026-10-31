@@ -63,6 +63,7 @@ make linux                                                    # 只能在 Linux 
   - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
 - **使用者的電腦**：
   - Windows 11 Pro 26200，zh-TW 語系，1920×1080 螢幕。
+  - **系統 ANSI 字碼頁是 932（日文 Shift-JIS）**，不是 950。路徑分隔符號在主控台顯示成 ¥。
   - 顯示卡是 AMD Mobility Radeon HD 5000（很舊）。VDD 的算繪可能要靠 WARP，若虛擬螢幕黑畫面要往這裡查。
 
 ## 踩過的坑
@@ -71,7 +72,8 @@ make linux                                                    # 只能在 Linux 
 - **systray 在 Windows 上建立視窗和處理訊息必須在同一個執行緒**。`fyne.io/systray` 的 `RunWithExternalLoop` 會在任意 goroutine 跑 `GetMessage`，不能用。改成在 `runtime.LockOSThread()` 的 goroutine 裡呼叫 `systray.Run`，Gio 的 `app.Main()` 留在 main goroutine。
 - **模組根目錄不能有 `vendor/` 資料夾**，Go 會當成 vendoring 而報錯，所以下載目錄叫 `downloads/`。
 - **PowerShell 5.1 讀取沒有 BOM 的 UTF-8 檔案會當成 ANSI（cp950）**，中文會變亂碼。所有 `.ps1` 都存成 UTF-8 with BOM＋CRLF，`.gitattributes` 固定換行。
-- **`schtasks` 的錯誤訊息是 cp950 編碼**，所以不放進錯誤字串，只回報 exit code。
+- **`schtasks` 的錯誤訊息用系統字碼頁編碼**（不是 UTF-8），所以不放進錯誤字串，只回報 exit code。
+- **`WScript.Shell` 的 `CreateShortcut` 用 ANSI 字碼頁處理路徑**。使用者的字碼頁是 932，「虛」不在裡面，變成 `?` 後 `Save()` 報 FileNotFoundException。`install.ps1` 改成先用英文檔名建立捷徑，再用 `Move-Item` 改名。
 - **Gio 預設字型沒有中文**。Windows 版明確載入 `msjh.ttc`（微軟正黑體）並關閉系統字型掃描，啟動比較快；Linux 版靠系統字型補中文。
 
 ## 進度紀錄
@@ -93,8 +95,9 @@ make linux                                                    # 只能在 Linux 
     - 加參數的 sed 要用 `|` 當分隔符號，因為參數裡有 `/`（第一版就是在這裡出錯）
     - 在 Git Bash 用假的 grub 檔模擬過：初次安裝、重複安裝、換接頭、移除都正確
   - **自動開啟開關程式**：裝完以一般使用者身分 `setsid` 開啟
+- 2026-10-31：第一次實機執行 `windows\install.cmd`：驅動下載、安裝、排程工作都成功，但建立開始功能表捷徑時失敗（見踩過的坑的 WScript.Shell），已修正，待使用者重跑。
 - 待辦：
-  - Windows 實機安裝與拔插測試（由使用者點兩下 `windows\install.cmd`）
+  - Windows 實機安裝與拔插測試（修正捷徑後重跑 `windows\install.cmd`）
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
