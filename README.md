@@ -37,7 +37,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1440.bin  # 檢查並列出內容
 
 - Windows 10／11 x64（ARM64 也有驅動，但 Windows 11 24H2 以後可能需要測試簽章模式）
 - [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist)（缺少時驅動會報 `vcruntime140.dll not found`）
-- 自己編譯時需要 Go 1.26 以上
+- 沒裝 Go 的話，從 Gitea 的 Releases 下載 `go-virtual-display-<版本>-windows.zip`，裡面已附編好的開關程式。自己編譯則需要 Go 1.26 以上
 
 ### 一鍵安裝
 

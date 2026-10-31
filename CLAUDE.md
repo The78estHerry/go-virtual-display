@@ -118,10 +118,13 @@ make linux                                                    # 只能在 Linux 
   - 修正：`common.ps1` 加上 `Restart-DisplayDependentServices`，裝好驅動後和移除裝置後都呼叫。
   - 第二次移除後檢查，同樣全部清乾淨。
 - 2026-10-31 17:20 前後：重新安裝後實測，安裝完第一次自動插入時 Synergy 也正常。Synergy 紀錄裡安裝（17:21）、拔插、移除（17:24）後都有重新連線。移除後再檢查，同樣全部清乾淨。
+- 2026-10-31：發佈 **v0.1.0**（annotated tag＋Gitea Release）。附件 `go-virtual-display-0.1.0-windows.zip` 是 `git archive` 的原始碼加上 `dist/windows/vdswitch.exe`，沒裝 Go 也能一鍵安裝。
 - 待辦：
   - Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）
 
 ## 給之後的 Claude
+
+- 發新版本：`build.ps1` 編譯，打 annotated tag 推上去，用 `git archive --prefix=go-virtual-display-<版本>/` 打包再加入 `dist/windows/vdswitch.exe`，最後用 Gitea API 建 Release、上傳附件。Release 說明的中文要先寫成 UTF-8 檔案再 `--data-binary` 送出。
 
 - 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/scripts/verify.ps1` 和 `linux/scripts/verify.sh` 都是拿它來比對。
 - 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
