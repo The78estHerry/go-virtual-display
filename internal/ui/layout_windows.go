@@ -59,7 +59,11 @@ func watchDisplayLayout() {
 			}
 			if cur != handled && time.Since(changedAt) >= layoutSettle {
 				handled = cur
-				_ = display.RestartDependentServices() // 失敗也不影響開關，下次改變時會再試
+				// 使用者自己關掉 Synergy 時（服務還在、synergy-core.exe 沒在執行）不要重新啟動，
+				// 否則會把使用者關掉的 Synergy 又帶起來。沒裝 Synergy 時照樣執行，處理 $RestartServices 裡的其他服務
+				if st, _ := display.Synergy(); st != display.SynergyStopped {
+					_ = display.RestartDependentServices() // 失敗也不影響開關，下次改變時會再試
+				}
 			}
 		}
 	}()

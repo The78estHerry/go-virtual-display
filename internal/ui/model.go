@@ -28,6 +28,10 @@ type Snapshot struct {
 	// RebootPending 表示選了新的解析度，但要重新開機才會生效（Linux 沒有 debugfs 時）。
 	// 不放在 Err：Err 每次輪詢都會被狀態查詢的結果蓋掉
 	RebootPending bool
+	// Synergy 服務的狀態與安裝資料夾（顯示 Synergy 圖示用，只有 Windows 會偵測）
+	Synergy      display.SynergyState
+	SynergyDir   string
+	SynergyMajor int // 主要版號，例如 3；讀不到時是 0
 }
 
 // profilesKey 用來判斷解析度清單或使用中的那一組是否改變。
@@ -87,7 +91,8 @@ func (m *Model) set(update func(*Snapshot)) {
 	ls := append([]func(Snapshot){}, m.listeners...)
 	m.mu.Unlock()
 	if s.State != old.State || s.Busy != old.Busy || s.Applying != old.Applying || s.RebootPending != old.RebootPending ||
-		errText(s.Err) != errText(old.Err) || profilesKey(s.Profiles) != profilesKey(old.Profiles) {
+		errText(s.Err) != errText(old.Err) || profilesKey(s.Profiles) != profilesKey(old.Profiles) ||
+		s.Synergy != old.Synergy || s.SynergyDir != old.SynergyDir || s.SynergyMajor != old.SynergyMajor {
 		for _, f := range ls {
 			f(s)
 		}
@@ -102,6 +107,9 @@ func errText(err error) string {
 }
 
 func (m *Model) refresh() {
+	syn, synDir := display.Synergy()
+	synMajor := display.SynergyMajor(synDir)
+	m.set(func(s *Snapshot) { s.Synergy, s.SynergyDir, s.SynergyMajor = syn, synDir, synMajor })
 	if m.Snapshot().Busy {
 		return
 	}

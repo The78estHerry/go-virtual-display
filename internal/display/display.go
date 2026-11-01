@@ -49,3 +49,12 @@ type ProfileApplier interface {
 
 // New 回傳目前平台的 Controller。
 func New() (Controller, error) { return newController() }
+
+// SynergyState 是 Synergy 服務的狀態，用來在系統列和小工具上顯示 Synergy 圖示（只有 Windows）。
+type SynergyState int
+
+const (
+	SynergyNone    SynergyState = iota // 沒有安裝
+	SynergyStopped                     // 有安裝但沒有在共用滑鼠鍵盤
+	SynergyRunning                     // 服務和 synergy-core.exe 都在執行
+)

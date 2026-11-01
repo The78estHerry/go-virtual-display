@@ -3,6 +3,7 @@
 *.bin binary
 *.cmd text eol=crlf
 *.xml text eol=crlf
+windows/scripts/*.txt text eol=crlf
 linux/** text eol=lf
 *.ico binary
 *.png binary

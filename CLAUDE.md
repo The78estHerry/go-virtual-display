@@ -70,8 +70,17 @@ make linux                                                    # 只能在 Linux 
 - **Windows 拔插**：
   - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
   - 排程工作的動作用 `conhost.exe --headless pnputil.exe ...`，避免閃出主控台視窗。
-  - 偵測到 `$RestartServices`（目前只有 `Synergy Core Daemon`）裡的服務時，多建立排程工作 `RestartServices`（`Restart-Service`）。開關程式（`internal/ui/layout_windows.go`）每秒用 `EnumDisplayMonitors` 比對螢幕配置，改變並穩定 2 秒後執行它。0.4.1 以前是附加在 Plug／Unplug／Apply 後面的第二個動作（`Start-Sleep 3`），但在 Windows 設定裡調整排列時沒人重新啟動，Synergy 的滑鼠會卡在舊邊緣，0.4.2 改成這樣。
+  - 排程工作 `RestartServices` 一律建立（0.4.2 起），動作是 `Get-Service <$RestartServices> -ErrorAction SilentlyContinue | Restart-Service -Force`，執行時才檢查服務在不在，之後才裝或移除 Synergy 都不必重裝。開關程式（`internal/ui/layout_windows.go`）每秒用 `EnumDisplayMonitors` 比對螢幕配置，改變並穩定 2 秒後執行它。0.4.1 以前是附加在 Plug／Unplug／Apply 後面的第二個動作（`Start-Sleep 3`），但在 Windows 設定裡調整排列時沒人重新啟動，Synergy 的滑鼠會卡在舊邊緣，0.4.2 改成這樣。
   - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
+- **Synergy 狀態圖示**（0.4.2 起，`internal/display/synergy_windows.go`、`internal/ui/synergy_icon_windows.go`）：
+  - 讀服務狀態不能用 `svc/mgr.Connect`（要求完整權限，一般使用者打不開），要用 `OpenSCManager(SC_MANAGER_CONNECT)`＋`OpenService(SERVICE_QUERY_STATUS|SERVICE_QUERY_CONFIG)`。
+  - 圖示在執行時用 `PrivateExtractIconsW` 從使用者安裝的 `Synergy.exe` 讀取（`GetIconInfo`＋`GetDIBits` 轉成 NRGBA），**不把 Synergy 的 LOGO 放進 repo 或安裝包**：那是 Symless 的商標。README 三個語言版本都有「商標」段落說明。
+  - 系統列的 Synergy 項目不能 `Disable()`：停用時 Windows 會把選單圖示畫成灰色，看不出執行中。
+  - **只看服務狀態不夠**：Synergy 3 從它自己的系統列結束時，只停掉 `synergy-core.exe` 和系統列程式，服務（`synergy-daemon.exe`）仍然 Running（紀錄：`tray process exited, stopping core process`）。所以「執行中」＝服務 Running 且 `synergy-core.exe` 存在（`CreateToolhelp32Snapshot` 列程序）。
+  - Synergy 有安裝但未執行時，`watchDisplayLayout` 不執行 `RestartServices`，避免把使用者關掉的 Synergy 帶起來（重新啟動服務會帶起 core）。
+  - 版號：只顯示主要版號（「Synergy 3」）。讀 `Synergy.exe` 的產品版本（3.6.3）；`synergy-core.exe`／`synergy-daemon.exe` 是 1.20.3（核心元件的版號），`synergy-service.exe` 是 Node.js 的 22.x，都不能用。依檔案修改時間快取。
+  - 小工具：有裝 Synergy 時狀態下面多一行（圖示＋「Synergy 執行中／未執行」），高度 64 → 84 dp，裝或移除 Synergy 時用 `win.Option` 改高度（另開 goroutine 呼叫）。
+  - 服務名稱在 Go 的 `synergyService` 和 `common.ps1` 的 `$RestartServices` 各寫一次，改名時兩邊一起改。
 - **使用者的電腦**：
   - Windows 11 Pro 26200，zh-TW 語系，1920×1080 螢幕。
   - **系統 ANSI 字碼頁是 932（日文 Shift-JIS）**，不是 950。路徑分隔符號在主控台顯示成 ¥。
@@ -243,8 +252,18 @@ make linux                                                    # 只能在 Linux 
   - **小工具跟著被拔掉的螢幕消失**：虛擬螢幕設為主螢幕、小工具在它上面時拔掉，小工具的座標落在已不存在的螢幕上。`platform_windows.go` 的 `widgetPlacer` 每秒檢查：視窗至少一半在某螢幕工作區內才算看得到，否則暫時移到主螢幕右下角，原本的螢幕回來時移回原位（使用者選的行為）。暫時移開期間位置變了就當成使用者拖過，不再移回。隱藏或結束時存的是原本的位置。
   - **在「設定 > 顯示器」調整排列後 Synergy 滑鼠卡在邊緣**（本機滑鼠正常，使用者分別測過）：改由開關程式偵測螢幕配置改變後執行新的 `RestartServices` 排程工作，見上面的「Windows 拔插」。
   - **系統列「顯示桌面小工具」有時沒勾**（小工具明明顯示著）：`app.go` 先啟動 systray 再建立小工具，選單先建好時 `a.widget.Visible()` 還是 false。改成先建立小工具。`widget.json` 本來就會在重新安裝時保留，不是設定遺失。
+- 2026-11-01：0.4.2 再加兩項（使用者要求）：
+  - `RestartServices` 一律建立、執行時才檢查服務，見「Windows 拔插」。
+  - Synergy 狀態圖示：有安裝就在小工具標題旁和系統列選單顯示，服務 Running 是彩色、否則灰色，沒安裝不顯示（使用者選的行為）。見「Synergy 狀態圖示」。
+  - README 改成三語：`README.md`（繁中，主要版本）、`README.en.md`、`README.ja.md`，最上方互相連結，翻譯版註明以中文版為準。標示支援 Synergy 3，並加上商標聲明。**改 README 時三個版本要一起更新。**
+- 2026-11-01：0.4.2 再加：**Windows 安裝包內附驅動，可離線安裝**（使用者擔心沒網路或下載點消失）。
+  - 只附需要的檔案（`scripts\vdd\`，配置和 zip 相同）：x86（其實是 amd64）和 ARM64 的 `MttVDD.inf`／`.dll`／`mttvdd.cat`，加上 `devcon.exe`（Microsoft 簽章，使用者同意一起附）。壓縮後安裝包只多約 0.1 MB。
+  - 每個檔案的雜湊寫在 `common.ps1` 的 `$VddFilesSha256`，`Test-VddFiles` 檢查。`download-vdd.ps1` 先用內附的，不對才下載，最後輸出驅動根目錄（`$VddRoot`）。
+  - 授權：VDD 是 MIT；devcon 的原始碼（Windows-driver-samples）是 **MS-PL**，不是 MIT。全文在 `windows/scripts/THIRD-PARTY-NOTICES.txt`，打包到 `scripts\vdd\`。
+  - **修正重新安裝的順序**：之前是回答 y → 移除舊版 → 下載驅動，沒網路時會兩頭落空。改成先取得驅動，成功才移除舊版。
+  - 在 scratchpad 模擬過：下載網址改壞時仍用內附的成功；內附檔案改壞時警告並改成下載，下載失敗就中止。`.cat` 簽章驗證仍是 Valid。
 - 待辦：
-  1. 0.4.2 已實機測試通過（重新安裝保留自動啟動、小工具移開／移回、調整排列後 Synergy 正常、選單勾選正確）。下一步照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
+  1. 0.4.2 前半已實機測試通過（重新安裝保留自動啟動、小工具移開／移回、調整排列後 Synergy 正常、選單勾選正確）。後加的 Synergy 狀態（含版號「Synergy 3」）、一律建立的 `RestartServices`、內附驅動也都實機測過：使用者拔掉網路重新安裝成功。下一步照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
   2. Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）。測試前可先跑 `linux\tests\run.ps1`。
   3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 
@@ -253,5 +272,5 @@ make linux                                                    # 只能在 Linux 
 - 發新版本照 `RELEASING.md` 做：先改 `common.ps1` 的 `$AppVersion`，再用 `release.ps1` 產生精簡的 Windows 安裝包，各平台要包哪些檔案也記在那裡。改了安裝時用到的檔案，要同時更新 `release.ps1` 和 `RELEASING.md` 的清單。
 
 - 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/scripts/verify.ps1` 和 `linux/scripts/verify.sh` 都是拿它來比對。
-- 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本和 SHA-256，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
+- 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本、zip 的 SHA-256 和 `$VddFilesSha256`（內附的 7 個檔案），`THIRD-PARTY-NOTICES.txt` 的版本和雜湊，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
 - commit 一律以 claude-bot 身分，推到 `gitea.littleherry.work/The78estWorld/go-virtual-display`。

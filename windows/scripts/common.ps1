@@ -3,6 +3,18 @@
 $VddVersion   = '25.7.23'
 $VddUrl       = "https://github.com/VirtualDrivers/Virtual-Display-Driver/releases/download/$VddVersion/VDD.Control.$VddVersion.zip"
 $VddSha256    = 'A701F2272E9FCF382849B24F913C6DD07597B3B1116525F2E90182F019609154'
+# Release 安裝包內附的驅動檔案（scripts\vdd\，配置和 zip 裡相同），讓沒有網路或下載點消失時也能安裝。
+# 只取需要的檔案，內容和 zip 裡完全相同（簽章仍然有效）。雜湊取自用 $VddSha256 驗證過的 zip，
+# 寫在 repo 裡而不是打包時產生，安裝包被改過也會被發現。升級 VDD 時要一起更新
+$VddFilesSha256 = [ordered]@{
+    'SignedDrivers\x86\VDD\MttVDD.inf'   = '550D211FE481E74DFE3F9D724ED78BE48B3A9113405965D683D9373E8D672F5D'
+    'SignedDrivers\x86\VDD\MttVDD.dll'   = 'C9CA837F57A98FBD43BC416A7F535A95843626E7759EAF85CF0CD7CE334DBB05'
+    'SignedDrivers\x86\VDD\mttvdd.cat'   = '08A0093FC9B2E32B287A6F8A77CA4DE0A31830D29FC33D2B13A918DC859468F6'
+    'SignedDrivers\ARM64\VDD\MttVDD.inf' = 'A8B8D1C939EE49BB44B4CC3EF9A820B9943B1DBFA456D5B6880B6F106B51011B'
+    'SignedDrivers\ARM64\VDD\MttVDD.dll' = '9BD5429A71F2103309B291C18D97DAA5E2D8E1A35794F375AE718F1F1EB27C4F'
+    'SignedDrivers\ARM64\VDD\mttvdd.cat' = '9E62DD01DE5D80773819E6C92C76DACB175B4632E0D551026975DA5F815B5A97'
+    'Dependencies\devcon.exe'              = '77E87E7C4E23D6B9A4F5D86D15ED9EC61A16A242FB299C390AF6F179225BFA05'
+}
 $VddHardwareId = 'Root\MttVDD'
 $VddConfigDir = 'C:\VirtualDisplayDriver'
 $VddRegKey    = 'HKLM:\SOFTWARE\MikeTheTech\VirtualDisplayDriver'
@@ -14,11 +26,13 @@ $InstallMarker = Join-Path $VddConfigDir '.go-virtual-display'
 $Packaged     = Test-Path (Join-Path $PSScriptRoot 'edid_1920x1080.bin')
 if ($Packaged) {
     $VendorDir = Join-Path $PSScriptRoot "downloads\vdd-$VddVersion"
+    $VddBundleDir = Join-Path $PSScriptRoot 'vdd'  # 內附的驅動
     $EdidFile  = Join-Path $PSScriptRoot 'edid_1920x1080.bin'
     $AppExe    = Join-Path $PSScriptRoot 'vdswitch.exe'
 } else {
     $RepoRoot  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $VendorDir = Join-Path $RepoRoot "downloads\vdd-$VddVersion"
+    $VddBundleDir = $null  # 原始碼沒有內附驅動，一律下載
     $EdidFile  = Join-Path $RepoRoot 'edid\edid_1920x1080.bin'
     $AppExe    = Join-Path $RepoRoot 'dist\windows\vdswitch.exe'
 }
@@ -31,7 +45,8 @@ $UninstallKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\go-vi
 $TaskPath     = '\go-virtual-display\'
 $RunKey       = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $RunValue     = 'go-virtual-display'
-# 拔插後要重新啟動的服務：這些程式只在啟動時讀取桌面大小，螢幕增減後滑鼠位置會算錯
+# 螢幕配置改變後要重新啟動的服務：這些程式只在啟動時讀取桌面大小，螢幕增減後滑鼠位置會算錯
+# Synergy 的服務名稱也寫在 internal/display/synergy_windows.go（系統列和小工具的 Synergy 圖示），改名時兩邊一起改
 $RestartServices = @('Synergy Core Daemon')
 $LanguageKey  = 'HKLM:\SOFTWARE\go-virtual-display'  # 安裝時選的介面語言（Language = en／zh-TW），開關程式也讀這裡
 $LegacyShortcut = '虛擬螢幕開關.lnk'  # 0.1.x 用的中文捷徑名稱，安裝與移除時一併刪除
@@ -103,6 +118,16 @@ namespace GoVirtualDisplay {
 '@
     }
     [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description)
+}
+
+# Test-VddFiles 檢查 $root 底下的驅動檔案是否齊全且雜湊都對（內附的或下載解壓縮的都適用）
+function Test-VddFiles([string]$root) {
+    if (-not $root -or -not (Test-Path $root)) { return $false }
+    foreach ($f in $VddFilesSha256.Keys) {
+        $p = Join-Path $root $f
+        if (-not (Test-Path $p) -or (Get-FileHash $p -Algorithm SHA256).Hash -ne $VddFilesSha256[$f]) { return $false }
+    }
+    return $true
 }
 
 function Get-VddDevice {

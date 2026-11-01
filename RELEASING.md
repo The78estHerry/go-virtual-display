@@ -51,16 +51,21 @@ go-virtual-display-<版本>-windows/
     ├── verify.ps1            │
     ├── vdd_settings.xml      ┘
     ├── edid_1920x1080.bin    edid/edid_1920x1080.bin（沒有 vdswitch.exe 時才用的預設 EDID）
-    └── vdswitch.exe          dist/windows/vdswitch.exe（build.ps1 編譯）
+    ├── vdswitch.exe          dist/windows/vdswitch.exe（build.ps1 編譯）
+    └── vdd/                  內附的 Virtual Display Driver（release.ps1 從驗證過的 zip 取出，內容不改）
+        ├── THIRD-PARTY-NOTICES.txt     windows/scripts/THIRD-PARTY-NOTICES.txt（MIT、MS-PL 授權全文）
+        ├── Dependencies/devcon.exe
+        └── SignedDrivers/{x86,ARM64}/VDD/{MttVDD.inf, MttVDD.dll, mttvdd.cat}
 ```
 
-- 腳本靠 `scripts\edid_1920x1080.bin` 是否存在判斷自己在安裝包裡（`common.ps1` 的 `$Packaged`）。在安裝包裡時，EDID 和開關程式從 `scripts\` 讀取，驅動下載到 `scripts\downloads\`。
+- 腳本靠 `scripts\edid_1920x1080.bin` 是否存在判斷自己在安裝包裡（`common.ps1` 的 `$Packaged`）。在安裝包裡時，EDID 和開關程式從 `scripts\` 讀取，驅動用 `scripts\vdd\`（雜湊不對時才下載到 `scripts\downloads\`）。
+- `scripts\vdd\` 的每個檔案都要符合 `common.ps1` 的 `$VddFilesSha256`，`release.ps1` 不符就停止打包。
 - **不放**：
   - Go 原始碼、`go.mod`、`build.ps1`、`release.ps1`、`Makefile`
   - `make-edid.exe`：使用者用不到
   - `linux/`
   - `README.md`、`CLAUDE.md`、`RELEASING.md`：改放精簡的 `README.txt`
-  - Virtual Display Driver 本體：安裝時才下載並驗證 SHA-256，不重新散布
+  - Virtual Display Driver 用不到的檔案：`VDD Control.exe`、虛擬音效驅動（VAD）、驅動自帶的 `vdd_settings.xml`
 - 新增會在安裝時用到的檔案時，要同時改 `release.ps1` 和這份清單。
 
 ### Linux：`go-virtual-display-<版本>-linux-amd64.tar.gz`

@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"bytes"
+	"image/png"
 	"runtime"
 	"sync"
 
@@ -25,6 +27,9 @@ func (a *App) trayReady() {
 
 	mStatus := systray.AddMenuItem("", "")
 	mStatus.Disable()
+	// Synergy 狀態：有安裝才顯示。不停用這個項目，停用時 Windows 會把圖示畫成灰色，看不出運作中
+	mSynergy := systray.AddMenuItem("Synergy", "")
+	mSynergy.Hide()
 	systray.AddSeparator()
 	mToggle := systray.AddMenuItem(i18n.T("Plug in", "插入"), "")
 	var res *resolutionMenu
@@ -50,6 +55,32 @@ func (a *App) trayReady() {
 	}
 	a.onWidget = func(on bool) { setCheck(mWidget, on) }
 
+	var synShown, synMajorShown = display.SynergyNone, 0 // 上次顯示的狀態，只在改變時重設圖示和文字
+	updateSynergy := func(s Snapshot) {
+		if s.Synergy == synShown && s.SynergyMajor == synMajorShown {
+			return
+		}
+		synShown, synMajorShown = s.Synergy, s.SynergyMajor
+		if s.Synergy == display.SynergyNone {
+			mSynergy.Hide()
+			return
+		}
+		running := s.Synergy == display.SynergyRunning
+		if running {
+			mSynergy.SetTitle(synergyName(s) + i18n.T(": ", "：") + synergyText(true))
+		} else {
+			mSynergy.SetTitle(synergyName(s) + i18n.T(": ", "：") + synergyText(false))
+		}
+		px := smallIconPx()
+		if img := synergyIcon(s.SynergyDir, px, running); img != nil {
+			var buf bytes.Buffer
+			if png.Encode(&buf, img) == nil {
+				mSynergy.SetIcon(pngToICO(buf.Bytes(), px))
+			}
+		}
+		mSynergy.Show()
+	}
+
 	a.model.Subscribe(func(s Snapshot) {
 		systray.SetIcon(trayIcon(s))
 		text := i18n.T("Virtual display ", "虛擬螢幕 ") + s.Profiles.ActiveProfile().Size() + i18n.T(": ", "：") + statusText(s)
@@ -58,6 +89,7 @@ func (a *App) trayReady() {
 			res.update(s)
 		}
 		mStatus.SetTitle(text)
+		updateSynergy(s)
 		switch {
 		case s.Busy || s.State == display.Unknown:
 			mToggle.Disable()
@@ -72,6 +104,8 @@ func (a *App) trayReady() {
 
 	for {
 		select {
+		case <-mSynergy.ClickedCh:
+			// 只是顯示狀態，點了不做事
 		case <-mToggle.ClickedCh:
 			a.model.Toggle()
 		case <-mWidget.ClickedCh:

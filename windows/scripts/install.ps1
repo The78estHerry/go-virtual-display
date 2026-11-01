@@ -12,7 +12,9 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 Assert-Admin
 
-# 已經安裝過：告訴使用者目前和要安裝的版本，同意後先移除舊版（保留解析度清單和語言），再全新安裝
+# 已經安裝過：告訴使用者目前和要安裝的版本，同意後先移除舊版（保留解析度清單和語言），再全新安裝。
+# 實際移除要等到驅動取得成功之後，否則沒有網路時舊版被移除、新版又裝不起來
+$reinstall = $false
 # 0.1.0 沒有登記到「設定 > 應用程式」，所以也看程式資料夾。不看 VDD 裝置：可能是使用者自己另外裝的，不能幫他移除
 $installedVersion = (Get-ItemProperty $UninstallKey -Name DisplayVersion -ErrorAction SilentlyContinue).DisplayVersion
 if ($installedVersion -or (Test-Path $AppDir)) {
@@ -34,6 +36,18 @@ if ($installedVersion -or (Test-Path $AppDir)) {
         Write-Host (T 'Cancelled. Nothing was changed.' '已取消，沒有做任何變更。')
         return
     }
+    $reinstall = $true
+}
+
+# 1. 取得驅動（內附的或下載），在改動系統之前完成。失敗時直接中止，已安裝的版本保持原樣
+Write-Host ''
+try {
+    $VddRoot = & (Join-Path $PSScriptRoot 'download-vdd.ps1')
+} catch {
+    throw ((T 'Could not get the driver; nothing was changed. ' '無法取得驅動，沒有做任何變更。') + $_.Exception.Message)
+}
+
+if ($reinstall) {
     Write-Host ''
     Write-Host (T 'Uninstalling the current version ...' '移除目前的版本 ...')
     & (Join-Path $PSScriptRoot 'uninstall.ps1') -KeepUserSettings
@@ -61,12 +75,11 @@ Set-ItemProperty $LanguageKey -Name Language -Value $Lang
 Write-Host (T 'Language: English' '語言：繁體中文')
 Write-Host ''
 
-# 1. 下載驅動
-& (Join-Path $PSScriptRoot 'download-vdd.ps1')
+# 驅動檔案的位置（第 1 步取得的）
 $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x86' }  # x86 資料夾內是 amd64 驅動
-$driverDir = Join-Path $VendorDir "extracted\SignedDrivers\$arch\VDD"
+$driverDir = Join-Path $VddRoot "SignedDrivers\$arch\VDD"
 $inf = Join-Path $driverDir 'MttVDD.inf'
-$devcon = Join-Path $VendorDir 'extracted\Dependencies\devcon.exe'
+$devcon = Join-Path $VddRoot 'Dependencies\devcon.exe'
 
 # 2. 設定檔與 EDID（先備份原有檔案）
 #    標記檔存在表示目前的檔案是本專案放的，重複安裝時不能再備份，否則移除時會「還原」成本專案的檔案
@@ -108,20 +121,16 @@ Restart-DisplayDependentServices
 
 # 4. 排程工作：以最高權限執行，之後按開關、切換解析度都不會跳 UAC
 #    Plug／Unplug 啟用或停用裝置；Apply 執行 vdswitch.exe --apply 套用使用者選的解析度
-#    有裝 Synergy 等服務時，再建立 RestartServices：開關程式偵測到螢幕配置改變（拔插、切換解析度、
-#    在 Windows 設定裡調整排列）並穩定後執行它。之前是附加在 Plug／Unplug／Apply 後面，
-#    但在 Windows 設定裡調整排列時沒有東西去重新啟動，Synergy 的滑鼠會卡在舊的邊緣
-$services = @($RestartServices | Where-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue })
+#    RestartServices：開關程式偵測到螢幕配置改變（拔插、切換解析度、在 Windows 設定裡調整排列）
+#    並穩定後執行它，重新啟動 Synergy 等服務。一律建立，執行時才檢查服務在不在，
+#    所以之後才安裝或移除 Synergy 都不必重新安裝本程式
 $pnputil = "--headless $env:SystemRoot\System32\pnputil.exe {0} /deviceid `"$VddHardwareId`""
 $tasks = @(
     @{ Name = 'Plug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/enable-device') },
     @{ Name = 'Unplug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/disable-device') },
-    @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' })
-if ($services) {
-    $names = ($services | ForEach-Object { "'$_'" }) -join ','
-    $tasks += @{ Name = 'RestartServices'; Exe = "$env:SystemRoot\System32\conhost.exe"
-        Arg = "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Restart-Service -Name $names -Force`"" }
-}
+    @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' },
+    @{ Name = 'RestartServices'; Exe = "$env:SystemRoot\System32\conhost.exe"
+        Arg = "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Get-Service -Name $(($RestartServices | ForEach-Object { "'$_'" }) -join ',') -ErrorAction SilentlyContinue | Restart-Service -Force`"" })
 foreach ($t in $tasks) {
     $action = New-ScheduledTaskAction -Execute $t.Exe -Argument $t.Arg
     $principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Highest
@@ -130,7 +139,7 @@ foreach ($t in $tasks) {
 }
 $taskNames = ($tasks | ForEach-Object { $_.Name })
 Write-Host (T "Created scheduled tasks $($TaskPath)$($taskNames -join ', ') (user: $User)" "已建立排程工作 $($TaskPath)$($taskNames -join '、')（使用者：$User）")
-if ($services) { Write-Host ((T 'Will restart after the display layout changes: ' '螢幕配置改變後會自動重新啟動：') + ($services -join ', ')) }
+Write-Host ((T 'After the display layout changes, these services are restarted if installed: ' '螢幕配置改變後，會自動重新啟動這些服務（有安裝的話）：') + ($RestartServices -join ', '))
 
 # 5. 開關程式
 $exe = $AppExe

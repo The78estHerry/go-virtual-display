@@ -2,11 +2,15 @@
 
 # go-virtual-display
 
+**繁體中文** | [English](README.en.md) | [日本語](README.ja.md)
+
 讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除，預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
 
 適合用在無頭主機的遠端桌面或串流、錄影，以及需要特定解析度的測試。
 
 支援 **Windows 10／11** 和 **Linux**（需要顯示卡上有一個空的接頭）。macOS 不支援。
+
+Windows 版支援 **Synergy 3**（滑鼠鍵盤共用軟體）：螢幕配置改變後自動重新啟動 Synergy，並在系統列和小工具上顯示 Synergy 是否在運作（見「[搭配 Synergy 3](#搭配-synergy-3)」）。
 
 ## 運作方式
 
@@ -16,7 +20,12 @@
 | 自訂 EDID | 驅動讀取 `C:\VirtualDisplayDriver\user_edid.bin` | 開機參數 `drm.edid_firmware=` 指向 `/lib/firmware/edid/go-virtual-display.bin`；切換解析度時寫入 debugfs 的 `edid_override` 立即生效 |
 | 拔插 | 停用／啟用驅動裝置（`pnputil`），由「最高權限」排程工作執行，按開關不跳 UAC | 寫入 `/sys/class/drm/<接頭>/status`（`on`／`off`），由 polkit 允許使用中的使用者免密碼執行 |
 
-驅動本體**不放在這個 repo**，安裝腳本會下載固定版本（25.7.23）並驗證 SHA-256。
+驅動本體**不放在這個 repo**。
+- **Windows 的 Release 安裝包**已附固定版本（25.7.23）的驅動檔案，安裝時驗證 SHA-256，**不需要網路**，原本的下載點消失也能安裝。
+  - 只附需要的檔案：amd64／ARM64 的驅動和 `devcon.exe`，內容和官方 zip 完全相同，簽章仍然有效。
+  - 授權聲明在安裝包的 `scripts\vdd\THIRD-PARTY-NOTICES.txt`（見「[第三方軟體](#第三方軟體)」）。
+- **從原始碼安裝**時，會下載官方的 zip 並驗證 SHA-256。
+- 每個驅動檔案的 SHA-256 都寫在 `windows\scripts\common.ps1`，安裝包裡的檔案被改過也會被發現。
 
 ## EDID 內容
 
@@ -63,10 +72,10 @@ go run ./cmd/make-edid -check edid/edid_1920x1080.bin      # 檢查並列出內�
 點兩下 **`windows\install.cmd`**，UAC 詢問時按「是」，接著全部自動完成：
 
 1. 選擇介面語言（English／繁體中文），直接按 Enter 用預設值（見下方「介面語言」）
-2. 下載驅動並驗證 SHA-256
+2. 取得驅動並驗證 SHA-256：安裝包用內附的，原始碼才下載。這一步失敗時會直接停止，不會改動系統（重新安裝時也不會先移除舊版）
 3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）。EDID 依你存的解析度產生，新安裝是 1920×1080
 4. 安裝驅動
-5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`，有裝 Synergy 時再加 `RestartServices`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，螢幕配置改變後會自動重新啟動它（見下方說明）
+5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`、`RestartServices`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，螢幕配置改變後會自動重新啟動它（見下方說明）
 6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表和桌面建立「Virtual Display Switch」捷徑（想釘選到工作列的話，在捷徑上按右鍵選「釘選到工作列」）。如果還沒編譯但有裝 Go，會先自動編譯
 7. 複製移除用的檔案，並登記到「設定 > 應用程式」
 8. 執行檢查，並打開開關程式
@@ -99,11 +108,21 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\verify.ps1       # �
 powershell -ExecutionPolicy Bypass -File .\windows\scripts\uninstall.ps1    # 移除
 ```
 
-### 搭配 Synergy
+### 搭配 Synergy 3
 
-Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。在「設定 > 顯示器」調整螢幕排列後也一樣，滑鼠會卡在舊的邊緣。所以安裝時如果偵測到 Synergy 的服務（`Synergy Core Daemon`），會多建立排程工作 `RestartServices`。開關程式偵測到螢幕配置改變（拔插、切換解析度、調整排列、接上其他螢幕）並穩定約 2 秒後，用它重新啟動 Synergy，Synergy 會斷線一下再自動連回。開關程式沒有執行時不會處理。
+在 Synergy 3（服務名稱 `Synergy Core Daemon`）的子機上實測過。
 
-Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd` 就會加上。其他需要重新啟動的服務可以加到 `windows\scripts\common.ps1` 的 `$RestartServices`。
+- **自動重新啟動**：Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。在「設定 > 顯示器」調整螢幕排列後也一樣，滑鼠會卡在舊的邊緣。
+  - 開關程式偵測到螢幕配置改變（拔插、切換解析度、調整排列、接上其他螢幕），穩定約 2 秒後，透過排程工作 `RestartServices` 重新啟動 Synergy。Synergy 會斷線一下再自動連回。
+  - 這個排程工作一律會建立，執行時才檢查 Synergy 在不在，所以之後才安裝或移除 Synergy 都不必重新安裝本程式。
+  - 開關程式沒有執行時不會處理。
+- **狀態顯示**：有安裝 Synergy 時，小工具的狀態下面會多一行「Synergy 3 執行中／未執行」，系統列選單也有「Synergy 3：執行中／未執行」（數字是 Synergy 的主要版號，從 `Synergy.exe` 的版本讀取，讀不到時只寫 Synergy），前面都有 Synergy 的圖示。執行中是彩色，未執行是灰色，沒安裝就不顯示。
+  - 「執行中」是指 Synergy 的服務和實際共用滑鼠鍵盤的 `synergy-core.exe` 都在執行。從 Synergy 的系統列結束 Synergy 時，服務仍然會留著，但 `synergy-core.exe` 會停掉，這時顯示「未執行」。
+  - Synergy 未執行時，螢幕配置改變也不會重新啟動它，避免把你關掉的 Synergy 又打開。
+  - 圖示是執行時從你電腦上已安裝的 Synergy 讀取的，本專案沒有附帶 Synergy 的圖檔。
+- 其他也只在啟動時讀取桌面大小的服務，可以加到 `windows\scripts\common.ps1` 的 `$RestartServices`。
+
+本專案與 Synergy 的開發商 Symless 沒有任何關係，也沒有得到他們的認可或贊助（見「[商標](#商標)」）。
 
 > ⚠️ 更新顯示卡或晶片組驅動之前，建議先移除虛擬螢幕驅動（VDD 官方建議）。如果開機後黑畫面，請進安全模式移除。
 
@@ -175,11 +194,12 @@ linux/uninstall.sh
   - 綠色表示已插入，灰色表示已拔掉，橘色表示切換中，紅色表示發生錯誤（卡片上會顯示原因）
   - 拖曳左側文字區可以移動卡片
   - Windows 會記住卡片位置；Linux 由視窗管理員決定位置
+  - Windows：有安裝 Synergy 時，狀態下面多一行 Synergy 的圖示和「執行中／未執行」，卡片會高一點（見「[搭配 Synergy 3](#搭配-synergy-3)」）
   - Windows：卡片所在的螢幕被拔掉時（例如放在設為主螢幕的虛擬螢幕上），卡片會暫時移到主螢幕右下角，那個螢幕插回來後再回到原位。暫時移開期間自己拖曳過的話，就留在新的位置
 - **系統列圖示**：
   - 圖示顏色和小工具相同
   - **左鍵點一下切換**
-  - 右鍵選單：插入／拔掉、解析度（只有 Windows）、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、解除安裝…（只有 Windows）、結束
+  - 右鍵選單：Synergy 狀態（只有 Windows，有安裝 Synergy 時）、插入／拔掉、解析度（只有 Windows）、顯示桌面小工具、小工具固定在最上層、登入時自動啟動、解除安裝…（只有 Windows）、結束
 - 狀態每 2 秒同步一次。從其他地方（裝置管理員、VDD 的控制程式）改變狀態時，兩邊都會跟著更新。
 - 只會執行一份。重複開啟時會把小工具叫出來。
 - 設定存在 `%APPDATA%\go-virtual-display\widget.json`（Linux 是 `~/.config/go-virtual-display/widget.json`）。
@@ -207,3 +227,20 @@ release.ps1           產生 Release 安裝包（步驟與內容見 RELEASING.md
 ## 另一種做法（沒有採用）
 
 也可以自己修改 Microsoft 的 IddSampleDriver，把 EDID 寫死在驅動裡。這樣每個位元組都能自己控制，但必須自己編譯驅動。沒有正式簽章時要開測試簽章模式，而測試簽章模式需要關閉 Secure Boot，畫面上也會出現浮水印。Virtual Display Driver 已簽章，又支援自訂 EDID，所以採用它。
+
+## 商標
+
+- Synergy 是 Symless Ltd. 的商標，Synergy 的圖示（LOGO）屬於 Symless Ltd.。本專案只是為了相容而提到它的名稱，與 Symless 沒有任何關係，也沒有得到他們的認可或贊助。
+- 本專案不包含、也不散布 Synergy 的圖示。開關程式顯示的 Synergy 圖示，是在執行時從使用者自己電腦上已安裝的 Synergy 程式讀取的。
+- Windows 是 Microsoft Corporation 的商標。其他產品名稱屬於各自的擁有者。
+
+## 第三方軟體
+
+Windows 的 Release 安裝包內附以下檔案，內容未經修改，取自 Virtual Display Driver 官方發佈的 `VDD.Control.25.7.23.zip`：
+
+| 檔案 | 軟體 | 授權 |
+|---|---|---|
+| `scripts\vdd\SignedDrivers\*\VDD\*` | [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver) | MIT |
+| `scripts\vdd\Dependencies\devcon.exe` | DevCon（Microsoft 簽章，[原始碼](https://github.com/microsoft/Windows-driver-samples/tree/main/setup/devcon)） | MS-PL |
+
+授權全文在 `windows\scripts\THIRD-PARTY-NOTICES.txt`（安裝包裡是 `scripts\vdd\THIRD-PARTY-NOTICES.txt`）。本專案與這些軟體的作者沒有任何關係。

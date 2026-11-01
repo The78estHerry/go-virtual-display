@@ -3,6 +3,7 @@ package ui
 import (
 	"image"
 	"image/color"
+	"strconv"
 	"sync"
 	"time"
 
@@ -22,8 +23,9 @@ import (
 )
 
 const (
-	widgetH = 64
-	animDur = 160 * time.Millisecond
+	widgetH        = 64 // 沒裝 Synergy 時的高度
+	widgetHSynergy = 84 // 多一行 Synergy 狀態
+	animDur        = 160 * time.Millisecond
 )
 
 // widgetW 英文字比較寬，寬度依介面語言決定
@@ -90,14 +92,29 @@ func (w *widgetMgr) Show() {
 	win := new(app.Window)
 	win.Option(
 		app.Title(i18n.T("Virtual Display Switch", "虛擬螢幕開關")),
-		app.Size(unit.Dp(widgetW), unit.Dp(widgetH)),
-		app.MinSize(unit.Dp(widgetW), unit.Dp(widgetH)),
-		app.MaxSize(unit.Dp(widgetW), unit.Dp(widgetH)),
 		app.Decorated(false),
 		app.TopMost(s.TopMost),
 	)
+	win.Option(widgetSize(w.model.Snapshot())...)
 	w.win = win
 	go w.loop(win)
+}
+
+// widgetHeight 有安裝 Synergy 時多一行 Synergy 狀態。
+func widgetHeight(s Snapshot) float32 {
+	if s.Synergy == display.SynergyNone {
+		return widgetH
+	}
+	return widgetHSynergy
+}
+
+func widgetSize(s Snapshot) []app.Option {
+	h := unit.Dp(widgetHeight(s))
+	return []app.Option{
+		app.Size(unit.Dp(widgetW), h),
+		app.MinSize(unit.Dp(widgetW), h),
+		app.MaxSize(unit.Dp(widgetW), h),
+	}
 }
 
 func (w *widgetMgr) Hide() {
@@ -137,6 +154,7 @@ func (w *widgetMgr) loop(win *app.Window) {
 		last   time.Time
 		inited bool
 		stop   = make(chan struct{})
+		height = widgetHeight(w.model.Snapshot()) // 目前視窗的高度（dp）
 	)
 	for {
 		switch e := win.Event().(type) {
@@ -174,6 +192,11 @@ func (w *widgetMgr) loop(win *app.Window) {
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)
 			snap := w.model.Snapshot()
+			if h := widgetHeight(snap); h != height {
+				// 安裝或移除 Synergy 後改變高度。另開 goroutine，避免在事件迴圈裡等待視窗執行緒
+				height = h
+				go win.Option(widgetSize(snap)...)
+			}
 			if toggle.Clicked(gtx) {
 				w.model.Toggle()
 				snap = w.model.Snapshot()
@@ -230,6 +253,9 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 						l.MaxLines = 1
 						return l.Layout(gtx)
 					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return w.synergyRow(gtx, snap)
+					}),
 				)
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -258,6 +284,60 @@ func statusText(s Snapshot) string {
 		return i18n.T("Unplugged", "已拔掉")
 	}
 	return i18n.T("Unknown state", "狀態未知")
+}
+
+// synergyName 是「Synergy 3」這樣的名稱，只顯示主要版號；讀不到版本時只寫 Synergy。
+func synergyName(s Snapshot) string {
+	if s.SynergyMajor > 0 {
+		return "Synergy " + strconv.Itoa(s.SynergyMajor)
+	}
+	return "Synergy"
+}
+
+// synergyText 是 Synergy 狀態的文字：系統列選單和小工具共用。
+func synergyText(running bool) string {
+	if running {
+		return i18n.T("Running", "執行中")
+	}
+	return i18n.T("Not running", "未執行")
+}
+
+// synergyRow 是狀態下面的一行：Synergy 圖示＋「Synergy 執行中／未執行」，沒裝 Synergy 時不畫。
+// 圖示從使用者安裝的 Synergy 讀取，執行中是彩色、未執行是灰色；讀不到時改畫小圓點。
+func (w *widgetMgr) synergyRow(gtx layout.Context, snap Snapshot) layout.Dimensions {
+	if snap.Synergy == display.SynergyNone {
+		return layout.Dimensions{}
+	}
+	running := snap.Synergy == display.SynergyRunning
+	return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			size := gtx.Dp(14)
+			if img := synergyIcon(snap.SynergyDir, size, running); img != nil {
+				paint.NewImageOp(img).Add(gtx.Ops)
+				defer clip.Rect{Max: image.Pt(size, size)}.Push(gtx.Ops).Pop()
+				paint.PaintOp{}.Add(gtx.Ops)
+			} else {
+				c := colorOff
+				if running {
+					c = colorOn
+				}
+				d := gtx.Dp(8)
+				o := (size - d) / 2
+				paint.FillShape(gtx.Ops, c, clip.Ellipse(image.Rect(o, o, o+d, o+d)).Op(gtx.Ops))
+			}
+			return layout.Dimensions{Size: image.Pt(size, size)}
+		}),
+		layout.Rigid(layout.Spacer{Width: unit.Dp(5)}.Layout),
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			l := material.Label(w.theme, unit.Sp(12), synergyName(snap)+" "+synergyText(running))
+			l.Color = colorSub
+			if running {
+				l.Color = colorTitle
+			}
+			l.MaxLines = 1
+			return l.Layout(gtx)
+		}),
+	)
 }
 
 // drawSwitch 畫出滑動開關；knob 介於 0（左）與 1（右）之間。
