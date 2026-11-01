@@ -42,6 +42,7 @@ go-virtual-display-<版本>-windows/
 ├── install.cmd               一鍵安裝（windows/install.cmd）
 ├── uninstall.cmd             一鍵移除（windows/uninstall.cmd）
 ├── README.txt                使用說明，英文在前、繁中在後（release.ps1 產生，UTF-8 with BOM＋CRLF）
+├── LICENSE                   本專案的 MIT 授權
 └── scripts/
     ├── common.ps1            ┐
     ├── download-vdd.ps1      │
@@ -86,6 +87,7 @@ go-virtual-display-<版本>-linux-amd64/
 ├── install.sh                一鍵安裝（linux/install.sh）
 ├── uninstall.sh              一鍵移除（linux/uninstall.sh）
 ├── README.txt                使用說明，英文在前、繁中在後（release-linux.ps1 產生，UTF-8＋LF）
+├── LICENSE                   本專案的 MIT 授權（0.4.2 之後的版本才有）
 └── scripts/                  linux/scripts/ 的所有檔案，加上：
     ├── edid_1920x1080.bin    edid/edid_1920x1080.bin（預設 EDID）
     ├── VERSION               版本號（release-linux.ps1 寫入，0.4.1 起）。install.sh 顯示並記到 /etc/go-virtual-display.conf

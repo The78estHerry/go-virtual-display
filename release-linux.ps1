@@ -155,6 +155,7 @@ if [ "$LAYOUT" = flat ]; then
     chmod 644 "$stage/scripts/VERSION"
     install -m 755 /tmp/vdswitch "$stage/scripts/vdswitch"
     cp /work/README.txt "$stage/"
+    if [ -f LICENSE ]; then cp LICENSE "$stage/"; fi   # 0.4.2 之後才有 LICENSE
     chmod 755 "$stage"/*.sh "$stage"/scripts/verify.sh "$stage"/scripts/vdswitch-helper "$stage"/scripts/initramfs-hook
     chmod 644 "$stage"/scripts/lang.sh "$stage"/scripts/*.policy "$stage"/scripts/*.desktop "$stage"/scripts/*.bin "$stage"/README.txt
 else

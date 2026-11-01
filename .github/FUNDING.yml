@@ -1,0 +1,8 @@
+# GitHub 會依這個檔案在 repo 頁面顯示「Sponsor」按鈕（只有 GitHub 認得，Gitea 會忽略）。
+# 說明：https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# 帳號申請好之後，拿掉該行開頭的「# 」並填上帳號名稱。全部都是註解時，GitHub 不會顯示按鈕。
+
+# github: [帳號名稱]       # GitHub Sponsors（需要先申請並通過審核；最多 4 個帳號）
+# ko_fi: 帳號名稱          # Ko-fi，例如 https://ko-fi.com/帳號名稱 就填「帳號名稱」
+# custom: ["https://www.paypal.me/帳號名稱"]   # 其他網址（PayPal 等），最多 4 個

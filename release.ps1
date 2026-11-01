@@ -14,7 +14,7 @@ $stage = Join-Path 'dist\release' $name
 Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force (Join-Path $stage 'scripts') | Out-Null
 
-Copy-Item windows\install.cmd, windows\uninstall.cmd $stage
+Copy-Item windows\install.cmd, windows\uninstall.cmd, LICENSE $stage
 Copy-Item windows\scripts\*.ps1, windows\scripts\vdd_settings.xml $stage\scripts
 Copy-Item edid\edid_1920x1080.bin, dist\windows\vdswitch.exe $stage\scripts
 

@@ -230,6 +230,12 @@ release.ps1           build release packages (steps and contents in RELEASING.md
 
 You could also modify Microsoft's IddSampleDriver and hard-code the EDID in the driver. That gives full control over every byte, but you must build the driver yourself. Without a proper signature you need test-signing mode, which requires turning off Secure Boot and shows a watermark on screen. Virtual Display Driver is signed and supports custom EDIDs, so it was chosen instead.
 
+## License
+
+This project is released under the [MIT License](LICENSE): you may use, modify and distribute it freely, without any warranty. The bundled third-party software is under its own licenses (see [Third-party software](#third-party-software)).
+
+If this tool helps you, sponsorship to support development is welcome (the "Sponsor" button on the GitHub page, once it is available).
+
 ## Trademarks
 
 - Synergy is a trademark of Symless Ltd., and the Synergy icon (logo) belongs to Symless Ltd. This project mentions the name only for compatibility and is not affiliated with, endorsed by or sponsored by Symless.

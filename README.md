@@ -228,6 +228,12 @@ release.ps1           產生 Release 安裝包（步驟與內容見 RELEASING.md
 
 也可以自己修改 Microsoft 的 IddSampleDriver，把 EDID 寫死在驅動裡。這樣每個位元組都能自己控制，但必須自己編譯驅動。沒有正式簽章時要開測試簽章模式，而測試簽章模式需要關閉 Secure Boot，畫面上也會出現浮水印。Virtual Display Driver 已簽章，又支援自訂 EDID，所以採用它。
 
+## 授權
+
+本專案以 [MIT 授權](LICENSE) 釋出，可以自由使用、修改和散布，但不提供任何保證。內附的第三方軟體依各自的授權（見「[第三方軟體](#第三方軟體)」）。
+
+如果這個工具對你有幫助，歡迎贊助支持開發（GitHub 頁面上的「Sponsor」按鈕，開放後就會出現）。
+
 ## 商標
 
 - Synergy 是 Symless Ltd. 的商標，Synergy 的圖示（LOGO）屬於 Symless Ltd.。本專案只是為了相容而提到它的名稱，與 Symless 沒有任何關係，也沒有得到他們的認可或贊助。

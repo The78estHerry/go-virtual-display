@@ -268,7 +268,7 @@ make linux                                                    # 只能在 Linux 
   - Linux 安裝包在 `ubuntu:22.04` 檢查：腳本語法正確；`ldd` 缺 10 個桌面函式庫（EGL、X11、Wayland、xkbcommon 等，空容器本來就沒有），裝上之後是 0。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
-  2. Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）。測試前可先跑 `linux\tests\run.ps1`。
+  2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
   3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 
 ## 給之後的 Claude
