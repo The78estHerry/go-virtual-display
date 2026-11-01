@@ -70,7 +70,7 @@ make linux                                                    # 只能在 Linux 
 - **Windows 拔插**：
   - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
   - 排程工作的動作用 `conhost.exe --headless pnputil.exe ...`，避免閃出主控台視窗。
-  - 偵測到 `$RestartServices`（目前只有 `Synergy Core Daemon`）裡的服務時，排程工作多一個動作：`Start-Sleep 3` 後 `Restart-Service`。排程工作的多個動作會依序執行。
+  - 偵測到 `$RestartServices`（目前只有 `Synergy Core Daemon`）裡的服務時，多建立排程工作 `RestartServices`（`Restart-Service`）。開關程式（`internal/ui/layout_windows.go`）每秒用 `EnumDisplayMonitors` 比對螢幕配置，改變並穩定 2 秒後執行它。0.4.1 以前是附加在 Plug／Unplug／Apply 後面的第二個動作（`Start-Sleep 3`），但在 Windows 設定裡調整排列時沒人重新啟動，Synergy 的滑鼠會卡在舊邊緣，0.4.2 改成這樣。
   - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
 - **使用者的電腦**：
   - Windows 11 Pro 26200，zh-TW 語系，1920×1080 螢幕。
@@ -237,10 +237,14 @@ make linux                                                    # 只能在 Linux 
 - **2026-11-01 收工時的狀態（下次從這裡接續）**：
   - 已發佈：v0.3.0（Windows＋補上的 Linux）、v0.4.0、v0.4.1。Release 說明都標明 Linux 沒有實機測過。
   - main 上是 **0.4.2（開發中，未發佈）**，只改了 Windows 重新安裝時保留自動啟動，已推上 Gitea。測試用安裝包 `dist\release\go-virtual-display-0.4.2-windows.zip` 已產生。
-  - 使用者這台電腦：目前**沒有安裝**本程式（上次測完已移除，檢查過全部乾淨）。Docker Desktop 是這次為了編譯 Linux 版啟動的，可能還開著。
+  - 使用者這台電腦：收工時沒有安裝。11/1 下午使用者又裝了一版（0.4.1 或 0.4.2 測試包）在用，虛擬螢幕插入中。Docker Desktop 是這次為了編譯 Linux 版啟動的，可能還開著。
   - Gitea token：使用者在 11/1 提供了新的 token，已用 `git credential approve` 存進 Credential Manager（claude-bot）。曾建議使用者撤銷並換新，因為 token 貼在對話裡；換新的話要再存一次。
+- 2026-11-01：0.4.2 再修三個 Windows 問題（使用者回報，已實機測試通過）：
+  - **小工具跟著被拔掉的螢幕消失**：虛擬螢幕設為主螢幕、小工具在它上面時拔掉，小工具的座標落在已不存在的螢幕上。`platform_windows.go` 的 `widgetPlacer` 每秒檢查：視窗至少一半在某螢幕工作區內才算看得到，否則暫時移到主螢幕右下角，原本的螢幕回來時移回原位（使用者選的行為）。暫時移開期間位置變了就當成使用者拖過，不再移回。隱藏或結束時存的是原本的位置。
+  - **在「設定 > 顯示器」調整排列後 Synergy 滑鼠卡在邊緣**（本機滑鼠正常，使用者分別測過）：改由開關程式偵測螢幕配置改變後執行新的 `RestartServices` 排程工作，見上面的「Windows 拔插」。
+  - **系統列「顯示桌面小工具」有時沒勾**（小工具明明顯示著）：`app.go` 先啟動 systray 再建立小工具，選單先建好時 `a.widget.Visible()` 還是 false。改成先建立小工具。`widget.json` 本來就會在重新安裝時保留，不是設定遺失。
 - 待辦：
-  1. 請使用者實機確認 0.4.2：勾選「登入時自動啟動」→ 再執行 `install.cmd` 回答 y → 裝完後仍然勾著。通過後照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
+  1. 0.4.2 已實機測試通過（重新安裝保留自動啟動、小工具移開／移回、調整排列後 Synergy 正常、選單勾選正確）。下一步照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
   2. Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）。測試前可先跑 `linux\tests\run.ps1`。
   3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 

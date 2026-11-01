@@ -47,10 +47,14 @@ type widgetMgr struct {
 	theme    *material.Theme
 	onClosed func() // 視窗被關閉（含 Alt+F4）時呼叫
 
-	mu   sync.Mutex
-	win  *app.Window
-	hwnd uintptr
+	mu     sync.Mutex
+	win    *app.Window
+	hwnd   uintptr
+	placer widgetPlacer // 小工具所在的螢幕被拔掉時暫時移開
 }
+
+// placerInterval 是檢查小工具是否還在畫面上的間隔。Gio 沒有提供螢幕配置改變的事件，所以用輪詢
+const placerInterval = time.Second
 
 func newWidgetMgr(m *Model, onClosed func()) *widgetMgr {
 	th := material.NewTheme()
@@ -120,7 +124,7 @@ func (w *widgetMgr) SavePosition() {
 	w.mu.Lock()
 	hwnd := w.hwnd
 	w.mu.Unlock()
-	if x, y, ok := windowPos(hwnd); ok {
+	if x, y, ok := w.placer.savedPos(hwnd); ok {
 		SaveSettings(func(s *Settings) { s.X, s.Y, s.HasPos = x, y, true })
 	}
 }
@@ -132,10 +136,12 @@ func (w *widgetMgr) loop(win *app.Window) {
 		knob   float32 // 0 = 左（拔掉），1 = 右（插入）
 		last   time.Time
 		inited bool
+		stop   = make(chan struct{})
 	)
 	for {
 		switch e := win.Event().(type) {
 		case app.DestroyEvent:
+			close(stop)
 			w.mu.Lock()
 			if w.win == win {
 				w.win, w.hwnd = nil, 0
@@ -151,7 +157,19 @@ func (w *widgetMgr) loop(win *app.Window) {
 				s := LoadSettings()
 				// 必須另開 goroutine：視窗執行緒正等著這個迴圈處理完事件，
 				// 在這裡同步呼叫會送訊息給該視窗的 Win32 函式會互相等待而卡死
-				go setupWidgetWindow(h, s.X, s.Y, s.HasPos)
+				go func() {
+					setupWidgetWindow(h, s.X, s.Y, s.HasPos, &w.placer)
+					t := time.NewTicker(placerInterval)
+					defer t.Stop()
+					for {
+						select {
+						case <-stop:
+							return
+						case <-t.C:
+							w.placer.check(h)
+						}
+					}
+				}()
 			}
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)

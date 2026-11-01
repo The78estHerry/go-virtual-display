@@ -27,6 +27,13 @@ func Run(show <-chan struct{}) {
 	a.widget = newWidgetMgr(a.model, a.widgetClosed)
 	a.manager = newManagerWin(a.model)
 
+	// 小工具要在系統列之前建立：系統列選單建立時用 a.widget.Visible() 決定「顯示桌面小工具」有沒有勾，
+	// 之前順序相反，選單有時先建好，小工具明明顯示著卻沒有勾
+	watchDisplayLayout()
+	if LoadSettings().ShowWidget {
+		a.widget.Show()
+	}
+
 	go func() {
 		// systray 在 Windows 上需要同一個執行緒建立視窗並處理訊息
 		runtime.LockOSThread()
@@ -40,9 +47,6 @@ func Run(show <-chan struct{}) {
 				a.ShowWidget()
 			}
 		}()
-	}
-	if LoadSettings().ShowWidget {
-		a.widget.Show()
 	}
 	app.Main()
 }

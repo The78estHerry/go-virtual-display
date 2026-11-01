@@ -108,25 +108,29 @@ Restart-DisplayDependentServices
 
 # 4. 排程工作：以最高權限執行，之後按開關、切換解析度都不會跳 UAC
 #    Plug／Unplug 啟用或停用裝置；Apply 執行 vdswitch.exe --apply 套用使用者選的解析度
-#    有裝 Synergy 等服務時，再加一個動作：等螢幕建立好後重新啟動它（排程工作的多個動作會依序執行）
+#    有裝 Synergy 等服務時，再建立 RestartServices：開關程式偵測到螢幕配置改變（拔插、切換解析度、
+#    在 Windows 設定裡調整排列）並穩定後執行它。之前是附加在 Plug／Unplug／Apply 後面，
+#    但在 Windows 設定裡調整排列時沒有東西去重新啟動，Synergy 的滑鼠會卡在舊的邊緣
 $services = @($RestartServices | Where-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue })
 $pnputil = "--headless $env:SystemRoot\System32\pnputil.exe {0} /deviceid `"$VddHardwareId`""
-foreach ($t in @(
-        @{ Name = 'Plug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/enable-device') },
-        @{ Name = 'Unplug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/disable-device') },
-        @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' })) {
-    $action = @(New-ScheduledTaskAction -Execute $t.Exe -Argument $t.Arg)
-    if ($services) {
-        $names = ($services | ForEach-Object { "'$_'" }) -join ','
-        $action += New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" `
-            -Argument "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Start-Sleep -Seconds 3; Restart-Service -Name $names -Force`""
-    }
+$tasks = @(
+    @{ Name = 'Plug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/enable-device') },
+    @{ Name = 'Unplug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/disable-device') },
+    @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' })
+if ($services) {
+    $names = ($services | ForEach-Object { "'$_'" }) -join ','
+    $tasks += @{ Name = 'RestartServices'; Exe = "$env:SystemRoot\System32\conhost.exe"
+        Arg = "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Restart-Service -Name $names -Force`"" }
+}
+foreach ($t in $tasks) {
+    $action = New-ScheduledTaskAction -Execute $t.Exe -Argument $t.Arg
     $principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskPath $TaskPath -TaskName $t.Name -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 }
-Write-Host (T "Created scheduled tasks $($TaskPath)Plug, Unplug, Apply (user: $User)" "已建立排程工作 $($TaskPath)Plug、Unplug、Apply（使用者：$User）")
-if ($services) { Write-Host ((T 'Will restart after plugging/unplugging or switching resolution: ' '拔插或切換解析度後會自動重新啟動：') + ($services -join ', ')) }
+$taskNames = ($tasks | ForEach-Object { $_.Name })
+Write-Host (T "Created scheduled tasks $($TaskPath)$($taskNames -join ', ') (user: $User)" "已建立排程工作 $($TaskPath)$($taskNames -join '、')（使用者：$User）")
+if ($services) { Write-Host ((T 'Will restart after the display layout changes: ' '螢幕配置改變後會自動重新啟動：') + ($services -join ', ')) }
 
 # 5. 開關程式
 $exe = $AppExe

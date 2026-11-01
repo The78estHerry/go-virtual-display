@@ -66,7 +66,7 @@ go run ./cmd/make-edid -check edid/edid_1920x1080.bin      # 檢查並列出內�
 2. 下載驅動並驗證 SHA-256
 3. 把 `vdd_settings.xml` 和 EDID 放到 `C:\VirtualDisplayDriver`（原本有檔案的話會先備份）。EDID 依你存的解析度產生，新安裝是 1920×1080
 4. 安裝驅動
-5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，每次拔插後會自動重新啟動它（見下方說明）
+5. 建立排程工作（`\go-virtual-display\Plug`、`Unplug`、`Apply`，有裝 Synergy 時再加 `RestartServices`），之後按開關、切換解析度都不會再跳 UAC。有裝 Synergy 的話，螢幕配置改變後會自動重新啟動它（見下方說明）
 6. 把開關程式裝到 `C:\Program Files\go-virtual-display`，並在開始功能表和桌面建立「Virtual Display Switch」捷徑（想釘選到工作列的話，在捷徑上按右鍵選「釘選到工作列」）。如果還沒編譯但有裝 Go，會先自動編譯
 7. 複製移除用的檔案，並登記到「設定 > 應用程式」
 8. 執行檢查，並打開開關程式
@@ -101,7 +101,7 @@ powershell -ExecutionPolicy Bypass -File .\windows\scripts\uninstall.ps1    # �
 
 ### 搭配 Synergy
 
-Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。所以安裝時如果偵測到 Synergy 的服務（`Synergy Core Daemon`），拔插用的排程工作會在拔插 3 秒後自動重新啟動它，Synergy 會斷線一下再自動連回。
+Synergy 子機只在啟動時讀取整個桌面的大小。插入或拔掉虛擬螢幕後，它會用舊的大小計算滑鼠位置，從主機移過來的滑鼠會落到錯的螢幕上。在「設定 > 顯示器」調整螢幕排列後也一樣，滑鼠會卡在舊的邊緣。所以安裝時如果偵測到 Synergy 的服務（`Synergy Core Daemon`），會多建立排程工作 `RestartServices`。開關程式偵測到螢幕配置改變（拔插、切換解析度、調整排列、接上其他螢幕）並穩定約 2 秒後，用它重新啟動 Synergy，Synergy 會斷線一下再自動連回。開關程式沒有執行時不會處理。
 
 Synergy 是在本專案之後才安裝的話，重跑一次 `windows\install.cmd` 就會加上。其他需要重新啟動的服務可以加到 `windows\scripts\common.ps1` 的 `$RestartServices`。
 
@@ -175,6 +175,7 @@ linux/uninstall.sh
   - 綠色表示已插入，灰色表示已拔掉，橘色表示切換中，紅色表示發生錯誤（卡片上會顯示原因）
   - 拖曳左側文字區可以移動卡片
   - Windows 會記住卡片位置；Linux 由視窗管理員決定位置
+  - Windows：卡片所在的螢幕被拔掉時（例如放在設為主螢幕的虛擬螢幕上），卡片會暫時移到主螢幕右下角，那個螢幕插回來後再回到原位。暫時移開期間自己拖曳過的話，就留在新的位置
 - **系統列圖示**：
   - 圖示顏色和小工具相同
   - **左鍵點一下切換**
