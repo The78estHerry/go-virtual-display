@@ -262,8 +262,12 @@ make linux                                                    # 只能在 Linux 
   - 授權：VDD 是 MIT；devcon 的原始碼（Windows-driver-samples）是 **MS-PL**，不是 MIT。全文在 `windows/scripts/THIRD-PARTY-NOTICES.txt`，打包到 `scripts\vdd\`。
   - **修正重新安裝的順序**：之前是回答 y → 移除舊版 → 下載驅動，沒網路時會兩頭落空。改成先取得驅動，成功才移除舊版。
   - 在 scratchpad 模擬過：下載網址改壞時仍用內附的成功；內附檔案改壞時警告並改成下載，下載失敗就中止。`.cat` 簽章驗證仍是 Valid。
+- 2026-11-01：發佈 **v0.4.2**（Gitea Release id 17），Release 說明標明 Linux 沒有實機測過、這版 Linux 只重新打包。附件 SHA-256：Windows `339F3B0C…726BAE1F7`、Linux `2D6DCDC9…1BB296C21`。
+  - 上傳後以 token 下載回來比對雜湊一致。**不帶 token 下載會拿到別的內容**（雜湊不同），比對時要帶 `Authorization`。
+  - `RELEASING.md` 補上 0.3.0～0.4.2 的版本紀錄；打包準則第 4 條改成：預設下載，必要時（使用者決定）可以內附，但內容不改、雜湊寫死在 repo、附授權全文。
+  - Linux 安裝包在 `ubuntu:22.04` 檢查：腳本語法正確；`ldd` 缺 10 個桌面函式庫（EGL、X11、Wayland、xkbcommon 等，空容器本來就沒有），裝上之後是 0。
 - 待辦：
-  1. 0.4.2 前半已實機測試通過（重新安裝保留自動啟動、小工具移開／移回、調整排列後 Synergy 正常、選單勾選正確）。後加的 Synergy 狀態（含版號「Synergy 3」）、一律建立的 `RestartServices`、內附驅動也都實機測過：使用者拔掉網路重新安裝成功。下一步照 `RELEASING.md` 發佈 v0.4.2（Windows＋Linux 兩個安裝包，Linux 標明未實機測試）。
+  1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試（需要使用者的 Linux 機器；WSL 沒有 DRM 而且這台沒裝 WSL）。測試前可先跑 `linux\tests\run.ps1`。
   3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 
