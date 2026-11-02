@@ -262,7 +262,7 @@ make linux                                                    # 只能在 Linux 
   - 授權：VDD 是 MIT；devcon 的原始碼（Windows-driver-samples）是 **MS-PL**，不是 MIT。全文在 `windows/scripts/THIRD-PARTY-NOTICES.txt`，打包到 `scripts\vdd\`。
   - **修正重新安裝的順序**：之前是回答 y → 移除舊版 → 下載驅動，沒網路時會兩頭落空。改成先取得驅動，成功才移除舊版。
   - 在 scratchpad 模擬過：下載網址改壞時仍用內附的成功；內附檔案改壞時警告並改成下載，下載失敗就中止。`.cat` 簽章驗證仍是 Valid。
-- 2026-11-01：發佈 **v0.4.2**（Gitea Release id 17），Release 說明標明 Linux 沒有實機測過、這版 Linux 只重新打包。附件 SHA-256：Windows `339F3B0C…726BAE1F7`、Linux `2D6DCDC9…1BB296C21`。
+- 2026-11-01：發佈 **v0.4.2**（Gitea Release id 17），Release 說明標明 Linux 沒有實機測過、這版 Linux 只重新打包。附件 SHA-256：Windows `9FC384DF…5C35D933`、Linux `F0935191…15CE91EC`（2026-11-02 加上 LICENSE 後重新打包替換，程式碼和實測的版本相同；原本是 `339F3B0C…`／`2D6DCDC9…`）。
   - 上傳後以 token 下載回來比對雜湊一致。**不帶 token 下載會拿到別的內容**（雜湊不同），比對時要帶 `Authorization`。
   - `RELEASING.md` 補上 0.3.0～0.4.2 的版本紀錄；打包準則第 4 條改成：預設下載，必要時（使用者決定）可以內附，但內容不改、雜湊寫死在 repo、附授權全文。
   - Linux 安裝包在 `ubuntu:22.04` 檢查：腳本語法正確；`ldd` 缺 10 個桌面函式庫（EGL、X11、Wayland、xkbcommon 等，空容器本來就沒有），裝上之後是 0。
