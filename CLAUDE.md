@@ -266,6 +266,20 @@ make linux                                                    # 只能在 Linux 
   - 上傳後以 token 下載回來比對雜湊一致。**不帶 token 下載會拿到別的內容**（雜湊不同），比對時要帶 `Authorization`。
   - `RELEASING.md` 補上 0.3.0～0.4.2 的版本紀錄；打包準則第 4 條改成：預設下載，必要時（使用者決定）可以內附，但內容不改、雜湊寫死在 repo、附授權全文。
   - Linux 安裝包在 `ubuntu:22.04` 檢查：腳本語法正確；`ldd` 缺 10 個桌面函式庫（EGL、X11、Wayland、xkbcommon 等，空容器本來就沒有），裝上之後是 0。
+- 2026-11-01～02：為了之後可能同步到 GitHub 讓其他人下載、贊助，做了以下準備：
+  - **授權**：新增 `LICENSE`（MIT，著作權人 The78ester）。兩個安裝包最上層都附上（`release.ps1`、`release-linux.ps1`，後者用 `[ -f LICENSE ]` 判斷，打包 0.4.2 以前的 tag 不會出錯）。三份 README 都加了「授權」段落和一句贊助說明。
+  - **贊助**：`.github/FUNDING.yml` 目前是全部註解掉的範本（`github:`、`ko_fi:`、`custom:`）。使用者申請好帳號後，拿掉 `# ` 並填上帳號即可啟用。
+  - 給過的建議（使用者還沒決定）：
+    - CLAUDE.md 有本機與 token 的紀錄，公開前要移除或改寫，必要時清理 git 歷史。
+    - module 路徑和網址都寫死 Gitea，要先決定主要放在哪裡。
+    - 程式碼簽章可考慮 SignPath.io 或 Azure Trusted Signing，否則會有 SmartScreen 和防毒軟體警告。
+    - 補 SECURITY.md、issue 範本、免責聲明。
+  - **v0.4.2 重新打包**（使用者要求這版就附 LICENSE）：程式碼和實測的版本相同，只差文件和打包腳本。替換了 Release 附件（新雜湊見上一則），並把 `v0.4.2` tag 從 `a068ad9` 移到 `69e4b69`，讓原始碼壓縮檔也有 LICENSE。
+    - 強制推送 tag 會被自動模式擋下，要使用者明確要求後才能執行。
+  - **Release 說明改成三語**：v0.1.0～v0.4.2 六個 Release 全部改完，規則寫在 `RELEASING.md` 第 6 步。
+    - 以中文為主，英文、日文放在 `<details>` 折疊區塊；中文內容維持原文不改。
+    - 程式介面沒有日文，所以日文版引用介面文字時寫英文原文。
+    - 原稿在 scratchpad，用 API 的 PATCH 更新，再讀回來比對內容一致。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
