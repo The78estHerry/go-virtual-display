@@ -290,6 +290,11 @@ make linux                                                    # 只能在 Linux 
   - **對話紀錄（`~/.claude/projects/...`）不能直接公開**：裡面有使用者貼過的 Gitea token 和 GitHub token、gmail、`git credential fill` 的輸出、Synergy 設定與紀錄、截圖、其他專案（claude-secretary、KYOSAITAI）的內容。要公開的話，先轉成遮罩過的 Markdown，給使用者看過。
   - 0.4.3 的改動：module 路徑、`install.ps1` 的 `URLInfoAbout`、兩個 release 腳本寫的 README.txt 原始碼網址改成 GitHub；`FUNDING.yml` 啟用 `github: [The78estHerry]`；三份 README 的贊助說明加上 GitHub Sponsors 連結。功能沒有變更。
   - polkit ID `io.littleherry.vdswitch` 不改：改名的話，已安裝的使用者升級時要多處理舊檔。
+  - 發佈 **v0.4.3**（2026-11-03）：使用者用安裝包實測通過（支援連結開啟 GitHub、拔插正常）。
+    - 推上 GitHub 的有 main 和 v0.1.0～v0.4.3 全部 tag；GitHub 只有 v0.4.3 有 Release，舊版的 Release 只在 Gitea。
+    - GitHub Release id 432617847，Gitea Release id 18，標題沿用「v0.4.3」這種只有版本號的格式。
+    - 附件 SHA-256：Windows `858849E7…63D30616`、Linux `BECEA322…26EFB9D9B`。兩邊下載回來比對都一致。
+    - 第一次推 GitHub 時 403：fine-grained token 的 Contents 權限要設成 Read and write。改權限不會換掉 token。
   - GitHub token 是使用者貼在對話裡的，已建議發佈完成後撤銷並換新，新的請使用者在自己的終端機用 `git credential approve` 輸入。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
