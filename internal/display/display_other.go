@@ -5,7 +5,7 @@ package display
 import (
 	"errors"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
 )
 
 func newController() (Controller, error) {

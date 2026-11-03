@@ -14,8 +14,8 @@ import (
 	"slices"
 	"sync"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/edid"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/edid"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
 )
 
 // Profile 是一組解析度與更新率。

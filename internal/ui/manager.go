@@ -16,8 +16,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 const presetColumns = 3

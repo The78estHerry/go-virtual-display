@@ -2,7 +2,7 @@
 package main
 
 import (
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/ui"
+	"github.com/The78estHerry/go-virtual-display/internal/ui"
 )
 
 func main() {

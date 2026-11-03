@@ -82,7 +82,7 @@ The scripts folder contains installer files; you do not need to open it.
 支援 Synergy 3：有安裝的話，螢幕配置改變後會自動重新啟動它，系統列和小工具會顯示它的狀態。
 scripts 資料夾是安裝用的檔案，不需要直接開啟。
 
-Source / 原始碼：https://gitea.littleherry.work/The78estWorld/go-virtual-display
+Source / 原始碼：https://github.com/The78estHerry/go-virtual-display
 "@
 # 檔名一律英文；內容用 UTF-8 with BOM 和 CRLF，記事本才會正確顯示中文
 [IO.File]::WriteAllText((Join-Path $stage 'README.txt'), ($readme -replace "`r?`n", "`r`n"), (New-Object Text.UTF8Encoding $true))

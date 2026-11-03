@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 func TestSetVDDResolution(t *testing.T) {

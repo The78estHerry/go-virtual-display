@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"github.com/The78estHerry/go-virtual-display/internal/display"
 )
 
 // runSubcommand 處理 vdswitch.exe --apply（由最高權限排程工作 Apply 與安裝腳本執行）。

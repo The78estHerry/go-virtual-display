@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
 )
 
 func autostartFile() (string, error) {

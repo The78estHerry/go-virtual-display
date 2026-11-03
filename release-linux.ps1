@@ -77,7 +77,7 @@ The scripts folder contains installer files; you do not need to open it.
       glibc 2.31 以上（Ubuntu 20.04／Debian 11 以後）。
 scripts 資料夾是安裝用的檔案，不需要直接開啟。
 
-Source / 原始碼：https://gitea.littleherry.work/The78estWorld/go-virtual-display
+Source / 原始碼：https://github.com/The78estHerry/go-virtual-display
 "@
 } else {
 $readme = @"
@@ -117,7 +117,7 @@ This Linux package has not been tested on real hardware yet.
 這一版的 Linux 解析度固定 1920x1440。
 Linux 安裝包還沒有在實機上測試過。
 
-Source / 原始碼：https://gitea.littleherry.work/The78estWorld/go-virtual-display
+Source / 原始碼：https://github.com/The78estHerry/go-virtual-display
 "@
 }
 # 用 LF 換行、UTF-8 without BOM，Linux 的終端機和編輯器才會正常顯示

@@ -7,7 +7,7 @@ import (
 	"fyne.io/systray"
 	"gioui.org/app"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"github.com/The78estHerry/go-virtual-display/internal/display"
 )
 
 // App 串起 Model、系統列圖示與桌面小工具。

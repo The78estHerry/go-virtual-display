@@ -8,9 +8,9 @@ import (
 
 	"fyne.io/systray"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/display"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 func trayIcon(s Snapshot) []byte {

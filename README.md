@@ -232,7 +232,7 @@ release.ps1           產生 Release 安裝包（步驟與內容見 RELEASING.md
 
 本專案以 [MIT 授權](LICENSE) 釋出，可以自由使用、修改和散布，但不提供任何保證。內附的第三方軟體依各自的授權（見「[第三方軟體](#第三方軟體)」）。
 
-如果這個工具對你有幫助，歡迎贊助支持開發（GitHub 頁面上的「Sponsor」按鈕，開放後就會出現）。
+如果這個工具對你有幫助，歡迎贊助支持開發：[GitHub Sponsors](https://github.com/sponsors/The78estHerry)（repo 頁面上方的「Sponsor」按鈕；審核通過前可能還無法使用）。
 
 ## 商標
 

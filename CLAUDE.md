@@ -280,6 +280,17 @@ make linux                                                    # 只能在 Linux 
     - 以中文為主，英文、日文放在 `<details>` 折疊區塊；中文內容維持原文不改。
     - 程式介面沒有日文，所以日文版引用介面文字時寫英文原文。
     - 原稿在 scratchpad，用 API 的 PATCH 更新，再讀回來比對內容一致。
+- 2026-11-02～03：**同步到 GitHub**（`The78estHerry/go-virtual-display`），發佈 0.4.3。
+  - 敏感資料檢查：repo 和 git 歷史裡沒有 token、密碼、憑證，也沒有刪除過檔案。只有名稱、網域、信箱、電腦規格。
+  - 使用者的決定：
+    - 不隱藏 Gitea，歷史原封不動推上去（舊 commit 裡看得到 Gitea 網址、信箱、舊版 CLAUDE.md）。
+    - CLAUDE.md 照常公開。
+    - Gitea 繼續同步，兩邊都發 Release。
+    - 和 Claude 的對話紀錄要不要公開，之後再決定。
+  - **對話紀錄（`~/.claude/projects/...`）不能直接公開**：裡面有使用者貼過的 Gitea token 和 GitHub token、gmail、`git credential fill` 的輸出、Synergy 設定與紀錄、截圖、其他專案（claude-secretary、KYOSAITAI）的內容。要公開的話，先轉成遮罩過的 Markdown，給使用者看過。
+  - 0.4.3 的改動：module 路徑、`install.ps1` 的 `URLInfoAbout`、兩個 release 腳本寫的 README.txt 原始碼網址改成 GitHub；`FUNDING.yml` 啟用 `github: [The78estHerry]`；三份 README 的贊助說明加上 GitHub Sponsors 連結。功能沒有變更。
+  - polkit ID `io.littleherry.vdswitch` 不改：改名的話，已安裝的使用者升級時要多處理舊檔。
+  - GitHub token 是使用者貼在對話裡的，已建議發佈完成後撤銷並換新，新的請使用者在自己的終端機用 `git credential approve` 輸入。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
@@ -291,4 +302,8 @@ make linux                                                    # 只能在 Linux 
 
 - 改了 EDID 參數要重新產生 `.bin` 並一起 commit，`windows/scripts/verify.ps1` 和 `linux/scripts/verify.sh` 都是拿它來比對。
 - 升級 VDD 版本時，要同時更新 `windows/scripts/common.ps1` 的版本、zip 的 SHA-256 和 `$VddFilesSha256`（內附的 7 個檔案），`THIRD-PARTY-NOTICES.txt` 的版本和雜湊，並重新讀新版的 `vdd_settings.xml` 格式和 INF 的硬體 ID。
-- commit 一律以 claude-bot 身分，推到 `gitea.littleherry.work/The78estWorld/go-virtual-display`。
+- commit 一律以 claude-bot 身分。0.4.3 起要推兩邊：
+  - `github`：`https://github.com/The78estHerry/go-virtual-display`，主要位置，公開。token 是使用者的 fine-grained token，存在 Credential Manager（`host=github.com`、`username=The78estHerry`）。
+  - `origin`：`gitea.littleherry.work/The78estWorld/go-virtual-display`，要登入才能看，同步一份。
+  - 發新版時兩邊都要建 Release，步驟見 `RELEASING.md`。
+- module 路徑是 `github.com/The78estHerry/go-virtual-display`（0.4.3 起；之前是 Gitea 的路徑）。程式碼和安裝包裡給使用者看的連結都要指向 GitHub，因為其他人打不開 Gitea。

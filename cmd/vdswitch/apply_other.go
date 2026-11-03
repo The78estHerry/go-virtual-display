@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 // runSubcommand 處理 vdswitch --write-edid <檔案>：依目前使用者 profiles.json 使用中的解析度

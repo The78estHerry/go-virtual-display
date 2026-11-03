@@ -180,7 +180,7 @@ $entry = @{
     Publisher       = 'go-virtual-display'
     InstallLocation = $AppDir
     UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcher`""
-    URLInfoAbout    = 'https://gitea.littleherry.work/The78estWorld/go-virtual-display'
+    URLInfoAbout    = 'https://github.com/The78estHerry/go-virtual-display'
 }
 if (Test-Path (Join-Path $AppDir 'vdswitch.exe')) { $entry.DisplayIcon = Join-Path $AppDir 'vdswitch.exe' }
 foreach ($k in $entry.Keys) { Set-ItemProperty $UninstallKey -Name $k -Value $entry[$k] }

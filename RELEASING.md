@@ -10,7 +10,8 @@
 
 ## 步驟
 
-1. 把 `windows/scripts/common.ps1` 的 `$AppVersion` 改成新版本，確認要發佈的修改都已 commit 並推上 Gitea，工作目錄乾淨（`git status`）。
+1. 把 `windows/scripts/common.ps1` 的 `$AppVersion` 改成新版本，確認要發佈的修改都已 commit 並推上 GitHub 和 Gitea，工作目錄乾淨（`git status`）。
+   - 0.4.3 起主要放在 GitHub（`github` remote：`https://github.com/The78estHerry/go-virtual-display`），Gitea（`origin`）同步一份。每次都兩邊推：`git push origin main` 和 `git push github main`。
 2. 產生安裝包：
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\release.ps1
@@ -23,8 +24,9 @@
    ```
    git tag -a v0.1.0 -m "v0.1.0：<一句話摘要>"
    git push origin v0.1.0
+   git push github v0.1.0
    ```
-6. 在 Gitea 建 Release（網頁或 API），說明寫：
+6. **GitHub 和 Gitea 都要建 Release**（0.4.3 起），兩邊的說明和附件相同。說明寫：
    - 下載哪個檔案、怎麼安裝
    - 這版的內容
    - 測試狀態：哪些平台實機測過，哪些沒有
@@ -35,9 +37,17 @@
      - 英文、日文各放在一個 `<details>` 折疊區塊裡，開頭註明「這是翻譯，以中文版為準」。
      - 程式介面沒有日文，所以日文版引用介面文字時寫英文介面的原文（例如「Start at sign-in」），必要時在括號裡附日文說明。
      - SHA-256 三語共用，放在最後。
-7. 上傳安裝包當作 Release 附件。**不要上傳原始碼壓縮檔**，Gitea 會自動附上。
+7. 上傳安裝包當作 Release 附件。**不要上傳原始碼壓縮檔**，GitHub 和 Gitea 都會自動附上。
+8. 兩邊都下載回來比對 SHA-256。Gitea 要登入才能下載，下載時要帶 token，否則拿到的是登入頁。
 
 用 API 時，Release 說明的中文要先寫成 UTF-8 檔案，再用 `curl --data-binary @檔案` 送出。直接放在命令列參數裡會變成亂碼。
+
+- **GitHub**：token 用 `git credential fill`（`host=github.com`、`username=The78estHerry`）取得，header 是 `Authorization: Bearer <token>`。
+  - 建 Release：`POST https://api.github.com/repos/The78estHerry/go-virtual-display/releases`，JSON 裡放 `tag_name`、`name`、`body`。
+  - 上傳附件：`POST https://uploads.github.com/repos/The78estHerry/go-virtual-display/releases/<id>/assets?name=<檔名>`，`Content-Type: application/octet-stream`，內容用 `--data-binary @檔案`。
+- **Gitea**：token 用 `git credential fill`（`host=gitea.littleherry.work`、`username=claude-bot`）取得，header 是 `Authorization: token <token>`。
+  - 建 Release：`POST /api/v1/repos/The78estWorld/go-virtual-display/releases`。
+  - 上傳附件：`POST .../releases/<id>/assets?name=<檔名>`，用 multipart：`-F attachment=@檔案`。
 
 ## 各平台安裝包的內容
 
@@ -125,6 +135,7 @@ go-virtual-display-<版本>-linux-amd64/
 | 0.4.0 | 2026-11-01 | windows、linux-amd64 | Linux 也能切換解析度。Linux 未實機測試；Windows 只改共用程式碼，未重新實測 |
 | 0.4.1 | 2026-11-01 | windows、linux-amd64 | Linux 的 install.sh 已安裝時先提醒。Linux 未實機測試 |
 | 0.4.2 | 2026-11-01 | windows、linux-amd64 | Windows：重新安裝保留自動啟動；小工具所在螢幕被拔掉時暫時移開；調整排列後自動重新啟動 Synergy；Synergy 3 狀態顯示；安裝包內附驅動可離線安裝；修正重新安裝的順序；三語 README。Windows 已實機測試（含離線安裝），Linux 只重新打包、未實機測試 |
+| 0.4.3 | 2026-11-03 | windows、linux-amd64 | 第一次在 GitHub 發佈：module 路徑、「設定 > 應用程式」的支援連結、安裝包 README.txt 的原始碼網址改成 GitHub；啟用 GitHub Sponsors。功能和 0.4.2 相同 |
 
 ## 打包準則（所有專案共用）
 

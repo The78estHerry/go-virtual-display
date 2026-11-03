@@ -234,7 +234,7 @@ You could also modify Microsoft's IddSampleDriver and hard-code the EDID in the 
 
 This project is released under the [MIT License](LICENSE): you may use, modify and distribute it freely, without any warranty. The bundled third-party software is under its own licenses (see [Third-party software](#third-party-software)).
 
-If this tool helps you, sponsorship to support development is welcome (the "Sponsor" button on the GitHub page, once it is available).
+If this tool helps you, sponsorship to support development is welcome via [GitHub Sponsors](https://github.com/sponsors/The78estHerry) (the "Sponsor" button at the top of the repo page; it may not work until the account is approved).
 
 ## Trademarks
 

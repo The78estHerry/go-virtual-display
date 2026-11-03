@@ -11,7 +11,7 @@ import (
 	"gioui.org/text"
 	"golang.org/x/sys/windows"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
 )
 
 var (

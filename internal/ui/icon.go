@@ -8,7 +8,7 @@ import (
 	"image/png"
 	"math"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/display"
+	"github.com/The78estHerry/go-virtual-display/internal/display"
 )
 
 var (

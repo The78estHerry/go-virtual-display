@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/edid"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/edid"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 func main() {

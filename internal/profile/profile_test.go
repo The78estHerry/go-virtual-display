@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/edid"
+	"github.com/The78estHerry/go-virtual-display/internal/edid"
 )
 
 func TestPresetsBuildAndParse(t *testing.T) {

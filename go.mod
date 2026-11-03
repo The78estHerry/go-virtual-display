@@ -1,4 +1,4 @@
-module gitea.littleherry.work/The78estWorld/go-virtual-display
+module github.com/The78estHerry/go-virtual-display
 
 go 1.26.0
 

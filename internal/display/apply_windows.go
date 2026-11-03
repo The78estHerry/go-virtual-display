@@ -16,8 +16,8 @@ import (
 
 	"golang.org/x/sys/windows/registry"
 
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/i18n"
-	"gitea.littleherry.work/The78estWorld/go-virtual-display/internal/profile"
+	"github.com/The78estHerry/go-virtual-display/internal/i18n"
+	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
 const (
