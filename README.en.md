@@ -6,9 +6,9 @@
 
 > The Traditional Chinese README is the primary version. If this translation differs from it, the Chinese version is correct.
 
-[![PayPal](https://img.shields.io/badge/PayPal-paypal.me%2FThe78ester-00457C?logo=paypal&logoColor=white)](https://paypal.me/The78ester)
+[![PayPal](https://img.shields.io/badge/PayPal-paypal.me%2FThe78ester-00457C?logo=paypal&logoColor=white)](https://paypal.me/The78ester) [![Ko-fi](https://img.shields.io/badge/Ko--fi-the78ester-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/the78ester)
 
-💖 If this tool helps you, please consider supporting development via [PayPal](https://paypal.me/The78ester).
+💖 If this tool helps you, please consider supporting development via [PayPal](https://paypal.me/The78ester) or [Ko-fi](https://ko-fi.com/the78ester).
 
 Makes your computer believe a monitor is connected even when **no physical monitor is attached**, and that monitor reports an EDID we generate ourselves. You can pick, add and remove resolutions; the default is 1920×1080. It also comes with a "plug switch": a tray icon plus a desktop widget that plug in or unplug this virtual monitor with one click.
 
@@ -238,7 +238,7 @@ You could also modify Microsoft's IddSampleDriver and hard-code the EDID in the 
 
 This project is released under the [MIT License](LICENSE): you may use, modify and distribute it freely, without any warranty. The bundled third-party software is under its own licenses (see [Third-party software](#third-party-software)).
 
-If this tool helps you, sponsorship to support development is welcome via [PayPal](https://paypal.me/The78ester).
+If this tool helps you, sponsorship to support development is welcome via [PayPal](https://paypal.me/The78ester) or [Ko-fi](https://ko-fi.com/the78ester).
 
 ## Trademarks
 
