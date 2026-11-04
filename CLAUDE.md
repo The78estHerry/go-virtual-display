@@ -268,7 +268,7 @@ make linux                                                    # 只能在 Linux 
   - Linux 安裝包在 `ubuntu:22.04` 檢查：腳本語法正確；`ldd` 缺 10 個桌面函式庫（EGL、X11、Wayland、xkbcommon 等，空容器本來就沒有），裝上之後是 0。
 - 2026-11-01～02：為了之後可能同步到 GitHub 讓其他人下載、贊助，做了以下準備：
   - **授權**：新增 `LICENSE`（MIT，著作權人 The78ester）。兩個安裝包最上層都附上（`release.ps1`、`release-linux.ps1`，後者用 `[ -f LICENSE ]` 判斷，打包 0.4.2 以前的 tag 不會出錯）。三份 README 都加了「授權」段落和一句贊助說明。
-  - **贊助**：`.github/FUNDING.yml` 目前是全部註解掉的範本（`github:`、`ko_fi:`、`custom:`）。使用者申請好帳號後，拿掉 `# ` 並填上帳號即可啟用。
+  - **贊助**：新增 `.github/FUNDING.yml`，用 PayPal（`custom: ["https://paypal.me/The78ester"]`）。
   - 給過的建議（使用者還沒決定）：
     - CLAUDE.md 有本機與 token 的紀錄，公開前要移除或改寫，必要時清理 git 歷史。
     - module 路徑和網址都寫死 Gitea，要先決定主要放在哪裡。
@@ -288,7 +288,7 @@ make linux                                                    # 只能在 Linux 
     - Gitea 繼續同步，兩邊都發 Release。
     - 和 Claude 的對話紀錄要不要公開，之後再決定。
   - **對話紀錄（`~/.claude/projects/...`）不能直接公開**：裡面有使用者貼過的 Gitea token 和 GitHub token、gmail、`git credential fill` 的輸出、Synergy 設定與紀錄、截圖、其他專案（claude-secretary、KYOSAITAI）的內容。要公開的話，先轉成遮罩過的 Markdown，給使用者看過。
-  - 0.4.3 的改動：module 路徑、`install.ps1` 的 `URLInfoAbout`、兩個 release 腳本寫的 README.txt 原始碼網址改成 GitHub；`FUNDING.yml` 啟用 `github: [The78estHerry]`；三份 README 的贊助說明加上 GitHub Sponsors 連結。功能沒有變更。
+  - 0.4.3 的改動：module 路徑、`install.ps1` 的 `URLInfoAbout`、兩個 release 腳本寫的 README.txt 原始碼網址改成 GitHub；`FUNDING.yml` 啟用 PayPal（`custom`）；三份 README 的贊助說明加上 PayPal 連結。功能沒有變更。
   - polkit ID `io.littleherry.vdswitch` 不改：改名的話，已安裝的使用者升級時要多處理舊檔。
   - 發佈 **v0.4.3**（2026-11-03）：使用者用安裝包實測通過（支援連結開啟 GitHub、拔插正常）。
     - 推上 GitHub 的有 main 和 v0.1.0～v0.4.3 全部 tag；GitHub 只有 v0.4.3 有 Release，舊版的 Release 只在 Gitea。
@@ -296,15 +296,14 @@ make linux                                                    # 只能在 Linux 
     - 附件 SHA-256：Windows `858849E7…63D30616`、Linux `BECEA322…26EFB9D9B`。兩邊下載回來比對都一致。
     - 第一次推 GitHub 時 403：fine-grained token 的 Contents 權限要設成 Read and write。改權限不會換掉 token。
   - GitHub token 是使用者貼在對話裡的，已建議發佈完成後撤銷並換新，新的請使用者在自己的終端機用 `git credential approve` 輸入。
-- 2026-11-04：依使用者要求，三份 README 最上面（語言連結下面）加上 GitHub Sponsors 徽章和一句贊助說明。
+- 2026-11-04：依使用者要求，三份 README 最上面（語言連結下面）加上 PayPal 徽章和一句贊助說明。
 - 2026-11-04：依使用者要求，commit 信箱從舊的網域信箱（敏感字眼，不寫出來，見 gitea-to-github 的 rules.md 第 5 節）改成 `littleherry@gmail.com`，**連歷史一起改寫**：
   - 用 `git filter-branch --env-filter` 改寫全部 commit（電腦上沒有 filter-repo），內容和日期不變，只有雜湊變了。annotated tag 用原本的訊息和日期重新建立，tagger 也換成新信箱。
   - 強制推送 main 和 v0.1.0～v0.4.3 到 GitHub 和 Gitea。Release 跟著 tag 名稱，安裝包附件不變；原始碼壓縮檔的內容相同。
   - 上面紀錄裡的 commit 雜湊已換成新的。改寫前的備份是 scratchpad 的 `before-email-rewrite.bundle`（工作階段結束就會清掉）。
   - 全域的 `~/.claude/settings.json`（`GIT_AUTHOR_EMAIL`／`GIT_COMMITTER_EMAIL`）和 `~/.claude/CLAUDE.md` 也改成新信箱，**所有專案**之後的 commit 都會用它。
   - 同一天再改寫一次：之前的 CLAUDE.md 紀錄寫出了舊信箱，連同其他 10 個 repo 的歷史一起清掉（經過在 gitea-to-github 的 `cases/history-email-cleanup.md`）。本專案只有最後兩個 commit 的雜湊改變，tag 和 Release 都沒動。
-- 2026-11-04：依使用者要求加入 PayPal 贊助（`https://paypal.me/The78ester`，不帶 locale 參數）：三份 README 的徽章、最上方和授權段落的贊助句，`FUNDING.yml` 的 `custom`。gitea-to-github 的 `readme-style.md` 也一起改，之後的 GitHub 專案照這個樣式。
-  - 同一天：**GitHub Sponsors 不支援台灣**，取消。README 只留 PayPal，`FUNDING.yml` 拿掉 `github:`，只留 `custom`。go-screen-burn-in-fixer 同步改。RELEASING.md 的 0.4.3 紀錄也改成「開放 PayPal 贊助」（使用者要求）。v0.4.3 的 Release 說明（GitHub、Gitea）中「開放贊助」三語的連結改成 PayPal，其餘內容和附件不變。
+- 2026-11-04：依使用者要求，贊助只用 PayPal（`https://paypal.me/The78ester`，不帶 locale 參數）：三份 README 的徽章、最上方和授權段落的贊助句，`FUNDING.yml` 的 `custom`，RELEASING.md 的 0.4.3 紀錄，v0.4.3 的 Release 說明（GitHub、Gitea，其餘內容和附件不變）。go-screen-burn-in-fixer 同步改；gitea-to-github 的 `readme-style.md` 是之後所有 GitHub 專案的樣式。**不要用 GitHub Sponsors：不支援台灣。**
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
