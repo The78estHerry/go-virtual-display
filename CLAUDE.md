@@ -304,7 +304,7 @@ make linux                                                    # 只能在 Linux 
   - 全域的 `~/.claude/settings.json`（`GIT_AUTHOR_EMAIL`／`GIT_COMMITTER_EMAIL`）和 `~/.claude/CLAUDE.md` 也改成新信箱，**所有專案**之後的 commit 都會用它。
   - 同一天再改寫一次：之前的 CLAUDE.md 紀錄寫出了舊信箱，連同其他 10 個 repo 的歷史一起清掉（經過在 gitea-to-github 的 `cases/history-email-cleanup.md`）。本專案只有最後兩個 commit 的雜湊改變，tag 和 Release 都沒動。
 - 2026-11-04：依使用者要求，贊助只用 PayPal（`https://paypal.me/The78ester`，不帶 locale 參數）：三份 README 的徽章、最上方和授權段落的贊助句，`FUNDING.yml` 的 `custom`，RELEASING.md 的 0.4.3 紀錄，v0.4.3 的 Release 說明（GitHub、Gitea，其餘內容和附件不變）。go-screen-burn-in-fixer 同步改；gitea-to-github 的 `readme-style.md` 是之後所有 GitHub 專案的樣式。**不要用 GitHub Sponsors：不支援台灣。**
-- 2026-11-04：使用者設定好 Ko-fi（`https://ko-fi.com/the78ester`）。三份 README 加上 Ko-fi 徽章，贊助句改成「PayPal 或 Ko-fi」，`FUNDING.yml` 加 `ko_fi: the78ester`。go-screen-burn-in-fixer 和 readme-style.md 同步改。Release 說明沒改。
+- 2026-11-04：使用者設定好 Ko-fi（`https://ko-fi.com/the78ester`）。三份 README 加上 Ko-fi 徽章，贊助句改成「PayPal 或 Ko-fi」，`FUNDING.yml` 加 `ko_fi: the78ester`。go-screen-burn-in-fixer 和 readme-style.md 同步改。v0.4.3 的 Release 說明（GitHub、Gitea）三語也加上 Ko-fi。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
