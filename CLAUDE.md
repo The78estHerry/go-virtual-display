@@ -297,7 +297,7 @@ make linux                                                    # 只能在 Linux 
     - 第一次推 GitHub 時 403：fine-grained token 的 Contents 權限要設成 Read and write。改權限不會換掉 token。
   - GitHub token 是使用者貼在對話裡的，已建議發佈完成後撤銷並換新，新的請使用者在自己的終端機用 `git credential approve` 輸入。
 - 2026-11-04：依使用者要求，三份 README 最上面（語言連結下面）加上 GitHub Sponsors 徽章和一句贊助說明。
-- 2026-11-04：依使用者要求，commit 信箱從 舊的網域信箱 改成 `littleherry@gmail.com`，**連歷史一起改寫**：
+- 2026-11-04：依使用者要求，commit 信箱從舊的網域信箱（敏感字眼，不寫出來，見 gitea-to-github 的 rules.md 第 5 節）改成 `littleherry@gmail.com`，**連歷史一起改寫**：
   - 用 `git filter-branch --env-filter` 改寫全部 commit（電腦上沒有 filter-repo），內容和日期不變，只有雜湊變了。annotated tag 用原本的訊息和日期重新建立，tagger 也換成新信箱。
   - 強制推送 main 和 v0.1.0～v0.4.3 到 GitHub 和 Gitea。Release 跟著 tag 名稱，安裝包附件不變；原始碼壓縮檔的內容相同。
   - 上面紀錄裡的 commit 雜湊已換成新的。改寫前的備份是 scratchpad 的 `before-email-rewrite.bundle`（工作階段結束就會清掉）。
