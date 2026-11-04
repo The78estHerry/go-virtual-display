@@ -304,7 +304,7 @@ make linux                                                    # 只能在 Linux 
   - 全域的 `~/.claude/settings.json`（`GIT_AUTHOR_EMAIL`／`GIT_COMMITTER_EMAIL`）和 `~/.claude/CLAUDE.md` 也改成新信箱，**所有專案**之後的 commit 都會用它。
   - 同一天再改寫一次：之前的 CLAUDE.md 紀錄寫出了舊信箱，連同其他 10 個 repo 的歷史一起清掉（經過在 gitea-to-github 的 `cases/history-email-cleanup.md`）。本專案只有最後兩個 commit 的雜湊改變，tag 和 Release 都沒動。
 - 2026-11-04：依使用者要求加入 PayPal 贊助（`https://paypal.me/The78ester`，不帶 locale 參數）：三份 README 的徽章、最上方和授權段落的贊助句，`FUNDING.yml` 的 `custom`。gitea-to-github 的 `readme-style.md` 也一起改，之後的 GitHub 專案照這個樣式。
-  - 同一天：**GitHub Sponsors 不支援台灣**，取消。README 只留 PayPal，`FUNDING.yml` 拿掉 `github:`，只留 `custom`。go-screen-burn-in-fixer 同步改。RELEASING.md 裡 0.4.3「啟用 GitHub Sponsors」是當時的紀錄，不改。v0.4.3 的 Release 說明（GitHub、Gitea）中「開放贊助」三語的連結改成 PayPal，其餘內容和附件不變。
+  - 同一天：**GitHub Sponsors 不支援台灣**，取消。README 只留 PayPal，`FUNDING.yml` 拿掉 `github:`，只留 `custom`。go-screen-burn-in-fixer 同步改。RELEASING.md 的 0.4.3 紀錄也改成「開放 PayPal 贊助」（使用者要求）。v0.4.3 的 Release 說明（GitHub、Gitea）中「開放贊助」三語的連結改成 PayPal，其餘內容和附件不變。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
