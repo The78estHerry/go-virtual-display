@@ -302,6 +302,7 @@ make linux                                                    # 只能在 Linux 
   - 強制推送 main 和 v0.1.0～v0.4.3 到 GitHub 和 Gitea。Release 跟著 tag 名稱，安裝包附件不變；原始碼壓縮檔的內容相同。
   - 上面紀錄裡的 commit 雜湊已換成新的。改寫前的備份是 scratchpad 的 `before-email-rewrite.bundle`（工作階段結束就會清掉）。
   - 全域的 `~/.claude/settings.json`（`GIT_AUTHOR_EMAIL`／`GIT_COMMITTER_EMAIL`）和 `~/.claude/CLAUDE.md` 也改成新信箱，**所有專案**之後的 commit 都會用它。
+  - 同一天再改寫一次：之前的 CLAUDE.md 紀錄寫出了舊信箱，連同其他 10 個 repo 的歷史一起清掉（經過在 gitea-to-github 的 `cases/history-email-cleanup.md`）。本專案只有最後兩個 commit 的雜湊改變，tag 和 Release 都沒動。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
