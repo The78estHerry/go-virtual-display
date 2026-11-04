@@ -135,7 +135,7 @@ go-virtual-display-<版本>-linux-amd64/
 | 0.4.0 | 2026-11-01 | windows、linux-amd64 | Linux 也能切換解析度。Linux 未實機測試；Windows 只改共用程式碼，未重新實測 |
 | 0.4.1 | 2026-11-01 | windows、linux-amd64 | Linux 的 install.sh 已安裝時先提醒。Linux 未實機測試 |
 | 0.4.2 | 2026-11-01 | windows、linux-amd64 | Windows：重新安裝保留自動啟動；小工具所在螢幕被拔掉時暫時移開；調整排列後自動重新啟動 Synergy；Synergy 3 狀態顯示；安裝包內附驅動可離線安裝；修正重新安裝的順序；三語 README。Windows 已實機測試（含離線安裝），Linux 只重新打包、未實機測試 |
-| 0.4.3 | 2026-11-03 | windows、linux-amd64 | 第一次在 GitHub 發佈：module 路徑、「設定 > 應用程式」的支援連結、安裝包 README.txt 的原始碼網址改成 GitHub；開放 PayPal 贊助。功能和 0.4.2 相同 |
+| 0.4.3 | 2026-11-03 | windows、linux-amd64 | 第一次在 GitHub 發佈：module 路徑、「設定 > 應用程式」的支援連結、安裝包 README.txt 的原始碼網址改成 GitHub；開放 PayPal、Ko-fi 贊助。功能和 0.4.2 相同 |
 
 ## 打包準則（所有專案共用）
 
