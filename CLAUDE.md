@@ -196,7 +196,7 @@ make linux                                                    # 只能在 Linux 
   - 原因：0.3.0 的 `vdd_settings.xml` 第 3 行註解寫了 `vdswitch.exe --apply`。**XML 註解不能有 `--`**，整個檔案格式錯誤，驅動不讀設定，所以不建立螢幕、也不寫記錄、沒有任何錯誤。之前推測的 EDID 時序和系統狀態都不是原因（`ExactRefresh` 仍保留，讓更新率剛好是整數）。
   - 修正：拿掉註解裡的 `--`，logging 改回 false。`setVDDResolution` 寫入前用 `encoding/xml` 檢查格式，測試也會檢查範本格式。`.gitattributes` 加上 `*.xml text eol=crlf`，0.3.0 之前的安裝包是 CRLF，之後被改成 LF 了（實測 LF 也能用，只是保持一致）。
   - 重新產生測試用安裝包 `dist\release\go-virtual-display-0.3.0-windows.zip`，等使用者移除 0.1.1 後重裝測試。
-  - 0.3.0 還沒驗證的項目：切換解析度和管理視窗、桌面捷徑和搜尋「虛擬螢幕」、新圖示、安裝時語言選單的排版（`e4006e3` 改用 `Console.ReadLine`）、移除是否乾淨。通過後照 `RELEASING.md` 打 v0.3.0 tag 並發佈。
+  - 0.3.0 還沒驗證的項目：切換解析度和管理視窗、桌面捷徑和搜尋「虛擬螢幕」、新圖示、安裝時語言選單的排版（`59b0f01` 改用 `Console.ReadLine`）、移除是否乾淨。通過後照 `RELEASING.md` 打 v0.3.0 tag 並發佈。
   - 另外要查：0.1.1 重開機後插入時，虛擬螢幕變成主螢幕（在 (0,0)，實體螢幕被排到右邊）。之後裝 0.3.0 時實體螢幕維持主螢幕，可能是 Windows 沿用上次的排列，先觀察。
 - 2026-11-01：使用者用修正後的安裝包（英文介面）安裝 0.3.0，虛擬螢幕正常出現。驗證通過：切換解析度、管理視窗、桌面捷徑、新圖示，移除後全部乾淨。英文介面搜尋「Virtual Display Switch」找得到，搜尋中文找不到，這是預期的行為。
 - 2026-11-01：使用者要求在已安裝時重複安裝要先提醒：
@@ -274,7 +274,7 @@ make linux                                                    # 只能在 Linux 
     - module 路徑和網址都寫死 Gitea，要先決定主要放在哪裡。
     - 程式碼簽章可考慮 SignPath.io 或 Azure Trusted Signing，否則會有 SmartScreen 和防毒軟體警告。
     - 補 SECURITY.md、issue 範本、免責聲明。
-  - **v0.4.2 重新打包**（使用者要求這版就附 LICENSE）：程式碼和實測的版本相同，只差文件和打包腳本。替換了 Release 附件（新雜湊見上一則），並把 `v0.4.2` tag 從 `a068ad9` 移到 `69e4b69`，讓原始碼壓縮檔也有 LICENSE。
+  - **v0.4.2 重新打包**（使用者要求這版就附 LICENSE）：程式碼和實測的版本相同，只差文件和打包腳本。替換了 Release 附件（新雜湊見上一則），並把 `v0.4.2` tag 從 `1ed2f75` 移到 `e6bd74b`，讓原始碼壓縮檔也有 LICENSE。
     - 強制推送 tag 會被自動模式擋下，要使用者明確要求後才能執行。
   - **Release 說明改成三語**：v0.1.0～v0.4.2 六個 Release 全部改完，規則寫在 `RELEASING.md` 第 6 步。
     - 以中文為主，英文、日文放在 `<details>` 折疊區塊；中文內容維持原文不改。
@@ -296,6 +296,12 @@ make linux                                                    # 只能在 Linux 
     - 附件 SHA-256：Windows `858849E7…63D30616`、Linux `BECEA322…26EFB9D9B`。兩邊下載回來比對都一致。
     - 第一次推 GitHub 時 403：fine-grained token 的 Contents 權限要設成 Read and write。改權限不會換掉 token。
   - GitHub token 是使用者貼在對話裡的，已建議發佈完成後撤銷並換新，新的請使用者在自己的終端機用 `git credential approve` 輸入。
+- 2026-11-04：依使用者要求，三份 README 最上面（語言連結下面）加上 GitHub Sponsors 徽章和一句贊助說明。
+- 2026-11-04：依使用者要求，commit 信箱從 舊的網域信箱 改成 `littleherry@gmail.com`，**連歷史一起改寫**：
+  - 用 `git filter-branch --env-filter` 改寫全部 commit（電腦上沒有 filter-repo），內容和日期不變，只有雜湊變了。annotated tag 用原本的訊息和日期重新建立，tagger 也換成新信箱。
+  - 強制推送 main 和 v0.1.0～v0.4.3 到 GitHub 和 Gitea。Release 跟著 tag 名稱，安裝包附件不變；原始碼壓縮檔的內容相同。
+  - 上面紀錄裡的 commit 雜湊已換成新的。改寫前的備份是 scratchpad 的 `before-email-rewrite.bundle`（工作階段結束就會清掉）。
+  - 全域的 `~/.claude/settings.json`（`GIT_AUTHOR_EMAIL`／`GIT_COMMITTER_EMAIL`）和 `~/.claude/CLAUDE.md` 也改成新信箱，**所有專案**之後的 commit 都會用它。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
