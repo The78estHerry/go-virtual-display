@@ -4,9 +4,9 @@
 
 **繁體中文** | [English](README.en.md) | [日本語](README.ja.md)
 
-[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/The78estHerry) [![PayPal](https://img.shields.io/badge/PayPal-paypal.me%2FThe78ester-00457C?logo=paypal&logoColor=white)](https://paypal.me/The78ester)
+[![PayPal](https://img.shields.io/badge/PayPal-paypal.me%2FThe78ester-00457C?logo=paypal&logoColor=white)](https://paypal.me/The78ester)
 
-💖 如果這個工具對你有幫助，歡迎透過 [GitHub Sponsors](https://github.com/sponsors/The78estHerry) 或 [PayPal](https://paypal.me/The78ester) 贊助支持開發。
+💖 如果這個工具對你有幫助，歡迎透過 [PayPal](https://paypal.me/The78ester) 贊助支持開發。
 
 讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除，預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
 
@@ -236,7 +236,7 @@ release.ps1           產生 Release 安裝包（步驟與內容見 RELEASING.md
 
 本專案以 [MIT 授權](LICENSE) 釋出，可以自由使用、修改和散布，但不提供任何保證。內附的第三方軟體依各自的授權（見「[第三方軟體](#第三方軟體)」）。
 
-如果這個工具對你有幫助，歡迎贊助支持開發：[GitHub Sponsors](https://github.com/sponsors/The78estHerry)（repo 頁面上方的「Sponsor」按鈕；審核通過前可能還無法使用）或 [PayPal](https://paypal.me/The78ester)。
+如果這個工具對你有幫助，歡迎透過 [PayPal](https://paypal.me/The78ester) 贊助支持開發。
 
 ## 商標
 
