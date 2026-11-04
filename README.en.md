@@ -6,6 +6,10 @@
 
 > The Traditional Chinese README is the primary version. If this translation differs from it, the Chinese version is correct.
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/The78estHerry)
+
+💖 If this tool helps you, please consider supporting development via [GitHub Sponsors](https://github.com/sponsors/The78estHerry).
+
 Makes your computer believe a monitor is connected even when **no physical monitor is attached**, and that monitor reports an EDID we generate ourselves. You can pick, add and remove resolutions; the default is 1920×1080. It also comes with a "plug switch": a tray icon plus a desktop widget that plug in or unplug this virtual monitor with one click.
 
 Useful for remote desktop, streaming or recording on headless machines, and for tests that need a specific resolution.

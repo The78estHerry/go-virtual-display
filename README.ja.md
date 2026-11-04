@@ -6,6 +6,10 @@
 
 > 正式な説明は繁體中文版の README です。この翻訳と内容が異なる場合は、中国語版が正しい内容です。
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/The78estHerry)
+
+💖 このツールが役に立った場合は、[GitHub Sponsors](https://github.com/sponsors/The78estHerry) から開発を支援していただけるとうれしいです。
+
 **物理モニターを接続していない**状態でも、モニターが接続されているとパソコンに認識させます。このモニターは、本プロジェクトで生成した EDID を返します。解像度は選択・追加・削除でき、既定は 1920×1080 です。あわせて「抜き差しスイッチ」も付属しています。タスクトレイのアイコンとデスクトップウィジェットから、ワンクリックで仮想モニターを接続・切断できます。
 
 ヘッドレス環境でのリモートデスクトップ、配信、録画や、特定の解像度が必要なテストに向いています。

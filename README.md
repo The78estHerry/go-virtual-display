@@ -4,6 +4,10 @@
 
 **繁體中文** | [English](README.en.md) | [日本語](README.ja.md)
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/The78estHerry)
+
+💖 如果這個工具對你有幫助，歡迎透過 [GitHub Sponsors](https://github.com/sponsors/The78estHerry) 贊助支持開發。
+
 讓電腦在**沒有接實體螢幕**的情況下，以為接著一台螢幕，而且這台螢幕回報的是我們自己產生的 EDID。解析度可以自己選、新增和刪除，預設是 1920×1080。另外附一個「拔插開關」：系統列圖示加桌面小工具，按一下就能插入或拔掉這台虛擬螢幕。
 
 適合用在無頭主機的遠端桌面或串流、錄影，以及需要特定解析度的測試。
