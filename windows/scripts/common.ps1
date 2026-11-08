@@ -80,7 +80,8 @@ function Assert-Admin {
 
 # 建立捷徑。不用 WScript.Shell：它以 ANSI 字碼頁處理字串，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?。
 # 這裡直接用 Unicode 版的 IShellLinkW。
-function New-Shortcut([string]$Path, [string]$Target, [string]$Description, [string]$Arguments = '') {
+# $IconIndex 不是 0 時改用 $Target 裡的其他圖示；負數表示資源 ID（例如 -2 是 vdswitch.rc 的 2 ICON）。
+function New-Shortcut([string]$Path, [string]$Target, [string]$Description, [string]$Arguments = '', [int]$IconIndex = 0) {
     if (-not ('GoVirtualDisplay.ShellLink' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
@@ -112,10 +113,11 @@ namespace GoVirtualDisplay {
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
     class CShellLink { }
     public static class ShellLink {
-        public static void Create(string path, string target, string description, string arguments) {
+        public static void Create(string path, string target, string description, string arguments, int iconIndex) {
             var link = (IShellLinkW)new CShellLink();
             link.SetPath(target);
             link.SetArguments(arguments);
+            if (iconIndex != 0) { link.SetIconLocation(target, iconIndex); }
             link.SetWorkingDirectory(System.IO.Path.GetDirectoryName(target));
             link.SetDescription(description);
             ((IPersistFile)link).Save(path, true);
@@ -124,7 +126,7 @@ namespace GoVirtualDisplay {
 }
 '@
     }
-    [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description, $Arguments)
+    [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description, $Arguments, $IconIndex)
 }
 
 # Test-VddFiles 檢查 $root 底下的驅動檔案是否齊全且雜湊都對（內附的或下載解壓縮的都適用）

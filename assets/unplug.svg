@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- 「拔掉虛擬螢幕」捷徑的圖示（0.4.4 起）：和程式圖示同樣的雲朵與螢幕，但螢幕熄掉（灰色），
+       右下角加上紅色徽章，裡面是拔開的插頭與插座。小尺寸時靠紅色徽章和程式圖示區分 -->
+  <defs>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4DEFF"/>
+    </linearGradient>
+    <linearGradient id="off" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#55506E"/><stop offset="1" stop-color="#3A3654"/>
+    </linearGradient>
+  </defs>
+  <path d="M58 188 C18 188 10 140 42 126 C30 82 84 58 110 82 C126 38 200 40 208 90 C250 90 258 140 230 156 C248 190 212 214 186 198 C170 220 116 220 102 198 C88 210 58 208 58 188 Z"
+        fill="url(#cloud)" stroke="#7B6BD6" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="70" y="86" width="120" height="84" rx="9" fill="#2A2350"/>
+  <rect x="77" y="93" width="106" height="70" rx="5" fill="url(#off)"/>
+  <path d="M84 100 L110 100" stroke="#6E6990" stroke-width="5" stroke-linecap="round"/>
+  <rect x="122" y="170" width="16" height="12" fill="#2A2350"/>
+  <rect x="104" y="180" width="52" height="8" rx="4" fill="#2A2350"/>
+  <!-- 紅色徽章 -->
+  <circle cx="186" cy="186" r="62" fill="#E5484D" stroke="#FFFFFF" stroke-width="8"/>
+  <g fill="#FFFFFF">
+    <!-- 左邊：插頭（本體＋兩根插腳），線往左下 -->
+    <rect x="138" y="172" width="24" height="28" rx="5"/>
+    <rect x="162" y="177" width="11" height="6" rx="2"/>
+    <rect x="162" y="189" width="11" height="6" rx="2"/>
+    <path d="M138 186 L128 186 L128 212" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 右邊：插座（有兩個孔），線往右上；和插腳之間留明顯的空隙，表示拔開 -->
+    <path d="M203 172 h18 a5 5 0 0 1 5 5 v18 a5 5 0 0 1 -5 5 h-18 z"/>
+    <path d="M226 186 L236 186 L236 160" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="203" y="177" width="7" height="6" rx="1.5" fill="#E5484D"/>
+  <rect x="203" y="189" width="7" height="6" rx="1.5" fill="#E5484D"/>
+  <!-- 空隙裡的兩道短線，強調「分開」 -->
+  <g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round">
+    <path d="M183 168 L193 160"/>
+    <path d="M183 204 L193 212"/>
+  </g>
+</svg>

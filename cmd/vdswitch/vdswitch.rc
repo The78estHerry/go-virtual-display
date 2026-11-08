@@ -1,3 +1,5 @@
 // vdswitch.exe 的 Windows 資源：程式圖示（「安裝的程式」、開始功能表、檔案總管都會顯示）。
 // 由 assets/make-icon.ps1 編譯成 rsrc_windows_amd64.syso，Go 編譯時會自動連結。
 1 ICON "../../assets/icon.ico"
+// 「拔掉虛擬螢幕」捷徑用的圖示（0.4.4 起），捷徑以 IconLocation = vdswitch.exe,-2（資源 ID 2）指定
+2 ICON "../../assets/unplug.ico"

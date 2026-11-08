@@ -162,13 +162,16 @@ if (Test-Path $exe) {
         New-Shortcut (Join-Path $dir "$AppName.lnk") (Join-Path $AppDir 'vdswitch.exe') `
             (T 'Plug in or unplug the virtual display and switch resolutions' '虛擬螢幕開關：插入或拔掉虛擬螢幕、切換解析度')
     }
-    # 「拔掉」捷徑只放開始功能表：主螢幕看不到時盲打搜尋用，放桌面反而容易誤點
+    # 「拔掉」捷徑只放開始功能表：主螢幕看不到時盲打搜尋用，放桌面反而容易誤點。
+    # 圖示用 vdswitch.exe 的資源 ID 2（assets\unplug.svg：螢幕熄掉＋紅色拔開插頭），和程式圖示區分
     New-Shortcut (Join-Path $programs "$UnplugShortcutName.lnk") (Join-Path $AppDir 'vdswitch.exe') `
-        (T 'Unplug the virtual display right away' '立即拔掉虛擬螢幕') '--request-unplug'
+        (T 'Unplug the virtual display right away' '立即拔掉虛擬螢幕') '--request-unplug' -IconIndex -2
     $zhShortcut = Join-Path $programs "$UnplugShortcutNameZh.lnk"
     Remove-Item $zhShortcut -Force -ErrorAction SilentlyContinue  # 重新安裝時改成英文介面的話不留
     if ($Lang -eq 'zh-TW') {
-        New-Shortcut $zhShortcut (Join-Path $AppDir 'vdswitch.exe') '立即拔掉虛擬螢幕' '--request-unplug'
+        # 參數要和英文捷徑不同（多一個 zh，程式會忽略）：目標和參數完全相同的捷徑，
+        # 開始功能表只會列出其中一個，中文捷徑就搜尋不到
+        New-Shortcut $zhShortcut (Join-Path $AppDir 'vdswitch.exe') '立即拔掉虛擬螢幕' '--request-unplug zh' -IconIndex -2
     }
     Write-Host (T "Installed the switch to $AppDir; shortcuts on the Start menu and desktop: $AppName" "已安裝開關程式到 $AppDir，開始功能表與桌面捷徑：$AppName")
     Write-Host (T "If the virtual display is the main display and you cannot see the switch:" '虛擬螢幕是主螢幕、看不到開關時：')
