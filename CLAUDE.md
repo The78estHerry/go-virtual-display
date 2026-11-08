@@ -344,6 +344,9 @@ make linux                                                    # 只能在 Linux 
   - Docker Desktop（Hyper-V 後端）的虛擬機改成最多 2 顆 CPU：`%APPDATA%\Docker\settings-store.json` 的 `Cpus: 2`，原檔備份成 `settings-store.json.bak-before-cpus`。
   - 過熱保護做在 claude-secretary 的硬體記錄器：每秒檢查，≥ 80°C 自動 `docker pause`，≤ 70°C 維持 15 秒後恢復（見全域 CLAUDE.md）。記錄顯示 5 秒內可以升 23°C，所以改成每秒檢查。
   - 要再跑 `release-linux.ps1`，先和使用者確認，並確定 `thermal.py` 是 OK。
+- 2026-11-08 18:40～18:43：使用者同意後重跑 `release-linux.ps1`（容器 `--cpus=1`、Docker 虛擬機 2 顆 CPU、即時模式每秒監看），**成功**，約 3 分鐘。期間 CPU 最高 72°C，沒有觸發暫停（之前沒限制時 1 分鐘內升到 89°C 後當機）。
+  - 產生 `dist\release\go-virtual-display-0.4.4-linux-amd64.tar.gz`（SHA-256 `18CFF22D…84244B0D`），Linux 介面程式碼也確認能編譯。
+  - **0.4.4 兩個平台的安裝包都已產生，還沒發佈**，發佈照 `RELEASING.md`（兩邊建 Release，Release 說明標明 Linux 沒有實機測過）。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
