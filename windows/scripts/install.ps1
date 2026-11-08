@@ -120,14 +120,15 @@ if (Get-VddDevice) {
 Restart-DisplayDependentServices
 
 # 4. 排程工作：以最高權限執行，之後按開關、切換解析度都不會跳 UAC
-#    Plug／Unplug 啟用或停用裝置；Apply 執行 vdswitch.exe --apply 套用使用者選的解析度
+#    Plug／Unplug 執行 vdswitch.exe --plug／--unplug 啟用或停用裝置（0.4.4 起用 SetupAPI；
+#    之前的 pnputil /enable-device 在停用狀態下重新開機後會失敗，conhost 又會吞掉結束碼）
+#    Apply 執行 vdswitch.exe --apply 套用使用者選的解析度
 #    RestartServices：開關程式偵測到螢幕配置改變（拔插、切換解析度、在 Windows 設定裡調整排列）
 #    並穩定後執行它，重新啟動 Synergy 等服務。一律建立，執行時才檢查服務在不在，
 #    所以之後才安裝或移除 Synergy 都不必重新安裝本程式
-$pnputil = "--headless $env:SystemRoot\System32\pnputil.exe {0} /deviceid `"$VddHardwareId`""
 $tasks = @(
-    @{ Name = 'Plug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/enable-device') },
-    @{ Name = 'Unplug'; Exe = "$env:SystemRoot\System32\conhost.exe"; Arg = ($pnputil -f '/disable-device') },
+    @{ Name = 'Plug'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--plug' },
+    @{ Name = 'Unplug'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--unplug' },
     @{ Name = 'Apply'; Exe = (Join-Path $AppDir 'vdswitch.exe'); Arg = '--apply' },
     @{ Name = 'RestartServices'; Exe = "$env:SystemRoot\System32\conhost.exe"
         Arg = "--headless $env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command `"Get-Service -Name $(($RestartServices | ForEach-Object { "'$_'" }) -join ',') -ErrorAction SilentlyContinue | Restart-Service -Force`"" })

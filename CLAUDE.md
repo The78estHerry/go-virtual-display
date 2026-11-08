@@ -68,8 +68,11 @@ make linux                                                    # 只能在 Linux 
   - 解析度仍以 XML 的 `<resolutions>` 為準，EDID 不會「模擬解析度」，所以 XML 只留一組（`vdswitch.exe --apply` 改寫成使用中的解析度），global refresh 只留 60。
   - 有 named pipe `\\.\pipe\MTTVirtualDisplayPipe`，可用來重新載入等，目前沒用到。
 - **Windows 拔插**：
-  - 用 `pnputil /enable-device|/disable-device /deviceid "Root\MttVDD"`，Windows 11 的 pnputil 支援 `/deviceid`。
-  - 排程工作的動作用 `conhost.exe --headless pnputil.exe ...`，避免閃出主控台視窗。
+  - 0.4.4 起排程工作 Plug／Unplug 執行 `vdswitch.exe --plug`／`--unplug`（`internal/display/switch_windows.go`），用 SetupAPI 的 `DIF_PROPERTYCHANGE`（`DICS_ENABLE`／`DICS_DISABLE`，和 `Enable-PnpDevice`、裝置管理員相同）啟用或停用，結果寫到 `%APPDATA%\go-virtual-display\switch-result.json`，開關程式等最多 10 秒，有錯誤就顯示。vdswitch.exe 是 GUI 程式，不會閃出主控台視窗。
+  - **0.4.3 以前用 `conhost.exe --headless pnputil.exe /enable-device|/disable-device /deviceid "Root\MttVDD"`，有兩個問題**：
+    - 裝置在停用（拔掉）狀態下重新開機後，`pnputil /enable-device` 以系統管理員執行也失敗：1167「The device is not connected」，但 `CM_Get_DevNode_Status` 看到的是存在＋問題代碼 22。同一個狀態下 `Enable-PnpDevice` 一次就成功。
+    - `conhost --headless` 不會傳回子程序的結束碼（`conhost --headless cmd /c exit 5` 回傳 0），所以排程工作永遠顯示成功，開關程式只看得到「切換逾時」。
+  - `pnputil /restart-device`（Apply、安裝時）只在裝置已啟動時用，沒有碰到這個問題，維持不變。
   - 排程工作 `RestartServices` 一律建立（0.4.2 起），動作是 `Get-Service <$RestartServices> -ErrorAction SilentlyContinue | Restart-Service -Force`，執行時才檢查服務在不在，之後才裝或移除 Synergy 都不必重裝。開關程式（`internal/ui/layout_windows.go`）每秒用 `EnumDisplayMonitors` 比對螢幕配置，改變並穩定 2 秒後執行它。0.4.1 以前是附加在 Plug／Unplug／Apply 後面的第二個動作（`Start-Sleep 3`），但在 Windows 設定裡調整排列時沒人重新啟動，Synergy 的滑鼠會卡在舊邊緣，0.4.2 改成這樣。
   - 狀態用 SetupAPI＋`CM_Get_DevNode_Status` 讀取：問題代碼 22（`CM_PROB_DISABLED`）表示拔掉，`DN_STARTED` 表示插入。不解析 pnputil 的輸出，因為輸出會依系統語系變成中文。
 - **Synergy 狀態圖示**（0.4.2 起，`internal/display/synergy_windows.go`、`internal/ui/synergy_icon_windows.go`）：
@@ -305,6 +308,11 @@ make linux                                                    # 只能在 Linux 
   - 同一天再改寫一次：之前的 CLAUDE.md 紀錄寫出了舊信箱，連同其他 10 個 repo 的歷史一起清掉（經過在 gitea-to-github 的 `cases/history-email-cleanup.md`）。本專案只有最後兩個 commit 的雜湊改變，tag 和 Release 都沒動。
 - 2026-11-04：依使用者要求，贊助只用 PayPal（`https://paypal.me/The78ester`，不帶 locale 參數）：三份 README 的徽章、最上方和授權段落的贊助句，`FUNDING.yml` 的 `custom`，RELEASING.md 的 0.4.3 紀錄，v0.4.3 的 Release 說明（GitHub、Gitea，其餘內容和附件不變）。go-screen-burn-in-fixer 同步改；gitea-to-github 的 `readme-style.md` 是之後所有 GitHub 專案的樣式。**不要用 GitHub Sponsors：不支援台灣。**
 - 2026-11-04：使用者設定好 Ko-fi（`https://ko-fi.com/the78ester`）。三份 README 加上 Ko-fi 徽章，贊助句改成「PayPal 或 Ko-fi」，`FUNDING.yml` 加 `ko_fi: the78ester`。go-screen-burn-in-fixer 和 readme-style.md 同步改。v0.4.3 的 Release 說明（GitHub、Gitea）三語也加上 Ko-fi。
+- 2026-11-08：使用者換了電腦主機（系統沿用；顯示卡 AMD → NVIDIA GTX 1060 → 拔掉 NVIDIA 改用 Intel HD 4600 內顯，WDDM 2.0），之後虛擬螢幕插不進去。
+  - 時間軸：舊主機 AMD 時 11/7 23:10～11/8 09:32 有 4 次 `MttVDD.dll` 當機（`FxVerifierDriverReportedBugcheck`，原因沒查，可能和 WDDM 1.1 的 AMD HD 5000 有關）；新主機 NVIDIA 還在時（12:54 開機）正常；13:08 拔掉後關機拿掉 NVIDIA，15:41 開機後就插不進去。
+  - 原因是 pnputil 在「停用狀態下重新開機」後無法啟用，加上 conhost 吞掉錯誤碼（見「Windows 拔插」）。用 UAC 執行 `Enable-PnpDevice` 後立刻正常，Intel 內顯可以帶 2160×1360 的虛擬螢幕，沒有當機。
+  - 0.4.4 開發中（`$AppVersion` 已改成 0.4.4，**還沒發佈**，使用者要再加功能後一起發佈）：Plug／Unplug 改成 `vdswitch.exe --plug`／`--unplug`，Apply 的結果檔函式改成共用（`taskResult`）。已在這台用 UAC 實測 `--unplug`、`--plug`，以及沒有權限時錯誤會寫進結果檔。**還沒測**：裝好 0.4.4 安裝包後用開關拔插、「拔掉 → 重新開機 → 插入」。
+  - 這個工作階段是一般權限；需要系統管理員時可以用 `Start-Process powershell -Verb RunAs` 跳 UAC，由使用者按「是」，輸出寫到 scratchpad 的檔案再讀回來。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。

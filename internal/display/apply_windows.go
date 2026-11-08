@@ -2,7 +2,6 @@ package display
 
 import (
 	"bytes"
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -20,24 +19,7 @@ import (
 	"github.com/The78estHerry/go-virtual-display/internal/profile"
 )
 
-const (
-	applyTimeout  = 30 * time.Second
-	applyInterval = 300 * time.Millisecond
-)
-
-// applyResult 是 --apply 寫給開關程式看的結果。
-type applyResult struct {
-	Time  time.Time `json:"time"`
-	Error string    `json:"error,omitempty"`
-}
-
-func resultPath() (string, error) {
-	p, err := profile.Path()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(filepath.Dir(p), "apply-result.json"), nil
-}
+const applyTimeout = 30 * time.Second
 
 // ApplyActive 觸發最高權限排程工作 Apply（執行 vdswitch.exe --apply），並等它寫回結果。
 func (winController) ApplyActive() error {
@@ -45,23 +27,8 @@ func (winController) ApplyActive() error {
 	if err := runTask("Apply"); err != nil {
 		return err
 	}
-	path, err := resultPath()
-	if err != nil {
+	if err := waitTaskResult(applyResultFile, start, applyTimeout); err != errNoResult {
 		return err
-	}
-	for deadline := start.Add(applyTimeout); time.Now().Before(deadline); time.Sleep(applyInterval) {
-		b, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var r applyResult
-		if json.Unmarshal(b, &r) != nil || r.Time.Before(start) {
-			continue // 還是上一次的結果，或正在寫入
-		}
-		if r.Error != "" {
-			return errors.New(r.Error)
-		}
-		return nil
 	}
 	return errors.New(i18n.T("Timed out while applying the resolution", "套用解析度逾時"))
 }
@@ -71,16 +38,7 @@ func (winController) ApplyActive() error {
 // 只從使用者的設定讀取三個整數並驗證範圍，寫入的位置固定。結果同時寫到 apply-result.json。
 func ApplyElevated() error {
 	err := applyElevated()
-	r := applyResult{Time: time.Now()}
-	if err != nil {
-		r.Error = err.Error()
-	}
-	if path, perr := resultPath(); perr == nil {
-		if b, merr := json.Marshal(r); merr == nil {
-			_ = os.MkdirAll(filepath.Dir(path), 0o755)
-			_ = os.WriteFile(path, b, 0o644)
-		}
-	}
+	writeTaskResult(applyResultFile, err)
 	return err
 }
 

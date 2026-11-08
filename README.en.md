@@ -24,7 +24,7 @@ The Windows version supports **Synergy 3** (keyboard and mouse sharing software)
 |---|---|---|
 | Virtual monitor source | [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver) (signed open-source IddCx driver, MIT) | The kernel's built-in DRM EDID override, which makes a free connector look connected |
 | Custom EDID | The driver reads `C:\VirtualDisplayDriver\user_edid.bin` | Boot parameter `drm.edid_firmware=` points to `/lib/firmware/edid/go-virtual-display.bin`; switching resolution writes debugfs `edid_override` to apply it immediately |
-| Plug / unplug | Disable/enable the driver device (`pnputil`), run by a "highest privileges" scheduled task, so the switch never shows UAC | Write `on`/`off` to `/sys/class/drm/<connector>/status`, allowed without a password for the active user via polkit |
+| Plug / unplug | Disable/enable the driver device (`vdswitch.exe --plug`/`--unplug` via SetupAPI), run by a "highest privileges" scheduled task, so the switch never shows UAC | Write `on`/`off` to `/sys/class/drm/<connector>/status`, allowed without a password for the active user via polkit |
 
 The driver itself is **not stored in this repo**.
 - **The Windows release package** includes the driver files of a pinned version (25.7.23) and verifies their SHA-256 at install time, so **no internet connection is needed**, and it still installs even if the original download disappears.

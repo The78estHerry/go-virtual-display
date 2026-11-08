@@ -26,7 +26,7 @@ Windows 版は **Synergy 3**（マウス・キーボード共有ソフト）に�
 |---|---|---|
 | 仮想モニターの実体 | [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver)（署名済みのオープンソース IddCx ドライバー、MIT） | カーネル内蔵の DRM EDID 上書き機能で、空き端子にモニターが接続されているように見せる |
 | カスタム EDID | ドライバーが `C:\VirtualDisplayDriver\user_edid.bin` を読み込む | 起動パラメーター `drm.edid_firmware=` で `/lib/firmware/edid/go-virtual-display.bin` を指定。解像度の切り替え時は debugfs の `edid_override` に書き込んで即時反映 |
-| 抜き差し | ドライバーのデバイスを無効化／有効化（`pnputil`）。「最上位の特権」のタスクで実行するので、スイッチ操作で UAC は出ない | `/sys/class/drm/<端子>/status` に `on`／`off` を書き込む。polkit により、ログイン中のユーザーはパスワードなしで実行できる |
+| 抜き差し | ドライバーのデバイスを無効化／有効化（`vdswitch.exe --plug`／`--unplug` が SetupAPI を呼び出す）。「最上位の特権」のタスクで実行するので、スイッチ操作で UAC は出ない | `/sys/class/drm/<端子>/status` に `on`／`off` を書き込む。polkit により、ログイン中のユーザーはパスワードなしで実行できる |
 
 ドライバー本体は**このリポジトリには含まれていません**。
 - **Windows のリリースパッケージ**には固定バージョン（25.7.23）のドライバーファイルが同梱されており、インストール時に SHA-256 を検証します。**インターネット接続は不要**で、元のダウンロード先がなくなってもインストールできます。

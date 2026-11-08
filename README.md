@@ -22,7 +22,7 @@ Windows 版支援 **Synergy 3**（滑鼠鍵盤共用軟體）：螢幕配置改�
 |---|---|---|
 | 虛擬螢幕來源 | [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver)（已簽章的開源 IddCx 驅動，MIT） | 核心內建的 DRM EDID 覆寫，讓空接頭被當成接著螢幕 |
 | 自訂 EDID | 驅動讀取 `C:\VirtualDisplayDriver\user_edid.bin` | 開機參數 `drm.edid_firmware=` 指向 `/lib/firmware/edid/go-virtual-display.bin`；切換解析度時寫入 debugfs 的 `edid_override` 立即生效 |
-| 拔插 | 停用／啟用驅動裝置（`pnputil`），由「最高權限」排程工作執行，按開關不跳 UAC | 寫入 `/sys/class/drm/<接頭>/status`（`on`／`off`），由 polkit 允許使用中的使用者免密碼執行 |
+| 拔插 | 停用／啟用驅動裝置（`vdswitch.exe --plug`／`--unplug` 呼叫 SetupAPI），由「最高權限」排程工作執行，按開關不跳 UAC | 寫入 `/sys/class/drm/<接頭>/status`（`on`／`off`），由 polkit 允許使用中的使用者免密碼執行 |
 
 驅動本體**不放在這個 repo**。
 - **Windows 的 Release 安裝包**已附固定版本（25.7.23）的驅動檔案，安裝時驗證 SHA-256，**不需要網路**，原本的下載點消失也能安裝。
