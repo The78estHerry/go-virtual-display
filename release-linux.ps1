@@ -2,12 +2,14 @@
 # Linux 版的開關程式（Gio）需要 cgo，Windows 上無法直接編譯，所以用 Docker 的 Linux 容器編譯並打包。
 # 用 Debian 11（glibc 2.31）編譯，Ubuntu 20.04／Debian 11 以後的發行版都能執行。
 #
-# 用法：powershell -ExecutionPolicy Bypass -File .\release-linux.ps1 [-Ref v0.3.0]
+# 用法：powershell -ExecutionPolicy Bypass -File .\release-linux.ps1 [-Ref v0.3.0] [-Cpus 1]
 #   -Ref：要打包的 git 版本（tag 或 commit），預設 HEAD。版本號取自該版本的 windows/scripts/common.ps1。
+#   -Cpus：容器最多用幾顆 CPU（docker run --cpus），預設 1。開發用的電腦滿載時會過熱當機（2026-11-08 三次），所以預設限制。
 # 需要 Docker Desktop（Linux 容器）。
 param(
     [string]$Ref = 'HEAD',
-    [string]$GoVersion = '1.27.0'
+    [string]$GoVersion = '1.27.0',
+    [double]$Cpus = 1
 )
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
@@ -172,7 +174,7 @@ tar -tvzf "/out/$NAME.tar.gz"
 '@
 [IO.File]::WriteAllText((Join-Path $work 'build.sh'), ($build -replace "`r`n", "`n"), (New-Object Text.UTF8Encoding $false))
 
-docker run --rm --platform linux/amd64 `
+docker run --rm --platform linux/amd64 --cpus=$Cpus `
     -e "GO_VERSION=$GoVersion" -e "NAME=$name" -e "LAYOUT=$layout" -e "VERSION=$Version" `
     -v "${work}:/work:ro" -v "$(Join-Path $PSScriptRoot 'dist\release'):/out" `
     debian:bullseye bash /work/build.sh

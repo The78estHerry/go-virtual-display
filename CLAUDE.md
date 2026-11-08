@@ -339,6 +339,11 @@ make linux                                                    # 只能在 Linux 
   - 判斷：**CPU 過熱**（約 1 分鐘內 40→89°C，上升太快），可能和換主機後散熱器的安裝（接觸、散熱膏、風扇）有關，Docker 只是讓 CPU 滿載的工作。建議使用者檢查散熱，或用 CPU 燒機工具在監看下短時間測試確認。
   - 檢查與修復：10 個 repo 都沒有未提交的變更、fsck 正常、沒有鎖定檔、所有 remote 都沒有沒推的 commit；當機前那個工作階段的 claude-secretary、claude-memory commit 已推上去。刪掉中斷留下的 `dist\release-linux`。Docker Desktop 沒在執行。
   - 0.4.4 狀態不變：Windows 測試包已產生，Linux 安裝包還沒產生，**還沒發佈**。散熱問題解決前不要再跑 `release-linux.ps1`。
+- 2026-11-08 18:30 前後：使用者要求降低編譯時的 CPU 用量，並在過熱時自動暫停：
+  - `release-linux.ps1` 加上 `-Cpus`（預設 1），`docker run --cpus=$Cpus`。
+  - Docker Desktop（Hyper-V 後端）的虛擬機改成最多 2 顆 CPU：`%APPDATA%\Docker\settings-store.json` 的 `Cpus: 2`，原檔備份成 `settings-store.json.bak-before-cpus`。
+  - 過熱保護做在 claude-secretary 的硬體記錄器：每秒檢查，≥ 80°C 自動 `docker pause`，≤ 70°C 維持 15 秒後恢復（見全域 CLAUDE.md）。記錄顯示 5 秒內可以升 23°C，所以改成每秒檢查。
+  - 要再跑 `release-linux.ps1`，先和使用者確認，並確定 `thermal.py` 是 OK。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
