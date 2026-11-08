@@ -330,6 +330,10 @@ make linux                                                    # 只能在 Linux 
   - 使用者實測：游標旁邊的位置、設定視窗按了就設定、新快捷鍵有效都通過。中文捷徑搜尋不到，原因：**目標和參數完全相同的捷徑，開始功能表（`Get-StartApps`）只列出其中一個**，中文捷徑被併掉。中文捷徑的參數改成 `--request-unplug zh`（程式只看第一個參數），在個人開始功能表放兩個參數不同的測試捷徑確認兩個都會列出，測完已刪除。
   - 使用者要求「拔掉」捷徑用有識別度的圖示：新增 `assets/unplug.svg`（同樣的雲朵與螢幕，螢幕熄掉成灰色，右下角紅色徽章＋拔開的插頭與插座），`make-icon.ps1` 改成同時產生 `icon.ico`、`unplug.ico`，`vdswitch.rc` 加 `2 ICON`。捷徑用 `New-Shortcut -IconIndex -2`（負數是資源 ID）。用 SHGetFileInfo 取出捷徑圖示確認正確。
   - 使用者實測全部通過（2026-11-08）：搜尋「拔掉」找得到、中文捷徑可以拔掉、新圖示辨識得出來、搜尋 unplug 仍然可以。0.4.4 的 Windows 功能都已實測；發佈前剩下用 `release-linux.ps1`（Docker）確認 Linux 版編譯。Linux 版的介面程式沒有編譯確認（這台 Docker 沒開），發佈前用 `release-linux.ps1` 編譯。
+- 2026-11-08 17:40、17:45：執行 `release-linux.ps1`（Docker 編譯 0.4.4 Linux 版）時連續死機兩次（Kernel-Power 41、沒有 BugCheck 記錄，開機後有 LiveKernelEvent）。使用者懷疑是 Docker（換主機後第一次用 Docker，目前用 Intel HD 4600 內顯）。
+  - 清理：刪掉中斷留下的 `dist\release-linux` 暫存資料夾；git 完整（fsck 正常、沒有鎖定檔）；Docker Desktop 沒在執行、沒有殘留容器。
+  - **0.4.4 狀態**：Windows 功能全部實測通過，Windows 測試包 `dist\release\go-virtual-display-0.4.4-windows.zip` 已產生；Linux 安裝包還沒產生，**還沒發佈**。
+  - **使用者要求暫停**。接續前先和使用者確認要不要再用 Docker：可以先單獨開 Docker Desktop 觀察是否穩定，或改用 WSL／其他電腦編譯 Linux 版。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
