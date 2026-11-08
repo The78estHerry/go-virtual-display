@@ -206,3 +206,30 @@ func newShaper() *text.Shaper {
 	}
 	return text.NewShaper(text.WithCollection(coll))
 }
+
+var (
+	procGetCursorPos     = user32.NewProc("GetCursorPos")
+	procMonitorFromPoint = user32.NewProc("MonitorFromPoint")
+)
+
+const monitorDefaultNearest = 2
+
+// cursorWidgetPos 回傳把小工具放在滑鼠所在螢幕工作區右下角時的位置（和預設位置的規則相同）。
+func cursorWidgetPos(hwnd uintptr) (int, int, bool) {
+	var pt struct{ X, Y int32 }
+	if ok, _, _ := procGetCursorPos.Call(uintptr(unsafe.Pointer(&pt))); ok == 0 {
+		return 0, 0, false
+	}
+	// MonitorFromPoint 的 POINT 以值傳遞：x64 上兩個 int32 合成一個 64 位元參數
+	mon, _, _ := procMonitorFromPoint.Call(uintptr(uint32(pt.X))|uintptr(uint32(pt.Y))<<32, monitorDefaultNearest)
+	mi := monitorInfo{CbSize: uint32(unsafe.Sizeof(monitorInfo{}))}
+	if ok, _, _ := procGetMonitorInfo.Call(mon, uintptr(unsafe.Pointer(&mi))); ok == 0 {
+		return 0, 0, false
+	}
+	var wr rect
+	if ok, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&wr))); ok == 0 {
+		return 0, 0, false
+	}
+	return int(mi.Work.Right) - int(wr.Right-wr.Left) - widgetMarginPixels,
+		int(mi.Work.Bottom) - int(wr.Bottom-wr.Top) - widgetMarginPixels, true
+}

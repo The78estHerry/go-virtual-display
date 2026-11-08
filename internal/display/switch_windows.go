@@ -138,3 +138,16 @@ func switchError(enable bool, err error) error {
 	}
 	return fmt.Errorf(i18n.T("Cannot unplug the virtual display: %v", "無法拔掉虛擬螢幕：%v"), err)
 }
+
+// RequestUnplug 由開始功能表的「Unplug Virtual Display」捷徑（vdswitch.exe --request-unplug）呼叫，
+// 以一般權限觸發排程工作 Unplug。已經拔掉時不做事。
+func RequestUnplug() error {
+	st, err := (winController{}).Status()
+	if err != nil {
+		return err
+	}
+	if st == Unplugged {
+		return nil
+	}
+	return runSwitchTask("Unplug")
+}

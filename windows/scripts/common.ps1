@@ -38,6 +38,9 @@ if ($Packaged) {
 }
 $AppVersion   = '0.4.4'  # 發佈版本；release.ps1、release-linux.ps1 以此為準
 $AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名一律英文）
+# 開始功能表的「拔掉」捷徑（0.4.4 起）：虛擬螢幕是主螢幕、開關都在看不到的螢幕上時，
+# 可以盲打「Win → unplug → Enter」拔掉。執行 vdswitch.exe --request-unplug，透過排程工作不跳 UAC
+$UnplugShortcutName = 'Unplug Virtual Display'
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $DesktopDir   = [Environment]::GetFolderPath('Desktop')  # 安裝與移除都以同一個使用者的系統管理員身分執行
 $UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除
@@ -74,7 +77,7 @@ function Assert-Admin {
 
 # 建立捷徑。不用 WScript.Shell：它以 ANSI 字碼頁處理字串，字碼頁沒有的中文字（例如日文系統的「虛」）會變成 ?。
 # 這裡直接用 Unicode 版的 IShellLinkW。
-function New-Shortcut([string]$Path, [string]$Target, [string]$Description) {
+function New-Shortcut([string]$Path, [string]$Target, [string]$Description, [string]$Arguments = '') {
     if (-not ('GoVirtualDisplay.ShellLink' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
@@ -106,9 +109,10 @@ namespace GoVirtualDisplay {
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
     class CShellLink { }
     public static class ShellLink {
-        public static void Create(string path, string target, string description) {
+        public static void Create(string path, string target, string description, string arguments) {
             var link = (IShellLinkW)new CShellLink();
             link.SetPath(target);
+            link.SetArguments(arguments);
             link.SetWorkingDirectory(System.IO.Path.GetDirectoryName(target));
             link.SetDescription(description);
             ((IPersistFile)link).Save(path, true);
@@ -117,7 +121,7 @@ namespace GoVirtualDisplay {
 }
 '@
     }
-    [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description)
+    [GoVirtualDisplay.ShellLink]::Create($Path, $Target, $Description, $Arguments)
 }
 
 # Test-VddFiles 檢查 $root 底下的驅動檔案是否齊全且雜湊都對（內附的或下載解壓縮的都適用）

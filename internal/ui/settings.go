@@ -14,6 +14,8 @@ type Settings struct {
 	HasPos     bool `json:"has_pos"`
 	X          int  `json:"x"`
 	Y          int  `json:"y"`
+	// Hotkey 是把小工具移到滑鼠所在螢幕的快捷鍵，空字串表示預設值（DefaultHotkey）
+	Hotkey string `json:"hotkey,omitempty"`
 }
 
 var settingsMu sync.Mutex

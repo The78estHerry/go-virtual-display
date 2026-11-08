@@ -49,7 +49,7 @@ if (-not $KeepUserSettings) { Remove-ItemProperty $RunKey -Name $RunValue -Error
 Remove-Item $AppDir -Recurse -Force -ErrorAction SilentlyContinue  # 含 uninstaller\
 Remove-Item $UninstallKey -Recurse -Force -ErrorAction SilentlyContinue
 $programs = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'
-Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs $LegacyShortcut), (Join-Path $DesktopDir "$AppName.lnk") -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $programs "$AppName.lnk"), (Join-Path $programs "$UnplugShortcutName.lnk"), (Join-Path $programs $LegacyShortcut), (Join-Path $DesktopDir "$AppName.lnk") -Force -ErrorAction SilentlyContinue
 if (-not $KeepUserSettings) {
     Remove-Item $LanguageKey -Recurse -Force -ErrorAction SilentlyContinue
     # 使用者的設定：存下的解析度、小工具位置、套用結果（移除以同一個使用者的系統管理員身分執行）

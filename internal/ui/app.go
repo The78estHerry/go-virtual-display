@@ -15,8 +15,11 @@ type App struct {
 	model    *Model
 	widget   *widgetMgr
 	manager  *managerWin
+	hotkey   *hotkeyMgr    // 把小工具移到滑鼠所在螢幕的快捷鍵（只有 Windows）
+	hkDialog *hotkeyDialog // 設定快捷鍵的視窗
 	quitting bool
 	onWidget func(bool) // 小工具顯示狀態改變時更新系統列選單
+	onHotkey func()     // 快捷鍵改變時更新系統列選單
 }
 
 // Run 啟動開關程式，不會返回（結束時直接離開程序）。必須在 main goroutine 呼叫。
@@ -26,6 +29,14 @@ func Run(show <-chan struct{}) {
 	a := &App{model: NewModel(ctrl, err)}
 	a.widget = newWidgetMgr(a.model, a.widgetClosed)
 	a.manager = newManagerWin(a.model)
+	if hotkeySupported {
+		a.hotkey = startHotkey(hotkeyFromSettings(LoadSettings()), a.summonWidget)
+		a.hkDialog = newHotkeyDialog(a.hotkey, func() {
+			if a.onHotkey != nil {
+				a.onHotkey()
+			}
+		})
+	}
 
 	// 小工具要在系統列之前建立：系統列選單建立時用 a.widget.Visible() 決定「顯示桌面小工具」有沒有勾，
 	// 之前順序相反，選單有時先建好，小工具明明顯示著卻沒有勾
@@ -49,6 +60,14 @@ func Run(show <-chan struct{}) {
 		}()
 	}
 	app.Main()
+}
+
+// summonWidget 是快捷鍵的動作：把小工具移到滑鼠所在的螢幕，隱藏中的話一併顯示。
+func (a *App) summonWidget() {
+	a.widget.MoveToCursor()
+	if !a.widget.Visible() {
+		a.setWidget(true)
+	}
 }
 
 // ShowWidget 顯示小工具（重複啟動程式時也會呼叫）。

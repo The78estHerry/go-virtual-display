@@ -49,10 +49,38 @@ type widgetMgr struct {
 	theme    *material.Theme
 	onClosed func() // 視窗被關閉（含 Alt+F4）時呼叫
 
-	mu     sync.Mutex
-	win    *app.Window
-	hwnd   uintptr
-	placer widgetPlacer // 小工具所在的螢幕被拔掉時暫時移開
+	mu       sync.Mutex
+	win      *app.Window
+	hwnd     uintptr
+	placer   widgetPlacer // 小工具所在的螢幕被拔掉時暫時移開
+	toCursor bool         // 視窗建立後移到滑鼠所在的螢幕（快捷鍵叫出隱藏中的小工具時）
+}
+
+// MoveToCursor 把小工具移到滑鼠所在螢幕的右下角並叫到前面，記住新位置。
+// 小工具隱藏中時，下次建立視窗時再移（呼叫端接著要 Show）。
+func (w *widgetMgr) MoveToCursor() {
+	w.mu.Lock()
+	hwnd, open := w.hwnd, w.win != nil
+	if !open || hwnd == 0 {
+		w.toCursor = true
+		w.mu.Unlock()
+		return
+	}
+	w.mu.Unlock()
+	if x, y, ok := cursorWidgetPos(hwnd); ok {
+		w.placer.reset() // 使用者要求的位置，不再移回原本的螢幕
+		moveWindow(hwnd, x, y)
+		bringToFront(hwnd)
+		w.SavePosition()
+	}
+}
+
+func (w *widgetMgr) takeToCursor() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	t := w.toCursor
+	w.toCursor = false
+	return t
 }
 
 // placerInterval 是檢查小工具是否還在畫面上的間隔。Gio 沒有提供螢幕配置改變的事件，所以用輪詢
@@ -176,7 +204,18 @@ func (w *widgetMgr) loop(win *app.Window) {
 				// 必須另開 goroutine：視窗執行緒正等著這個迴圈處理完事件，
 				// 在這裡同步呼叫會送訊息給該視窗的 Win32 函式會互相等待而卡死
 				go func() {
-					setupWidgetWindow(h, s.X, s.Y, s.HasPos, &w.placer)
+					x, y, hasPos := s.X, s.Y, s.HasPos
+					toCursor := w.takeToCursor()
+					if toCursor {
+						if cx, cy, ok := cursorWidgetPos(h); ok {
+							x, y, hasPos = cx, cy, true
+						}
+					}
+					setupWidgetWindow(h, x, y, hasPos, &w.placer)
+					if toCursor {
+						bringToFront(h)
+						w.SavePosition()
+					}
 					t := time.NewTicker(placerInterval)
 					defer t.Stop()
 					for {

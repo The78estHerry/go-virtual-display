@@ -34,7 +34,7 @@
 | `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
 | `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是安裝時的預設（Windows、Linux），後者是 0.3.0 以前 Linux 版使用的（和 0.2.0 以前完全相同） |
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
-| `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
+| `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`hotkey*.go`（快捷鍵與設定視窗）、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
 | `internal/i18n` | 介面語言：`T(英文, 繁中)`。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
 | `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
 | `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\scripts\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
@@ -313,6 +313,17 @@ make linux                                                    # 只能在 Linux 
   - 原因是 pnputil 在「停用狀態下重新開機」後無法啟用，加上 conhost 吞掉錯誤碼（見「Windows 拔插」）。用 UAC 執行 `Enable-PnpDevice` 後立刻正常，Intel 內顯可以帶 2160×1360 的虛擬螢幕，沒有當機。
   - 0.4.4 開發中（`$AppVersion` 已改成 0.4.4，**還沒發佈**，使用者要再加功能後一起發佈）：Plug／Unplug 改成 `vdswitch.exe --plug`／`--unplug`，Apply 的結果檔函式改成共用（`taskResult`）。已在這台用 UAC 實測 `--unplug`、`--plug`，以及沒有權限時錯誤會寫進結果檔。**還沒測**：裝好 0.4.4 安裝包後用開關拔插、「拔掉 → 重新開機 → 插入」。
   - 這個工作階段是一般權限；需要系統管理員時可以用 `Start-Process powershell -Verb RunAs` 跳 UAC，由使用者按「是」，輸出寫到 scratchpad 的檔案再讀回來。
+- 2026-11-08：0.4.4 再加（使用者要求）：虛擬螢幕設成主螢幕、沒有遠端時，系統列和小工具都在看不到的螢幕上，無法拔掉。
+  - 討論過「小工具一律留在實體螢幕」和「斷網自動切回主螢幕」，**不採用為預設**：其他使用者的實體螢幕可能是展示用的，自動移動會干擾。之後若要做，只能當預設關閉的選項。
+  - **快捷鍵** `Ctrl+Alt+Shift+V`（`internal/ui/hotkey*.go`）：把小工具移到滑鼠所在螢幕工作區的右下角，隱藏中就一併顯示，並記住位置。使用者刻意選「移動小工具」而不是「拔掉」：誤按也不會影響畫面。
+    - `RegisterHotKey(hwnd=0)` 在鎖定的執行緒上註冊，WM_HOTKEY 送到該執行緒的佇列；換組合鍵用 `PostThreadMessage(WM_APP)` 請它重新註冊（註冊／取消／收訊息必須同一個執行緒）。
+    - 可在系統列「小工具快捷鍵：…」開視窗（`hotkey_dialog.go`）按新的組合鍵。視窗開著時先取消註冊，不然按目前的組合鍵會被系統攔走、視窗收不到。註冊失敗（被占用）時恢復原本的，選單標示「無法使用」。
+    - 存在 `widget.json` 的 `hotkey`，空字串表示預設值。主鍵限 A～Z、0～9、F1～F12，至少要有 Ctrl、Alt、Win 其中一個。
+    - Linux 不支援（X11／Wayland 沒有統一 API），選單項目隱藏。
+    - `hotkey_windows_test.go` 測註冊、衝突、換組合鍵；設 `GO_VIRTUAL_DISPLAY_TEST_PRESS=1` 會用 SendInput 真的按 `Ctrl+Alt+Shift+F11` 確認收得到。
+  - **開始功能表捷徑「Unplug Virtual Display」**（只放開始功能表）：`vdswitch.exe --request-unplug`，以一般權限觸發排程工作 Unplug，失敗時跳 MessageBox。盲打「Win → unplug → Enter」就能拔掉。`New-Shortcut` 加了 `-Arguments` 參數。
+  - 安裝完成訊息、三語 README、安裝包 README.txt 都寫了這兩個方法（通知只會出現在主螢幕上，所以不用通知）。
+  - **還沒測**：裝好 0.4.4 後快捷鍵移動小工具、設定快捷鍵視窗（Gio 能不能收到 Alt／Win 組合）、「unplug」捷徑。Linux 版的介面程式沒有編譯確認（這台 Docker 沒開），發佈前用 `release-linux.ps1` 編譯。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。

@@ -39,6 +39,21 @@ func (a *App) trayReady() {
 	mWidget := systray.AddMenuItemCheckbox(i18n.T("Show desktop widget", "顯示桌面小工具"), "", a.widget.Visible())
 	mTop := systray.AddMenuItemCheckbox(i18n.T("Keep widget on top", "小工具固定在最上層"), "", LoadSettings().TopMost)
 	mAuto := systray.AddMenuItemCheckbox(i18n.T("Start at sign-in", "登入時自動啟動"), "", AutostartEnabled())
+	mHotkey := systray.AddMenuItem("", i18n.T("Moves the widget to the screen under the mouse", "把小工具移到滑鼠所在的螢幕"))
+	updateHotkey := func() {
+		h, err := a.hotkey.Status()
+		title := i18n.T("Widget hotkey: ", "小工具快捷鍵：") + h.String()
+		if err != nil {
+			title += i18n.T(" (unavailable)", "（無法使用）")
+		}
+		mHotkey.SetTitle(title + "…")
+	}
+	if a.hotkey != nil {
+		updateHotkey()
+		a.onHotkey = updateHotkey
+	} else {
+		mHotkey.Hide()
+	}
 	systray.AddSeparator()
 	mUninstall := systray.AddMenuItem(i18n.T("Uninstall…", "解除安裝…"), "")
 	if !uninstallSupported() {
@@ -119,6 +134,10 @@ func (a *App) trayReady() {
 			on := !mAuto.Checked()
 			if err := SetAutostart(on); err == nil {
 				setCheck(mAuto, on)
+			}
+		case <-mHotkey.ClickedCh:
+			if a.hkDialog != nil {
+				a.hkDialog.Show()
 			}
 		case <-mUninstall.ClickedCh:
 			startUninstall() // 移除腳本會關掉這個程式

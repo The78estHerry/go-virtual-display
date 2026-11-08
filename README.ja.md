@@ -207,7 +207,10 @@ linux/uninstall.sh
 - **タスクトレイのアイコン**：
   - 色はウィジェットと同じです
   - **左クリックで切り替え**
-  - 右クリックメニュー：Synergy の状態（Windows のみ、Synergy がインストールされている場合）、Plug in／Unplug（接続／切断）、Resolution（解像度、Windows のみ）、Show desktop widget（ウィジェットを表示）、Keep widget on top（ウィジェットを最前面に固定）、Start at sign-in（サインイン時に自動起動）、Uninstall…（Windows のみ）、Exit（終了）
+  - 右クリックメニュー：Synergy の状態（Windows のみ、Synergy がインストールされている場合）、Plug in／Unplug（接続／切断）、Resolution（解像度、Windows のみ）、Show desktop widget（ウィジェットを表示）、Keep widget on top（ウィジェットを最前面に固定）、Start at sign-in（サインイン時に自動起動）、Widget hotkey…（ウィジェットのショートカットキー、Windows のみ）、Uninstall…（Windows のみ）、Exit（終了）
+- **スイッチが見えないとき（Windows のみ）**：仮想ディスプレイをメインディスプレイにすると、タスクトレイとウィジェットがどちらも見えない仮想ディスプレイ上になることがあります（リモート接続していないときなど）。その場合は：
+  - **`Ctrl+Alt+Shift+V`** を押すと、ウィジェットをマウスのある画面の右下に移動します（非表示の場合は表示します）。誤って押してもウィジェットが動くだけで、ディスプレイは切断されません。タスクトレイメニューの「Widget hotkey…」で変更できます。ほかのプログラムがその組み合わせを使っている場合は、メニューに「unavailable」と表示されます
+  - **Win** を押して **`unplug`** と入力し **Enter** を押すと、スタートメニューのショートカット「Unplug Virtual Display」が実行され、仮想ディスプレイを切断します。スタートメニューは見えない画面に開きますが、見ずに入力できます
 - 状態は 2 秒ごとに同期します。ほかの場所（デバイスマネージャー、VDD のコントロールプログラム）で状態を変えた場合も、両方に反映されます。
 - 起動できるのは 1 つだけです。もう一度起動すると、ウィジェットを表示します。
 - 設定は `%APPDATA%\go-virtual-display\widget.json`（Linux は `~/.config/go-virtual-display/widget.json`）に保存されます。
