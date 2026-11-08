@@ -334,6 +334,11 @@ make linux                                                    # 只能在 Linux 
   - 清理：刪掉中斷留下的 `dist\release-linux` 暫存資料夾；git 完整（fsck 正常、沒有鎖定檔）；Docker Desktop 沒在執行、沒有殘留容器。
   - **0.4.4 狀態**：Windows 功能全部實測通過，Windows 測試包 `dist\release\go-virtual-display-0.4.4-windows.zip` 已產生；Linux 安裝包還沒產生，**還沒發佈**。
   - **使用者要求暫停**。接續前先和使用者確認要不要再用 Docker：可以先單獨開 Docker Desktop 觀察是否穩定，或改用 WSL／其他電腦編譯 Linux 版。
+- 2026-11-08 18:13：開著硬體記錄器再跑一次 `release-linux.ps1`，**第三次死機**（Kernel-Power 41，18:16 重新開機）。
+  - 記錄器的資料：18:12:31 CPU 40°C、負載 11%；Docker 的 `vmmem` 開始編譯後，18:13:32 升到 88°C，18:13:37 `vmmem` 100%、89°C，之後就沒有紀錄。記憶體一直在 48% 左右，認可 45%，不是記憶體不足。
+  - 判斷：**CPU 過熱**（約 1 分鐘內 40→89°C，上升太快），可能和換主機後散熱器的安裝（接觸、散熱膏、風扇）有關，Docker 只是讓 CPU 滿載的工作。建議使用者檢查散熱，或用 CPU 燒機工具在監看下短時間測試確認。
+  - 檢查與修復：10 個 repo 都沒有未提交的變更、fsck 正常、沒有鎖定檔、所有 remote 都沒有沒推的 commit；當機前那個工作階段的 claude-secretary、claude-memory commit 已推上去。刪掉中斷留下的 `dist\release-linux`。Docker Desktop 沒在執行。
+  - 0.4.4 狀態不變：Windows 測試包已產生，Linux 安裝包還沒產生，**還沒發佈**。散熱問題解決前不要再跑 `release-linux.ps1`。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
