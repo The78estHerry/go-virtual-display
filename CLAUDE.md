@@ -350,8 +350,13 @@ make linux                                                    # 只能在 Linux 
 - 2026-11-08：依使用者要求關掉 Docker Desktop，發佈 **v0.4.4**（GitHub Release id 438183672，Gitea Release id 21），三語說明，標明 Linux 沒有實機測過。
   - 附件 SHA-256：Windows `2EDD6650…79AADE63`、Linux `18CFF22D…84244B0D`。兩邊下載回來比對一致，說明內容也和原稿一致。
   - Linux 安裝包這次沒用 `ubuntu:22.04` 容器檢查 `ldd`（Docker 已依使用者要求關掉），只在 Git Bash 用 `bash -n` 檢查腳本語法、確認 VERSION 和 README.txt 的網址。
+- **2026-11-08 收工時的狀態（下次從這裡接續）**：
+  - 已發佈到 **v0.4.4**（GitHub＋Gitea），main 和兩邊同步，工作目錄乾淨，沒有開發中的版本。下一版要先改 `$AppVersion`。
+  - 使用者這台：0.4.4 安裝中（實測用的版本）。Docker Desktop 已關（虛擬機限制 2 顆 CPU）。硬體記錄器和 LibreHardwareMonitor 還在背景執行，收工時 CPU 38°C。
+  - 這台換主機後 CPU 很容易過熱（今天 3 次死機，都在 Docker 吃滿 CPU 時）。已建議使用者檢查散熱器；在那之前，吃重的工作照全域 CLAUDE.md 開即時模式，`release-linux.ps1` 維持 `-Cpus 1`。
+  - 今天新增的全域準則：當機後的處理流程、過熱保護與即時模式的判斷（都在 `~/.claude/CLAUDE.md`，工具在 claude-secretary）。
 - 待辦：
-  1. （已完成）v0.4.2 已發佈。
+  1. （已完成）v0.4.2～v0.4.4 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
   3. 使用者曾問 icon 三個方案的比較網頁，舊的已不在。若需要可依記錄重畫 A1／A2／A3 並發佈成 Artifact 保存（還沒答應要做）。
 
