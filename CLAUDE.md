@@ -347,6 +347,9 @@ make linux                                                    # 只能在 Linux 
 - 2026-11-08 18:40～18:43：使用者同意後重跑 `release-linux.ps1`（容器 `--cpus=1`、Docker 虛擬機 2 顆 CPU、即時模式每秒監看），**成功**，約 3 分鐘。期間 CPU 最高 72°C，沒有觸發暫停（之前沒限制時 1 分鐘內升到 89°C 後當機）。
   - 產生 `dist\release\go-virtual-display-0.4.4-linux-amd64.tar.gz`（SHA-256 `18CFF22D…84244B0D`），Linux 介面程式碼也確認能編譯。
   - **0.4.4 兩個平台的安裝包都已產生，還沒發佈**，發佈照 `RELEASING.md`（兩邊建 Release，Release 說明標明 Linux 沒有實機測過）。
+- 2026-11-08：依使用者要求關掉 Docker Desktop，發佈 **v0.4.4**（GitHub Release id 438183672，Gitea Release id 21），三語說明，標明 Linux 沒有實機測過。
+  - 附件 SHA-256：Windows `2EDD6650…79AADE63`、Linux `18CFF22D…84244B0D`。兩邊下載回來比對一致，說明內容也和原稿一致。
+  - Linux 安裝包這次沒用 `ubuntu:22.04` 容器檢查 `ldd`（Docker 已依使用者要求關掉），只在 Git Bash 用 `bash -n` 檢查腳本語法、確認 VERSION 和 README.txt 的網址。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。
