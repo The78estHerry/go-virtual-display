@@ -165,10 +165,15 @@ if (Test-Path $exe) {
     # 「拔掉」捷徑只放開始功能表：主螢幕看不到時盲打搜尋用，放桌面反而容易誤點
     New-Shortcut (Join-Path $programs "$UnplugShortcutName.lnk") (Join-Path $AppDir 'vdswitch.exe') `
         (T 'Unplug the virtual display right away' '立即拔掉虛擬螢幕') '--request-unplug'
+    $zhShortcut = Join-Path $programs "$UnplugShortcutNameZh.lnk"
+    Remove-Item $zhShortcut -Force -ErrorAction SilentlyContinue  # 重新安裝時改成英文介面的話不留
+    if ($Lang -eq 'zh-TW') {
+        New-Shortcut $zhShortcut (Join-Path $AppDir 'vdswitch.exe') '立即拔掉虛擬螢幕' '--request-unplug'
+    }
     Write-Host (T "Installed the switch to $AppDir; shortcuts on the Start menu and desktop: $AppName" "已安裝開關程式到 $AppDir，開始功能表與桌面捷徑：$AppName")
     Write-Host (T "If the virtual display is the main display and you cannot see the switch:" '虛擬螢幕是主螢幕、看不到開關時：')
-    Write-Host (T "  - Ctrl+Alt+Shift+V moves the widget to the screen under the mouse (can be changed from the tray menu)" '  - Ctrl+Alt+Shift+V：把小工具移到滑鼠所在的螢幕（可在系統列選單更改）')
-    Write-Host (T "  - Press Win, type `"unplug`" and press Enter to unplug the virtual display ($UnplugShortcutName)" "  - 按 Win、輸入「unplug」、按 Enter：拔掉虛擬螢幕（$UnplugShortcutName）")
+    Write-Host (T "  - Ctrl+Alt+Shift+V moves the widget next to the mouse pointer (can be changed from the tray menu)" '  - Ctrl+Alt+Shift+V：把小工具移到滑鼠游標旁邊（可在系統列選單更改）')
+    Write-Host (T "  - Press Win, type `"unplug`" and press Enter to unplug the virtual display ($UnplugShortcutName)" "  - 按 Win、輸入「unplug」或「拔掉」、按 Enter：拔掉虛擬螢幕（$UnplugShortcutNameZh）")
 } else {
     Write-Host (T "$exe not found and Go is not installed; skipping the switch" "找不到 $exe，也沒有安裝 Go，略過開關程式")
 }

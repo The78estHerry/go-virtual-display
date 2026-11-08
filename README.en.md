@@ -207,8 +207,8 @@ The switch program and the install and uninstall messages are available in Engli
   - **Left-click to toggle**
   - Right-click menu: Synergy status (Windows only, when Synergy is installed), Plug in / Unplug, Resolution (Windows only), Show desktop widget, Keep widget on top, Start at sign-in, Widget hotkey… (Windows only), Uninstall… (Windows only), Exit
 - **When you cannot see the switch (Windows only)**: once the virtual display is the main display, the tray and the widget may both be on the virtual display you cannot see (for example, with no remote connection). Then:
-  - Press **`Ctrl+Alt+Shift+V`** to move the widget to the bottom-right of the screen under the mouse (it is shown if it was hidden). Pressing it by accident only moves the widget; the display is not unplugged. Change it from "Widget hotkey…" in the tray menu; if another program already uses the combination, the menu shows "unavailable"
-  - Press **Win**, type **`unplug`** and press **Enter** to run the Start menu shortcut "Unplug Virtual Display", which unplugs the virtual display. The Start menu opens on the screen you cannot see, but you can type blind
+  - Press **`Ctrl+Alt+Shift+V`** to move the widget next to the mouse pointer (it is shown if it was hidden). Pressing it by accident only moves the widget; the display is not unplugged. Change it from "Widget hotkey…" in the tray menu; if another program already uses the combination, the menu shows "unavailable"
+  - Press **Win**, type **`unplug`** and press **Enter** to run the Start menu shortcut "Unplug Virtual Display" (with the Traditional Chinese interface there is also a Chinese-named shortcut, so typing 「拔掉」 works too), which unplugs the virtual display. The Start menu opens on the screen you cannot see, but you can type blind
 - The state is synced every 2 seconds. When it is changed elsewhere (Device Manager, VDD's control program), both follow.
 - Only one instance runs. Opening it again brings up the widget.
 - Settings are stored in `%APPDATA%\go-virtual-display\widget.json` (Linux: `~/.config/go-virtual-display/widget.json`).

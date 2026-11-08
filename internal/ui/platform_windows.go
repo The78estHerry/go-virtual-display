@@ -214,7 +214,11 @@ var (
 
 const monitorDefaultNearest = 2
 
-// cursorWidgetPos 回傳把小工具放在滑鼠所在螢幕工作區右下角時的位置（和預設位置的規則相同）。
+// cursorOffsetPixels 是小工具和滑鼠游標之間的距離
+const cursorOffsetPixels = 16
+
+// cursorWidgetPos 回傳把小工具放在滑鼠游標旁邊（右下方）時的位置；
+// 右邊或下面放不下就改放左邊或上面，最後再限制在那個螢幕的工作區內。
 func cursorWidgetPos(hwnd uintptr) (int, int, bool) {
 	var pt struct{ X, Y int32 }
 	if ok, _, _ := procGetCursorPos.Call(uintptr(unsafe.Pointer(&pt))); ok == 0 {
@@ -230,6 +234,6 @@ func cursorWidgetPos(hwnd uintptr) (int, int, bool) {
 	if ok, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&wr))); ok == 0 {
 		return 0, 0, false
 	}
-	return int(mi.Work.Right) - int(wr.Right-wr.Left) - widgetMarginPixels,
-		int(mi.Work.Bottom) - int(wr.Bottom-wr.Top) - widgetMarginPixels, true
+	x, y := besideCursor(int(pt.X), int(pt.Y), int(wr.Right-wr.Left), int(wr.Bottom-wr.Top), mi.Work)
+	return x, y, true
 }

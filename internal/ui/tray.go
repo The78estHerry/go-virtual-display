@@ -39,7 +39,7 @@ func (a *App) trayReady() {
 	mWidget := systray.AddMenuItemCheckbox(i18n.T("Show desktop widget", "顯示桌面小工具"), "", a.widget.Visible())
 	mTop := systray.AddMenuItemCheckbox(i18n.T("Keep widget on top", "小工具固定在最上層"), "", LoadSettings().TopMost)
 	mAuto := systray.AddMenuItemCheckbox(i18n.T("Start at sign-in", "登入時自動啟動"), "", AutostartEnabled())
-	mHotkey := systray.AddMenuItem("", i18n.T("Moves the widget to the screen under the mouse", "把小工具移到滑鼠所在的螢幕"))
+	mHotkey := systray.AddMenuItem("", i18n.T("Moves the widget next to the mouse pointer", "把小工具移到滑鼠游標旁邊"))
 	updateHotkey := func() {
 		h, err := a.hotkey.Status()
 		title := i18n.T("Widget hotkey: ", "小工具快捷鍵：") + h.String()

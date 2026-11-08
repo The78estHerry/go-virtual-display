@@ -323,7 +323,11 @@ make linux                                                    # 只能在 Linux 
     - `hotkey_windows_test.go` 測註冊、衝突、換組合鍵；設 `GO_VIRTUAL_DISPLAY_TEST_PRESS=1` 會用 SendInput 真的按 `Ctrl+Alt+Shift+F11` 確認收得到。
   - **開始功能表捷徑「Unplug Virtual Display」**（只放開始功能表）：`vdswitch.exe --request-unplug`，以一般權限觸發排程工作 Unplug，失敗時跳 MessageBox。盲打「Win → unplug → Enter」就能拔掉。`New-Shortcut` 加了 `-Arguments` 參數。
   - 安裝完成訊息、三語 README、安裝包 README.txt 都寫了這兩個方法（通知只會出現在主螢幕上，所以不用通知）。
-  - **還沒測**：裝好 0.4.4 後快捷鍵移動小工具、設定快捷鍵視窗（Gio 能不能收到 Alt／Win 組合）、「unplug」捷徑。Linux 版的介面程式沒有編譯確認（這台 Docker 沒開），發佈前用 `release-linux.ps1` 編譯。
+  - 使用者實測（第一版）：快捷鍵移動、隱藏中叫出、盲打 unplug、開關拔插、重新開機後插入、重新安裝保留設定都通過。回報兩點，已修正：
+    - 要小工具出現在**滑鼠游標旁邊**（原本是那個螢幕的右下角）：`besideCursor` 放在游標右下方 16 px，放不下改到左邊或上面，再限制在工作區內（`cursor_pos_windows.go`，有測試）。
+    - 設定快捷鍵視窗按鍵沒反應。原因：**Gio 只會把焦點交給登記過 `key.FocusFilter` 的對象**，只呼叫 `FocusCmd` 不會生效，按鍵就收不到。加上 FocusFilter 後，`TestHotkeyDialogCapture`（開真的視窗＋SendInput）通過。另外改成按下組合鍵就立刻套用並儲存（使用者以為按了就會設定），按鈕只剩「還原預設值」和「關閉」；開視窗時 `bringToFront` 取得前景。
+  - 使用者問中文能不能搜到捷徑：開始功能表只比對名稱。使用者決定中文介面時多建一個中文名稱的「拔掉虛擬螢幕」捷徑（`$UnplugShortcutNameZh`，「檔名一律英文」的例外，只在中文介面建立）。英文捷徑照樣建立；重新安裝改成英文介面時刪掉中文捷徑；移除時兩個都刪。
+  - **還沒測**：修正後的設定快捷鍵視窗、游標旁邊的位置、中文捷徑搜尋「拔掉」。Linux 版的介面程式沒有編譯確認（這台 Docker 沒開），發佈前用 `release-linux.ps1` 編譯。
 - 待辦：
   1. （已完成）v0.4.2 已發佈。
   2. Linux 實機測試：**使用者決定暫時不測**（2026-11-01），Release 說明一律標註「Linux 沒有實機測過」即可，不要主動提議測試。之後要測時需要使用者的 Linux 機器（WSL 沒有 DRM），測試前可先跑 `linux\tests\run.ps1`。

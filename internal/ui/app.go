@@ -15,7 +15,7 @@ type App struct {
 	model    *Model
 	widget   *widgetMgr
 	manager  *managerWin
-	hotkey   *hotkeyMgr    // 把小工具移到滑鼠所在螢幕的快捷鍵（只有 Windows）
+	hotkey   *hotkeyMgr    // 把小工具移到滑鼠游標旁邊的快捷鍵（只有 Windows）
 	hkDialog *hotkeyDialog // 設定快捷鍵的視窗
 	quitting bool
 	onWidget func(bool) // 小工具顯示狀態改變時更新系統列選單
@@ -62,7 +62,7 @@ func Run(show <-chan struct{}) {
 	app.Main()
 }
 
-// summonWidget 是快捷鍵的動作：把小工具移到滑鼠所在的螢幕，隱藏中的話一併顯示。
+// summonWidget 是快捷鍵的動作：把小工具移到滑鼠游標旁邊，隱藏中的話一併顯示。
 func (a *App) summonWidget() {
 	a.widget.MoveToCursor()
 	if !a.widget.Visible() {

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"gioui.org/io/system"
 	"os"
 	"testing"
 	"time"
@@ -89,4 +90,41 @@ func sendKeys(vks []uint16, up bool) {
 		}
 	}
 	user32.NewProc("SendInput").Call(uintptr(len(in)), uintptr(unsafe.Pointer(&in[0])), unsafe.Sizeof(in[0]))
+}
+
+// TestHotkeyDialogCapture 實際開啟設定視窗並用 SendInput 按下新的組合鍵，確認視窗收得到並立刻套用。
+// 會開視窗、送出真的按鍵，所以和 TestHotkeyPress 一樣要設環境變數才執行。設定寫到暫存目錄。
+func TestHotkeyDialogCapture(t *testing.T) {
+	if os.Getenv("GO_VIRTUAL_DISPLAY_TEST_PRESS") == "" {
+		t.Skip("設 GO_VIRTUAL_DISPLAY_TEST_PRESS=1 才執行")
+	}
+	t.Setenv("AppData", t.TempDir())
+	h, _ := ParseHotkey(testHotkey)
+	m := startHotkey(h, func() {})
+	defer m.Suspend()
+	d := newHotkeyDialog(m, nil)
+	d.Show()
+	time.Sleep(1500 * time.Millisecond) // 等視窗建立並拿到焦點
+	// Ctrl+Alt+F9
+	sendKeys([]uint16{0x11, 0x12, 0x78}, false)
+	sendKeys([]uint16{0x11, 0x12, 0x78}, true)
+	want, _ := ParseHotkey("Ctrl+Alt+F9")
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		d.mu.Lock()
+		got := d.applied
+		d.mu.Unlock()
+		if got == want {
+			if s := LoadSettings(); s.Hotkey != want.String() {
+				t.Fatalf("設定沒有存下：%q", s.Hotkey)
+			}
+			d.mu.Lock()
+			win := d.win
+			d.mu.Unlock()
+			win.Perform(system.ActionClose)
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatal("設定視窗沒有收到 Ctrl+Alt+F9")
 }

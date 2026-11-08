@@ -53,10 +53,10 @@ type widgetMgr struct {
 	win      *app.Window
 	hwnd     uintptr
 	placer   widgetPlacer // 小工具所在的螢幕被拔掉時暫時移開
-	toCursor bool         // 視窗建立後移到滑鼠所在的螢幕（快捷鍵叫出隱藏中的小工具時）
+	toCursor bool         // 視窗建立後移到滑鼠游標旁邊（快捷鍵叫出隱藏中的小工具時）
 }
 
-// MoveToCursor 把小工具移到滑鼠所在螢幕的右下角並叫到前面，記住新位置。
+// MoveToCursor 把小工具移到滑鼠游標旁邊並叫到前面，記住新位置。
 // 小工具隱藏中時，下次建立視窗時再移（呼叫端接著要 Show）。
 func (w *widgetMgr) MoveToCursor() {
 	w.mu.Lock()

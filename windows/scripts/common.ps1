@@ -41,6 +41,9 @@ $AppName      = 'Virtual Display Switch'  # 開始功能表捷徑名稱（檔名
 # 開始功能表的「拔掉」捷徑（0.4.4 起）：虛擬螢幕是主螢幕、開關都在看不到的螢幕上時，
 # 可以盲打「Win → unplug → Enter」拔掉。執行 vdswitch.exe --request-unplug，透過排程工作不跳 UAC
 $UnplugShortcutName = 'Unplug Virtual Display'
+# 中文介面時多建一個中文名稱的捷徑：開始功能表搜尋只比對名稱、不比對註解，英文名稱用中文搜不到。
+# 這是「檔名一律英文」的例外（使用者決定），只在中文介面建立。捷徑用 IShellLinkW 建立，中文檔名沒有字碼頁問題
+$UnplugShortcutNameZh = '拔掉虛擬螢幕'
 $AppDir       = Join-Path $env:ProgramFiles 'go-virtual-display'
 $DesktopDir   = [Environment]::GetFolderPath('Desktop')  # 安裝與移除都以同一個使用者的系統管理員身分執行
 $UninstallerDir = Join-Path $AppDir 'uninstaller'  # 安裝資料夾刪掉後仍能移除

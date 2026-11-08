@@ -58,7 +58,7 @@ Resolution: The default is 1920x1080. Right-click the tray icon and choose
 
 Cannot see the switch? (e.g. the virtual display is the main display and
            you are not connected remotely)
-           - Ctrl+Alt+Shift+V moves the widget to the screen under the mouse.
+           - Ctrl+Alt+Shift+V moves the widget next to the mouse pointer.
              Change it from "Widget hotkey..." in the tray menu.
            - Press Win, type "unplug" and press Enter to unplug the virtual
              display.
@@ -86,9 +86,9 @@ The scripts folder contains installer files; you do not need to open it.
         新增（常見解析度或自己輸入寬、高、更新率）和刪除。
 
 看不到開關時（例如虛擬螢幕是主螢幕、又沒有遠端連線）：
-        - 按 Ctrl+Alt+Shift+V：把小工具移到滑鼠所在的螢幕。
+        - 按 Ctrl+Alt+Shift+V：把小工具移到滑鼠游標旁邊。
           可在系統列選單的「小工具快捷鍵…」更改。
-        - 按 Win、輸入「unplug」、按 Enter：拔掉虛擬螢幕。
+        - 按 Win、輸入「unplug」或「拔掉」、按 Enter：拔掉虛擬螢幕。
 
 需求：Windows 10／11 x64、Microsoft Visual C++ Redistributable。
 支援 Synergy 3：有安裝的話，螢幕配置改變後會自動重新啟動它，系統列和小工具會顯示它的狀態。
