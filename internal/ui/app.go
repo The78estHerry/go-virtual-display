@@ -2,10 +2,10 @@ package ui
 
 import (
 	"os"
-	"runtime"
 
-	"fyne.io/systray"
 	"gioui.org/app"
+
+	"github.com/The78estHerry/go-desktop-kit/tray"
 
 	"github.com/The78estHerry/go-virtual-display/internal/display"
 )
@@ -13,6 +13,7 @@ import (
 // App 串起 Model、系統列圖示與桌面小工具。
 type App struct {
 	model    *Model
+	tray     *tray.Tray
 	widget   *widgetMgr
 	manager  *managerWin
 	hotkey   *hotkeyMgr    // 把小工具移到滑鼠游標旁邊的快捷鍵（只有 Windows）
@@ -45,12 +46,8 @@ func Run(show <-chan struct{}) {
 		a.widget.Show()
 	}
 
-	go func() {
-		// systray 在 Windows 上需要同一個執行緒建立視窗並處理訊息
-		runtime.LockOSThread()
-		systray.Run(a.trayReady, nil)
-		os.Exit(0)
-	}()
+	// 系統列在自己的執行緒執行（tray 套件處理），結束後離開程序
+	tray.Start(a.trayReady, func() { os.Exit(0) })
 
 	if show != nil {
 		go func() {
@@ -99,5 +96,9 @@ func (a *App) widgetClosed() {
 func (a *App) quit() {
 	a.quitting = true
 	a.widget.SavePosition()
-	systray.Quit() // systray.Run 返回後離開程序
+	if a.tray != nil {
+		a.tray.Quit() // 系統列結束後離開程序
+	} else {
+		os.Exit(0)
+	}
 }

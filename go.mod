@@ -3,13 +3,13 @@ module github.com/The78estHerry/go-virtual-display
 go 1.26.0
 
 require (
-	fyne.io/systray v1.12.2
 	gioui.org v0.10.3
 	github.com/The78estHerry/go-desktop-kit v0.2.0
 	golang.org/x/sys v0.49.0
 )
 
 require (
+	fyne.io/systray v1.12.2 // indirect
 	gioui.org/shader v1.0.9 // indirect
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect

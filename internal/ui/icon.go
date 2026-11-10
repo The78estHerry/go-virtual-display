@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bytes"
-	"encoding/binary"
 	"image"
 	"image/color"
 	"image/png"
@@ -58,24 +57,5 @@ func iconPNG(c color.NRGBA) []byte {
 	}
 	var buf bytes.Buffer
 	_ = png.Encode(&buf, img)
-	return buf.Bytes()
-}
-
-// pngToICO 把 PNG 包成 ICO（Windows Vista 起支援內含 PNG 的 ICO）。
-func pngToICO(p []byte, size int) []byte {
-	var buf bytes.Buffer
-	w := func(v any) { _ = binary.Write(&buf, binary.LittleEndian, v) }
-	w(uint16(0))                    // reserved
-	w(uint16(1))                    // type: icon
-	w(uint16(1))                    // count
-	buf.WriteByte(byte(size % 256)) // width（256 記為 0）
-	buf.WriteByte(byte(size % 256)) // height
-	buf.WriteByte(0)                // palette
-	buf.WriteByte(0)                // reserved
-	w(uint16(1))                    // planes
-	w(uint16(32))                   // bpp
-	w(uint32(len(p)))
-	w(uint32(6 + 16)) // 資料起點
-	buf.Write(p)
 	return buf.Bytes()
 }
