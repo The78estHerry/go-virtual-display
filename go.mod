@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	gioui.org v0.10.3
 	github.com/The78estHerry/go-desktop-kit v0.2.0
+	github.com/The78estHerry/go-gio-kit v0.2.0
 	golang.org/x/sys v0.49.0
 )
 

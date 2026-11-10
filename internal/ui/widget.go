@@ -18,6 +18,8 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 
+	"github.com/The78estHerry/go-gio-kit/giowidget"
+
 	"github.com/The78estHerry/go-virtual-display/internal/display"
 	"github.com/The78estHerry/go-virtual-display/internal/i18n"
 )
@@ -44,47 +46,34 @@ var (
 )
 
 // widgetMgr 管理桌面小工具視窗；隱藏時關閉視窗，顯示時重新建立。
+// 視窗的無邊框、不出現在工作列、位置記憶與螢幕拔掉時暫時移開，由 go-gio-kit 的 giowidget 處理。
 type widgetMgr struct {
 	model    *Model
 	theme    *material.Theme
 	onClosed func() // 視窗被關閉（含 Alt+F4）時呼叫
 
 	mu       sync.Mutex
-	win      *app.Window
-	hwnd     uintptr
-	placer   widgetPlacer // 小工具所在的螢幕被拔掉時暫時移開
-	toCursor bool         // 視窗建立後移到滑鼠游標旁邊（快捷鍵叫出隱藏中的小工具時）
+	gw       *giowidget.Widget
+	toCursor bool // 視窗建立後移到滑鼠游標旁邊（快捷鍵叫出隱藏中的小工具時）
 }
+
+// savePosDelay：giowidget 在背景移動視窗，等它移完再記住位置。
+const savePosDelay = 300 * time.Millisecond
 
 // MoveToCursor 把小工具移到滑鼠游標旁邊並叫到前面，記住新位置。
 // 小工具隱藏中時，下次建立視窗時再移（呼叫端接著要 Show）。
 func (w *widgetMgr) MoveToCursor() {
 	w.mu.Lock()
-	hwnd, open := w.hwnd, w.win != nil
-	if !open || hwnd == 0 {
+	gw := w.gw
+	if gw == nil {
 		w.toCursor = true
 		w.mu.Unlock()
 		return
 	}
 	w.mu.Unlock()
-	if x, y, ok := cursorWidgetPos(hwnd); ok {
-		w.placer.reset() // 使用者要求的位置，不再移回原本的螢幕
-		moveWindow(hwnd, x, y)
-		bringToFront(hwnd)
-		w.SavePosition()
-	}
+	gw.MoveToCursor()
+	time.AfterFunc(savePosDelay, w.SavePosition)
 }
-
-func (w *widgetMgr) takeToCursor() bool {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	t := w.toCursor
-	w.toCursor = false
-	return t
-}
-
-// placerInterval 是檢查小工具是否還在畫面上的間隔。Gio 沒有提供螢幕配置改變的事件，所以用輪詢
-const placerInterval = time.Second
 
 func newWidgetMgr(m *Model, onClosed func()) *widgetMgr {
 	th := material.NewTheme()
@@ -92,10 +81,10 @@ func newWidgetMgr(m *Model, onClosed func()) *widgetMgr {
 	w := &widgetMgr{model: m, theme: th, onClosed: onClosed}
 	m.Subscribe(func(Snapshot) {
 		w.mu.Lock()
-		win := w.win
+		gw := w.gw
 		w.mu.Unlock()
-		if win != nil {
-			win.Invalidate()
+		if gw != nil {
+			gw.Window().Invalidate()
 		}
 	})
 	return w
@@ -104,28 +93,34 @@ func newWidgetMgr(m *Model, onClosed func()) *widgetMgr {
 func (w *widgetMgr) Visible() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.win != nil
+	return w.gw != nil
 }
 
 func (w *widgetMgr) Show() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.win != nil {
-		if w.hwnd != 0 {
-			bringToFront(w.hwnd)
-		}
+	if w.gw != nil {
+		w.gw.BringToFront()
 		return
 	}
 	s := LoadSettings()
-	win := new(app.Window)
-	win.Option(
-		app.Title(i18n.T("virtual_display_switch")),
-		app.Decorated(false),
-		app.TopMost(s.TopMost),
-	)
-	win.Option(widgetSize(w.model.Snapshot())...)
-	w.win = win
-	go w.loop(win)
+	opts := giowidget.Options{
+		Title:   i18n.T("virtual_display_switch"),
+		Width:   unit.Dp(widgetW),
+		Height:  unit.Dp(widgetHeight(w.model.Snapshot())),
+		TopMost: s.TopMost,
+	}
+	if s.HasPos {
+		opts.Position = &image.Point{X: s.X, Y: s.Y}
+	}
+	if w.toCursor {
+		w.toCursor = false
+		opts.NearCursor = true
+		time.AfterFunc(savePosDelay*3, w.SavePosition) // 視窗建立並移到游標旁之後
+	}
+	gw := giowidget.New(opts)
+	w.gw = gw
+	go w.loop(gw)
 }
 
 // widgetHeight 有安裝 Synergy 時多一行 Synergy 狀態。
@@ -136,105 +131,66 @@ func widgetHeight(s Snapshot) float32 {
 	return widgetHSynergy
 }
 
-func widgetSize(s Snapshot) []app.Option {
-	h := unit.Dp(widgetHeight(s))
-	return []app.Option{
-		app.Size(unit.Dp(widgetW), h),
-		app.MinSize(unit.Dp(widgetW), h),
-		app.MaxSize(unit.Dp(widgetW), h),
-	}
-}
-
 func (w *widgetMgr) Hide() {
 	w.mu.Lock()
-	win := w.win
+	gw := w.gw
 	w.mu.Unlock()
-	if win != nil {
+	if gw != nil {
 		w.SavePosition()
-		win.Perform(system.ActionClose)
+		gw.Window().Perform(system.ActionClose)
 	}
 }
 
 func (w *widgetMgr) SetTopMost(on bool) {
 	w.mu.Lock()
-	win := w.win
+	gw := w.gw
 	w.mu.Unlock()
-	if win != nil {
-		win.Option(app.TopMost(on))
+	if gw != nil {
+		gw.SetTopMost(on)
 	}
 }
 
-// SavePosition 記住目前視窗位置（只在能取得位置的平台有效）。
+// SavePosition 記住目前視窗位置（只在能取得位置的平台有效）。所在螢幕暫時被拔掉時記住原本的位置。
 func (w *widgetMgr) SavePosition() {
 	w.mu.Lock()
-	hwnd := w.hwnd
+	gw := w.gw
 	w.mu.Unlock()
-	if x, y, ok := w.placer.savedPos(hwnd); ok {
-		SaveSettings(func(s *Settings) { s.X, s.Y, s.HasPos = x, y, true })
+	if gw == nil {
+		return
+	}
+	if p, ok := gw.Position(); ok {
+		SaveSettings(func(s *Settings) { s.X, s.Y, s.HasPos = p.X, p.Y, true })
 	}
 }
 
-func (w *widgetMgr) loop(win *app.Window) {
+func (w *widgetMgr) loop(gw *giowidget.Widget) {
 	var (
 		ops    op.Ops
 		toggle widget.Clickable
 		knob   float32 // 0 = 左（拔掉），1 = 右（插入）
 		last   time.Time
 		inited bool
-		stop   = make(chan struct{})
 		height = widgetHeight(w.model.Snapshot()) // 目前視窗的高度（dp）
 	)
 	for {
-		switch e := win.Event().(type) {
+		e := gw.Window().Event()
+		gw.HandleEvent(e)
+		switch e := e.(type) {
 		case app.DestroyEvent:
-			close(stop)
 			w.mu.Lock()
-			if w.win == win {
-				w.win, w.hwnd = nil, 0
+			if w.gw == gw {
+				w.gw = nil
 			}
 			w.mu.Unlock()
 			w.onClosed()
 			return
-		case app.ViewEvent:
-			if h := viewHWND(e); h != 0 {
-				w.mu.Lock()
-				w.hwnd = h
-				w.mu.Unlock()
-				s := LoadSettings()
-				// 必須另開 goroutine：視窗執行緒正等著這個迴圈處理完事件，
-				// 在這裡同步呼叫會送訊息給該視窗的 Win32 函式會互相等待而卡死
-				go func() {
-					x, y, hasPos := s.X, s.Y, s.HasPos
-					toCursor := w.takeToCursor()
-					if toCursor {
-						if cx, cy, ok := cursorWidgetPos(h); ok {
-							x, y, hasPos = cx, cy, true
-						}
-					}
-					setupWidgetWindow(h, x, y, hasPos, &w.placer)
-					if toCursor {
-						bringToFront(h)
-						w.SavePosition()
-					}
-					t := time.NewTicker(placerInterval)
-					defer t.Stop()
-					for {
-						select {
-						case <-stop:
-							return
-						case <-t.C:
-							w.placer.check(h)
-						}
-					}
-				}()
-			}
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)
 			snap := w.model.Snapshot()
 			if h := widgetHeight(snap); h != height {
-				// 安裝或移除 Synergy 後改變高度。另開 goroutine，避免在事件迴圈裡等待視窗執行緒
+				// 安裝或移除 Synergy 後改變高度（SetSize 不會在事件迴圈裡等待視窗執行緒）
 				height = h
-				go win.Option(widgetSize(snap)...)
+				gw.SetSize(unit.Dp(widgetW), unit.Dp(h))
 			}
 			if toggle.Clicked(gtx) {
 				w.model.Toggle()

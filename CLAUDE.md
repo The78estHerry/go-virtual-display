@@ -34,9 +34,9 @@
 | `cmd/make-edid` | `-o` 產生、`-check` 檢查並印出 hex |
 | `edid/edid_1920x1080.bin`、`edid_1920x1440.bin` | 產好的 EDID，commit 進 repo：前者是安裝時的預設（Windows、Linux），後者是 0.3.0 以前 Linux 版使用的（和 0.2.0 以前完全相同） |
 | `internal/display` | `Controller` 介面（`Status`/`Plug`/`Unplug`），各平台各一個實作 |
-| `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`hotkey*.go`（快捷鍵與設定視窗）、`autostart_*.go`、`platform_*.go`、`icon.go`（執行時繪製圖示） |
-| `internal/i18n` | 介面語言：`T(英文, 繁中)`。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
-| `cmd/vdswitch` | 主程式＋單一執行個體（Windows：具名 mutex＋event；Linux：flock） |
+| `internal/ui` | `Model`（狀態、輪詢、切換後等待）、`tray.go`、`widget.go`、`settings.go`、`hotkey*.go`（快捷鍵與設定視窗）、`autostart.go`、`platform_*.go`、`icon.go`（執行時繪製圖示）。系統列用 go-desktop-kit 的 `tray`、小工具視窗用 go-gio-kit 的 `giowidget`、登入啟動用 `desktop/autostart` |
+| `internal/i18n` | 介面語言：`T("key")`，訊息表在 `messages.go`（英文、繁中），用 go-desktop-kit 的 `desktop/i18n`，缺翻譯退回英文；測試檢查兩張表一致、用到的 key 都存在。順序是環境變數 `GO_VIRTUAL_DISPLAY_LANG`（測試用）→ 安裝時選的 → 系統顯示語言 |
+| `cmd/vdswitch` | 主程式；單一執行個體用 go-desktop-kit 的 `desktop/single`（ID `go-virtual-display`，第二份啟動會叫出小工具） |
 | `windows/install.cmd`／`uninstall.cmd` | 一鍵安裝／移除：用 `net session` 判斷權限，不足時以 `Start-Process -Verb RunAs` 重新啟動自己，再呼叫 `windows\scripts\install.ps1 -Launch`／`uninstall.ps1`。只放 ASCII，因為 cmd 用系統字碼頁讀檔 |
 | `windows/scripts/` | `common.ps1`（常數）、`download-vdd.ps1`、`install.ps1`、`verify.ps1`、`uninstall.ps1`、`vdd_settings.xml` |
 | `linux/` | `install.sh`、`uninstall.sh`（一鍵：一般使用者執行，root 部分自己 `sudo bash "$0"`）。其餘在 `linux/scripts/`：`verify.sh`、`vdswitch-helper`、polkit 規則、`initramfs-hook`、`.desktop`。`linux/tests/`：Docker 模擬測試（`run.ps1` 一鍵執行） |
@@ -371,3 +371,9 @@ make linux                                                    # 只能在 Linux 
   - `origin`：`gitea.littleherry.work/The78estWorld/go-virtual-display`，要登入才能看，同步一份。
   - 發新版時兩邊都要建 Release，步驟見 `RELEASING.md`。
 - module 路徑是 `github.com/The78estHerry/go-virtual-display`（0.4.3 起；之前是 Gitea 的路徑）。程式碼和安裝包裡給使用者看的連結都要指向 GitHub，因為其他人打不開 Gitea。
+- 2026-11-11：改用 go-desktop-kit v0.2.0 與 go-gio-kit v0.2.0（分支 `use-kits`，go-credential-porter 的 M4）：
+  - 介面文字：82 個 `i18n.T(英文, 繁中)` 改成 `i18n.T("key")`，72 個 key 的訊息表在 `internal/i18n/messages.go`；之後加日文只要多一張表。
+  - 單一執行個體改用 `desktop/single`，Linux 第二份啟動也會叫出小工具（原本直接結束）；Windows mutex 名稱改變，安裝程式本來就會先結束舊程式。
+  - 登入啟動改用 `desktop/autostart`，ID 仍是 `go-virtual-display`（Run 機碼值名稱、`.desktop` 檔名、移除腳本都不用改）；macOS 改用 LaunchAgent。
+  - 系統列改用 `tray`；小工具視窗改用 `giowidget`（位置邏輯搬進套件並有單元測試），刪掉 `cursor_pos_windows.go`、`pngToICO` 與大部分 `platform_windows.go`。
+  - 實機測試（停掉安裝版、執行測試版、測完開回安裝版）全部通過：系統列圖示與提示、左鍵拔插、解析度子選單、勾選項目、小工具位置與拖曳、快捷鍵移到游標旁、關掉再開記得位置、重複啟動只剩一份並叫出小工具、「結束」。Linux 沒有實機測過。

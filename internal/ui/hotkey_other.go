@@ -13,5 +13,3 @@ func (*hotkeyMgr) Set(Hotkey) error         { return nil }
 func (*hotkeyMgr) Suspend()                 {}
 func (*hotkeyMgr) Resume()                  {}
 func (*hotkeyMgr) Status() (Hotkey, error)  { return Hotkey{}, nil }
-
-func cursorWidgetPos(uintptr) (int, int, bool) { return 0, 0, false }
