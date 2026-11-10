@@ -9,5 +9,5 @@ import (
 )
 
 func newController() (Controller, error) {
-	return nil, errors.New(i18n.T("This operating system is not supported yet", "這個作業系統還不支援"))
+	return nil, errors.New(i18n.T("this_operating_system_is_not_supported"))
 }

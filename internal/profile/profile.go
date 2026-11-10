@@ -69,13 +69,13 @@ func (p Profile) Timing() (edid.Timing, error) {
 // Validate 檢查是否在可以產生 EDID 的範圍內。
 func (p Profile) Validate() error {
 	if p.Width < MinSize || p.Width > MaxSize || p.Height < MinSize || p.Height > MaxSize {
-		return fmt.Errorf(i18n.T("Width and height must be between %d and %d", "寬和高必須介於 %d 到 %d"), MinSize, MaxSize)
+		return fmt.Errorf(i18n.T("width_and_height_must_be_between"), MinSize, MaxSize)
 	}
 	if p.Refresh < MinRefresh || p.Refresh > MaxRefresh {
-		return fmt.Errorf(i18n.T("Refresh rate must be between %d and %d Hz", "更新率必須介於 %d 到 %d Hz"), MinRefresh, MaxRefresh)
+		return fmt.Errorf(i18n.T("refresh_rate_must_be_between_and"), MinRefresh, MaxRefresh)
 	}
 	if _, err := p.EDID(); err != nil {
-		return errors.New(i18n.T("This resolution and refresh rate are too high to describe in an EDID", "這個解析度和更新率太高，EDID 無法表示"))
+		return errors.New(i18n.T("this_resolution_and_refresh_rate_are"))
 	}
 	return nil
 }
@@ -192,7 +192,7 @@ func Add(p Profile) (List, error) {
 func Remove(p Profile) (List, error) {
 	return Update(func(l *List) error {
 		if p.Key() == l.Active {
-			return errors.New(i18n.T("The resolution in use cannot be deleted", "使用中的解析度不能刪除"))
+			return errors.New(i18n.T("the_resolution_in_use_cannot_be"))
 		}
 		l.Profiles = slices.DeleteFunc(l.Profiles, func(q Profile) bool { return q.Key() == p.Key() })
 		return nil

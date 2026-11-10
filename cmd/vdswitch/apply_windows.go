@@ -30,7 +30,7 @@ func runSubcommand() bool {
 	case "--request-unplug":
 		// 這時通常看不到主螢幕，但失敗時仍跳訊息方塊，至少遠端或切回來時看得到原因
 		if err = display.RequestUnplug(); err != nil {
-			title := i18n.T("Unplug Virtual Display", "拔掉虛擬螢幕")
+			title := i18n.T("unplug_virtual_display")
 			_, _ = windows.MessageBox(0, windows.StringToUTF16Ptr(err.Error()), windows.StringToUTF16Ptr(title), windows.MB_OK|windows.MB_ICONERROR|windows.MB_TOPMOST)
 		}
 	default:

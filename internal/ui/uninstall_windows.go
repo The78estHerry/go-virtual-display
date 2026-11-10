@@ -39,10 +39,8 @@ func uninstallSupported() bool { return uninstallLauncher() != "" }
 
 // startUninstall 確認後啟動移除腳本；腳本會跳 UAC，並先關掉這個程式。回傳是否已啟動。
 func startUninstall() bool {
-	title, _ := windows.UTF16PtrFromString(i18n.T("Uninstall Virtual Display Switch", "解除安裝虛擬螢幕開關"))
-	text, _ := windows.UTF16PtrFromString(i18n.T(
-		"Remove the virtual display driver, this switch and all settings?\n\nAdministrator permission will be requested next.",
-		"要移除虛擬螢幕驅動、開關程式與所有設定嗎？\n\n接下來會詢問系統管理員權限。"))
+	title, _ := windows.UTF16PtrFromString(i18n.T("uninstall_virtual_display_switch"))
+	text, _ := windows.UTF16PtrFromString(i18n.T("remove_the_virtual_display_driver_this"))
 	r, _, _ := procMessageBox.Call(0, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)),
 		mbYesNo|mbIconQuestion|mbDefButton2|mbTopMost)
 	if r != idYes {

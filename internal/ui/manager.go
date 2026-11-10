@@ -63,7 +63,7 @@ func (mw *managerWin) Show() {
 	}
 	win := new(app.Window)
 	win.Option(
-		app.Title(i18n.T("Manage resolutions", "管理解析度")),
+		app.Title(i18n.T("manage_resolutions")),
 		app.Size(unit.Dp(460), unit.Dp(640)),
 		app.MinSize(unit.Dp(400), unit.Dp(420)),
 	)
@@ -140,23 +140,23 @@ func (mw *managerWin) handle(gtx layout.Context, st *managerState) {
 			st.report(nil, "")
 		}
 		if clickable(st.del, p.Key()).Clicked(gtx) {
-			st.report(mw.model.RemoveProfile(p), i18n.T("Deleted ", "已刪除 ")+p.Label())
+			st.report(mw.model.RemoveProfile(p), i18n.T("deleted")+p.Label())
 		}
 	}
 	for _, p := range profile.Presets {
 		if clickable(st.presets, p.Key()).Clicked(gtx) {
-			st.report(mw.model.AddProfile(p), i18n.T("Added ", "已加入 ")+p.Label())
+			st.report(mw.model.AddProfile(p), i18n.T("added")+p.Label())
 		}
 	}
 	if st.add.Clicked(gtx) {
 		atoi := func(e *widget.Editor) int { n, _ := strconv.Atoi(e.Text()); return n }
 		p := profile.Profile{Width: atoi(&st.width), Height: atoi(&st.height), Refresh: atoi(&st.refresh)}
 		if snap.Profiles.Has(p) {
-			st.report(nil, p.Label()+i18n.T(" is already in the list", " 已在清單中"))
+			st.report(nil, p.Label()+i18n.T("is_already_in_the_list"))
 		} else if err := mw.model.AddProfile(p); err != nil {
 			st.report(err, "")
 		} else {
-			st.report(nil, i18n.T("Added ", "已加入 ")+p.Label())
+			st.report(nil, i18n.T("added")+p.Label())
 			st.width.SetText("")
 			st.height.SetText("")
 		}
@@ -180,7 +180,7 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 	}
 
 	// 已存的解析度
-	rows = append(rows, heading(i18n.T("Saved resolutions", "已存的解析度")))
+	rows = append(rows, heading(i18n.T("saved_resolutions")))
 	for _, p := range snap.Profiles.Profiles {
 		p := p
 		active := p.Key() == snap.Profiles.Active
@@ -190,7 +190,7 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 						text := p.Label()
 						if active {
-							text += i18n.T("  (in use)", "（使用中）")
+							text += i18n.T("in_use")
 						}
 						l := material.Body1(th, text)
 						l.Color = colorText
@@ -203,14 +203,14 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 						if active || snap.Busy {
 							gtx = gtx.Disabled()
 						}
-						return smallButton(th, clickable(st.use, p.Key()), i18n.T("Use", "使用")).Layout(gtx)
+						return smallButton(th, clickable(st.use, p.Key()), i18n.T("use")).Layout(gtx)
 					}),
 					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						if active {
 							gtx = gtx.Disabled()
 						}
-						b := smallButton(th, clickable(st.del, p.Key()), i18n.T("Delete", "刪除"))
+						b := smallButton(th, clickable(st.del, p.Key()), i18n.T("delete"))
 						b.Background = colorError
 						return b.Layout(gtx)
 					}),
@@ -220,7 +220,7 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 	}
 	if snap.Applying {
 		rows = append(rows, func(gtx layout.Context) layout.Dimensions {
-			l := material.Body2(th, i18n.T("Applying… the virtual display restarts briefly.", "套用中…虛擬螢幕會短暫重新啟動。"))
+			l := material.Body2(th, i18n.T("applying_the_virtual_display_restarts_briefly"))
 			l.Color = colorMuted
 			return l.Layout(gtx)
 		})
@@ -233,10 +233,10 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 			avail = append(avail, p)
 		}
 	}
-	rows = append(rows, heading(i18n.T("Add a common resolution (60 Hz)", "加入常見解析度（60 Hz）")))
+	rows = append(rows, heading(i18n.T("add_a_common_resolution_60_hz")))
 	if len(avail) == 0 {
 		rows = append(rows, func(gtx layout.Context) layout.Dimensions {
-			l := material.Body2(th, i18n.T("All common resolutions are already added.", "常見解析度都已加入。"))
+			l := material.Body2(th, i18n.T("all_common_resolutions_are_already_added"))
 			l.Color = colorMuted
 			return l.Layout(gtx)
 		})
@@ -269,7 +269,7 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 	}
 
 	// 手動輸入
-	rows = append(rows, heading(i18n.T("Add a custom resolution", "手動輸入解析度")))
+	rows = append(rows, heading(i18n.T("add_a_custom_resolution")))
 	rows = append(rows, func(gtx layout.Context) layout.Dimensions {
 		field := func(e *widget.Editor, hint string) layout.FlexChild {
 			return layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
@@ -282,19 +282,19 @@ func (mw *managerWin) layout(gtx layout.Context, st *managerState) {
 			})
 		}
 		return layout.Flex{Alignment: layout.Middle}.Layout(gtx,
-			field(&st.width, i18n.T("Width", "寬")),
+			field(&st.width, i18n.T("width")),
 			sep("×"),
-			field(&st.height, i18n.T("Height", "高")),
+			field(&st.height, i18n.T("height")),
 			sep("@"),
 			field(&st.refresh, "Hz"),
 			sep("Hz"),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return smallButton(th, &st.add, i18n.T("Add", "加入")).Layout(gtx)
+				return smallButton(th, &st.add, i18n.T("add")).Layout(gtx)
 			}),
 		)
 	})
 	rows = append(rows, func(gtx layout.Context) layout.Dimensions {
-		l := material.Caption(th, i18n.T("Width/height 320–4095, refresh 24–240 Hz.", "寬高 320–4095、更新率 24–240 Hz。"))
+		l := material.Caption(th, i18n.T("width_height_320_4095_refresh_24"))
 		l.Color = colorMuted
 		return layout.Inset{Top: unit.Dp(6)}.Layout(gtx, l.Layout)
 	})

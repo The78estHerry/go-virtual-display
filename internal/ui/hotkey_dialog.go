@@ -48,7 +48,7 @@ func (d *hotkeyDialog) Show() {
 	}
 	win := new(app.Window)
 	win.Option(
-		app.Title(i18n.T("Widget hotkey", "小工具快捷鍵")),
+		app.Title(i18n.T("widget_hotkey")),
 		app.Size(unit.Dp(440), unit.Dp(300)),
 		app.MinSize(unit.Dp(400), unit.Dp(280)),
 	)
@@ -123,7 +123,7 @@ func (d *hotkeyDialog) handle(gtx layout.Context, st *hotkeyDialogState) {
 		}
 		h := Hotkey{Mods: e.Modifiers & hotkeyModsAll, Key: string(e.Name)}
 		if err := h.Validate(); err != nil {
-			st.message, st.messageIsError = h.String()+i18n.T(": ", "：")+err.Error(), true
+			st.message, st.messageIsError = h.String()+i18n.T("sep_colon")+err.Error(), true
 			continue
 		}
 		d.apply(st, h)
@@ -152,7 +152,7 @@ func (d *hotkeyDialog) apply(st *hotkeyDialogState, h Hotkey) {
 		}
 	})
 	st.captured = h
-	st.message, st.messageIsError = fmt.Sprintf(i18n.T("Saved: %s. You can close this window.", "已改成 %s，可以關閉這個視窗。"), h), false
+	st.message, st.messageIsError = fmt.Sprintf(i18n.T("saved_you_can_close_this_window"), h), false
 	d.mu.Lock()
 	d.applied = h
 	d.mu.Unlock()
@@ -183,13 +183,9 @@ func (d *hotkeyDialog) layout(gtx layout.Context, st *hotkeyDialogState) layout.
 	}
 	return layout.UniformInset(unit.Dp(20)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-			label(14, i18n.T(
-				"Moves the desktop widget next to the mouse pointer. Useful when the virtual display is the main display and the switch is on a screen you cannot see.",
-				"把桌面小工具移到滑鼠游標旁邊。虛擬螢幕是主螢幕、開關在看不到的螢幕上時使用。"), colorText),
+			label(14, i18n.T("moves_the_desktop_widget_next_to"), colorText),
 			gap(12),
-			label(13, i18n.T(
-				"Press the new combination in this window; it is saved right away (Ctrl, Alt or Win plus a letter, digit or F1–F12). Esc closes.",
-				"在這個視窗裡直接按下新的組合鍵，會立刻儲存（Ctrl、Alt 或 Win，加上英文字母、數字或 F1～F12）。按 Esc 關閉。"), colorMuted),
+			label(13, i18n.T("press_the_new_combination_in_this"), colorMuted),
 			gap(16),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				l := material.Label(d.theme, unit.Sp(22), st.captured.String())
@@ -201,9 +197,9 @@ func (d *hotkeyDialog) layout(gtx layout.Context, st *hotkeyDialogState) layout.
 			layout.Flexed(1, layout.Spacer{}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Flex{Spacing: layout.SpaceStart}.Layout(gtx,
-					layout.Rigid(material.Button(d.theme, &st.reset, i18n.T("Restore default", "還原預設值")).Layout),
+					layout.Rigid(material.Button(d.theme, &st.reset, i18n.T("restore_default")).Layout),
 					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
-					layout.Rigid(material.Button(d.theme, &st.close, i18n.T("Close", "關閉")).Layout),
+					layout.Rigid(material.Button(d.theme, &st.close, i18n.T("close")).Layout),
 				)
 			}),
 		)

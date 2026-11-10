@@ -22,12 +22,3 @@ func installedLanguage() string {
 	}
 	return ""
 }
-
-func systemIsChinese() bool {
-	for _, k := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
-		if v := os.Getenv(k); v != "" {
-			return strings.HasPrefix(strings.ToLower(v), "zh")
-		}
-	}
-	return false
-}

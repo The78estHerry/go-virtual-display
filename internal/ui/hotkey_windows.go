@@ -120,7 +120,7 @@ func register(h Hotkey) error {
 		mods |= modWin
 	}
 	if r, _, e := procRegisterHotKey.Call(0, hotkeyID, mods, uintptr(vk)); r == 0 {
-		return fmt.Errorf(i18n.T("%s is already used by another program (%v)", "%s 已被其他程式使用（%v）"), h, e)
+		return fmt.Errorf(i18n.T("is_already_used_by_another_program"), h, e)
 	}
 	return nil
 }

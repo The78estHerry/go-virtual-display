@@ -19,15 +19,15 @@ const (
 func (s State) String() string {
 	switch s {
 	case Plugged:
-		return i18n.T("Plugged in", "已插入")
+		return i18n.T("plugged_in")
 	case Unplugged:
-		return i18n.T("Unplugged", "已拔掉")
+		return i18n.T("unplugged")
 	}
-	return i18n.T("Unknown", "未知")
+	return i18n.T("unknown")
 }
 
 // ErrNotInstalled 表示找不到虛擬螢幕（驅動或接頭沒有設定好）。
-var ErrNotInstalled = errors.New(i18n.T("Virtual display not found. Please run the installer first.", "找不到虛擬螢幕，請先執行安裝腳本"))
+var ErrNotInstalled = errors.New(i18n.T("virtual_display_not_found_please_run"))
 
 // Controller 是平台相關的實作。
 type Controller interface {
@@ -38,7 +38,7 @@ type Controller interface {
 
 // ErrRebootRequired 表示新的解析度已經存好，但要重新開機才會生效（Linux 沒有 debugfs 可以立即套用時）。
 // 這不算失敗：使用中的解析度維持新選的那一組。
-var ErrRebootRequired = errors.New(i18n.T("Saved; reboot to apply the new resolution", "已存好，重新開機後套用新解析度"))
+var ErrRebootRequired = errors.New(i18n.T("saved_reboot_to_apply_the_new"))
 
 // ProfileApplier 由支援切換解析度的平台實作（Windows、Linux）。
 // 使用前先用 profile 套件把要用的解析度設為使用中。

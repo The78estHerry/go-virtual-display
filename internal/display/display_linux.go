@@ -43,7 +43,7 @@ func readConnector() (string, error) {
 			return v, nil
 		}
 	}
-	return "", fmt.Errorf(i18n.T("No valid CONNECTOR setting in %s", "%s 裡沒有有效的 CONNECTOR 設定"), configFile)
+	return "", fmt.Errorf(i18n.T("no_valid_connector_setting_in"), configFile)
 }
 
 // Status 讀取 DRM 接頭的狀態，不需要 root。
@@ -58,7 +58,7 @@ func (c linuxController) Status() (State, error) {
 	case "disconnected":
 		return Unplugged, nil
 	}
-	return Unknown, fmt.Errorf(i18n.T("Unknown connector status: %q", "接頭狀態不明：%q"), strings.TrimSpace(string(b)))
+	return Unknown, fmt.Errorf(i18n.T("unknown_connector_status"), strings.TrimSpace(string(b)))
 }
 
 func (linuxController) Plug() error   { _, err := runHelper(nil, "on"); return err }
@@ -95,7 +95,7 @@ func runHelper(stdin []byte, arg string) (string, error) {
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf(i18n.T("Switch failed: %v %s", "切換失敗：%v %s"), err, strings.TrimSpace(string(out)))
+		return "", fmt.Errorf(i18n.T("switch_failed"), err, strings.TrimSpace(string(out)))
 	}
 	return string(out), nil
 }

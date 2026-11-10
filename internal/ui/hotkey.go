@@ -69,10 +69,10 @@ func validHotkeyKey(k string) bool {
 // 只有 Shift 會干擾一般打字。
 func (h Hotkey) Validate() error {
 	if !validHotkeyKey(h.Key) {
-		return errors.New(i18n.T("Use a letter, a digit or F1–F12 as the key", "主鍵請用英文字母、數字或 F1～F12"))
+		return errors.New(i18n.T("use_a_letter_a_digit_or"))
 	}
 	if h.Mods&(key.ModCtrl|key.ModAlt|key.ModSuper) == 0 {
-		return errors.New(i18n.T("Include Ctrl, Alt or Win", "至少要包含 Ctrl、Alt 或 Win"))
+		return errors.New(i18n.T("include_ctrl_alt_or_win"))
 	}
 	return nil
 }

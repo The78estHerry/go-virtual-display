@@ -30,7 +30,7 @@ func (winController) ApplyActive() error {
 	if err := waitTaskResult(applyResultFile, start, applyTimeout); err != errNoResult {
 		return err
 	}
-	return errors.New(i18n.T("Timed out while applying the resolution", "套用解析度逾時"))
+	return errors.New(i18n.T("timed_out_while_applying_the_resolution"))
 }
 
 // ApplyElevated 由 vdswitch.exe --apply 呼叫（以系統管理員身分執行）：
@@ -62,7 +62,7 @@ func applyElevated() error {
 		cmd := exec.Command("pnputil.exe", "/restart-device", "/deviceid", hardwareID)
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: createNoWindow}
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf(i18n.T("Cannot restart the virtual display: %v", "無法重新啟動虛擬螢幕：%v"), err)
+			return fmt.Errorf(i18n.T("cannot_restart_the_virtual_display"), err)
 		}
 	}
 	return nil
@@ -92,7 +92,7 @@ func setVDDResolution(path string, p profile.Profile) error {
 	}
 	s := string(b)
 	if !reResolutions.MatchString(s) || !reRefresh.MatchString(s) {
-		return fmt.Errorf(i18n.T("Unexpected format in %s; please reinstall", "%s 的格式不符，請重新安裝"), path)
+		return fmt.Errorf(i18n.T("unexpected_format_in_please_reinstall"), path)
 	}
 	s = reResolutions.ReplaceAllLiteralString(s, fmt.Sprintf(
 		"<resolutions>\n        <resolution>\n            <width>%d</width>\n            <height>%d</height>\n            <refresh_rate>%d</refresh_rate>\n        </resolution>\n    </resolutions>",
@@ -107,7 +107,7 @@ func setVDDResolution(path string, p profile.Profile) error {
 	})
 	// 格式錯誤的 XML 驅動會整個不讀，結果是不建立螢幕、也沒有任何錯誤訊息，所以寫入前先檢查
 	if err := checkXML([]byte(s)); err != nil {
-		return fmt.Errorf(i18n.T("Invalid XML in %s: %v; please reinstall", "%s 的 XML 格式錯誤：%v，請重新安裝"), path, err)
+		return fmt.Errorf(i18n.T("invalid_xml_in_please_reinstall"), path, err)
 	}
 	return writeFileAtomic(path, []byte(s))
 }

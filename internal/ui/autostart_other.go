@@ -48,6 +48,6 @@ func SetAutostart(on bool) error {
 		return err
 	}
 	desktop := fmt.Sprintf("[Desktop Entry]\nType=Application\nName=%s\nExec=%q\nX-GNOME-Autostart-enabled=true\n",
-		i18n.T("Virtual Display Switch", "虛擬螢幕開關"), exe)
+		i18n.T("virtual_display_switch"), exe)
 	return os.WriteFile(p, []byte(desktop), 0o644)
 }

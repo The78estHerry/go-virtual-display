@@ -22,7 +22,7 @@ func trayIcon(s Snapshot) []byte {
 }
 
 func (a *App) trayReady() {
-	systray.SetTitle(i18n.T("Virtual Display Switch", "虛擬螢幕開關"))
+	systray.SetTitle(i18n.T("virtual_display_switch"))
 	systray.SetOnTapped(a.model.Toggle) // 左鍵點一下切換；右鍵開選單
 
 	mStatus := systray.AddMenuItem("", "")
@@ -31,20 +31,20 @@ func (a *App) trayReady() {
 	mSynergy := systray.AddMenuItem("Synergy", "")
 	mSynergy.Hide()
 	systray.AddSeparator()
-	mToggle := systray.AddMenuItem(i18n.T("Plug in", "插入"), "")
+	mToggle := systray.AddMenuItem(i18n.T("plug_in"), "")
 	var res *resolutionMenu
 	if a.model.ProfilesSupported() {
 		res = a.newResolutionMenu()
 	}
-	mWidget := systray.AddMenuItemCheckbox(i18n.T("Show desktop widget", "顯示桌面小工具"), "", a.widget.Visible())
-	mTop := systray.AddMenuItemCheckbox(i18n.T("Keep widget on top", "小工具固定在最上層"), "", LoadSettings().TopMost)
-	mAuto := systray.AddMenuItemCheckbox(i18n.T("Start at sign-in", "登入時自動啟動"), "", AutostartEnabled())
-	mHotkey := systray.AddMenuItem("", i18n.T("Moves the widget next to the mouse pointer", "把小工具移到滑鼠游標旁邊"))
+	mWidget := systray.AddMenuItemCheckbox(i18n.T("show_desktop_widget"), "", a.widget.Visible())
+	mTop := systray.AddMenuItemCheckbox(i18n.T("keep_widget_on_top"), "", LoadSettings().TopMost)
+	mAuto := systray.AddMenuItemCheckbox(i18n.T("start_at_sign_in"), "", AutostartEnabled())
+	mHotkey := systray.AddMenuItem("", i18n.T("moves_the_widget_next_to_the"))
 	updateHotkey := func() {
 		h, err := a.hotkey.Status()
-		title := i18n.T("Widget hotkey: ", "小工具快捷鍵：") + h.String()
+		title := i18n.T("widget_hotkey_prefix") + h.String()
 		if err != nil {
-			title += i18n.T(" (unavailable)", "（無法使用）")
+			title += i18n.T("unavailable")
 		}
 		mHotkey.SetTitle(title + "…")
 	}
@@ -55,11 +55,11 @@ func (a *App) trayReady() {
 		mHotkey.Hide()
 	}
 	systray.AddSeparator()
-	mUninstall := systray.AddMenuItem(i18n.T("Uninstall…", "解除安裝…"), "")
+	mUninstall := systray.AddMenuItem(i18n.T("uninstall"), "")
 	if !uninstallSupported() {
 		mUninstall.Hide()
 	}
-	mQuit := systray.AddMenuItem(i18n.T("Exit", "結束"), "")
+	mQuit := systray.AddMenuItem(i18n.T("exit"), "")
 
 	setCheck := func(m *systray.MenuItem, on bool) {
 		if on {
@@ -82,9 +82,9 @@ func (a *App) trayReady() {
 		}
 		running := s.Synergy == display.SynergyRunning
 		if running {
-			mSynergy.SetTitle(synergyName(s) + i18n.T(": ", "：") + synergyText(true))
+			mSynergy.SetTitle(synergyName(s) + i18n.T("sep_colon") + synergyText(true))
 		} else {
-			mSynergy.SetTitle(synergyName(s) + i18n.T(": ", "：") + synergyText(false))
+			mSynergy.SetTitle(synergyName(s) + i18n.T("sep_colon") + synergyText(false))
 		}
 		px := smallIconPx()
 		if img := synergyIcon(s.SynergyDir, px, running); img != nil {
@@ -98,7 +98,7 @@ func (a *App) trayReady() {
 
 	a.model.Subscribe(func(s Snapshot) {
 		systray.SetIcon(trayIcon(s))
-		text := i18n.T("Virtual display ", "虛擬螢幕 ") + s.Profiles.ActiveProfile().Size() + i18n.T(": ", "：") + statusText(s)
+		text := i18n.T("virtual_display") + s.Profiles.ActiveProfile().Size() + i18n.T("sep_colon") + statusText(s)
 		systray.SetTooltip(text)
 		if res != nil {
 			res.update(s)
@@ -109,10 +109,10 @@ func (a *App) trayReady() {
 		case s.Busy || s.State == display.Unknown:
 			mToggle.Disable()
 		case s.State == display.Plugged:
-			mToggle.SetTitle(i18n.T("Unplug", "拔掉"))
+			mToggle.SetTitle(i18n.T("unplug"))
 			mToggle.Enable()
 		default:
-			mToggle.SetTitle(i18n.T("Plug in", "插入"))
+			mToggle.SetTitle(i18n.T("plug_in"))
 			mToggle.Enable()
 		}
 	})
@@ -162,8 +162,8 @@ type resolutionMenu struct {
 }
 
 func (a *App) newResolutionMenu() *resolutionMenu {
-	parent := systray.AddMenuItem(i18n.T("Resolution", "解析度"), "")
-	manage := parent.AddSubMenuItem(i18n.T("Manage resolutions…", "管理解析度…"), "")
+	parent := systray.AddMenuItem(i18n.T("resolution"), "")
+	manage := parent.AddSubMenuItem(i18n.T("manage_resolutions_menu"), "")
 	parent.AddSeparator()
 	go func() {
 		for range manage.ClickedCh {

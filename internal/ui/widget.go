@@ -119,7 +119,7 @@ func (w *widgetMgr) Show() {
 	s := LoadSettings()
 	win := new(app.Window)
 	win.Option(
-		app.Title(i18n.T("Virtual Display Switch", "虛擬螢幕開關")),
+		app.Title(i18n.T("virtual_display_switch")),
 		app.Decorated(false),
 		app.TopMost(s.TopMost),
 	)
@@ -278,7 +278,7 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 				area.Pop()
 				return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceAround}.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						l := material.Label(w.theme, unit.Sp(14), i18n.T("Virtual display ", "虛擬螢幕 ")+snap.Profiles.ActiveProfile().Size())
+						l := material.Label(w.theme, unit.Sp(14), i18n.T("virtual_display")+snap.Profiles.ActiveProfile().Size())
 						l.Color = colorTitle
 						l.MaxLines = 1
 						return l.Layout(gtx)
@@ -308,21 +308,21 @@ func (w *widgetMgr) layout(gtx layout.Context, snap Snapshot, toggle *widget.Cli
 
 func statusText(s Snapshot) string {
 	if s.RebootPending && !s.Busy && s.Err == nil {
-		return i18n.T("Reboot to apply", "重新開機後套用")
+		return i18n.T("reboot_to_apply")
 	}
 	switch {
 	case s.Applying:
-		return i18n.T("Applying…", "套用中…")
+		return i18n.T("applying")
 	case s.Busy:
-		return i18n.T("Switching…", "切換中…")
+		return i18n.T("switching")
 	case s.Err != nil:
 		return s.Err.Error()
 	case s.State == display.Plugged:
-		return i18n.T("Plugged in", "已插入")
+		return i18n.T("plugged_in")
 	case s.State == display.Unplugged:
-		return i18n.T("Unplugged", "已拔掉")
+		return i18n.T("unplugged")
 	}
-	return i18n.T("Unknown state", "狀態未知")
+	return i18n.T("unknown_state")
 }
 
 // synergyName 是「Synergy 3」這樣的名稱，只顯示主要版號；讀不到版本時只寫 Synergy。
@@ -336,9 +336,9 @@ func synergyName(s Snapshot) string {
 // synergyText 是 Synergy 狀態的文字：系統列選單和小工具共用。
 func synergyText(running bool) string {
 	if running {
-		return i18n.T("Running", "執行中")
+		return i18n.T("running")
 	}
-	return i18n.T("Not running", "未執行")
+	return i18n.T("not_running")
 }
 
 // synergyRow 是狀態下面的一行：Synergy 圖示＋「Synergy 執行中／未執行」，沒裝 Synergy 時不畫。

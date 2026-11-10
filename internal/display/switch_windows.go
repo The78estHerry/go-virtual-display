@@ -127,16 +127,16 @@ func setEnabled(enable bool) error {
 		return switchError(enable, err)
 	}
 	if p, err := set.DeviceInstallParams(data); err == nil && p.Flags&(windows.DI_NEEDREBOOT|windows.DI_NEEDRESTART) != 0 {
-		return errors.New(i18n.T("Windows needs a restart to finish this change", "需要重新開機才能完成切換"))
+		return errors.New(i18n.T("windows_needs_a_restart_to_finish"))
 	}
 	return nil
 }
 
 func switchError(enable bool, err error) error {
 	if enable {
-		return fmt.Errorf(i18n.T("Cannot plug in the virtual display: %v", "無法插入虛擬螢幕：%v"), err)
+		return fmt.Errorf(i18n.T("cannot_plug_in_the_virtual_display"), err)
 	}
-	return fmt.Errorf(i18n.T("Cannot unplug the virtual display: %v", "無法拔掉虛擬螢幕：%v"), err)
+	return fmt.Errorf(i18n.T("cannot_unplug_the_virtual_display"), err)
 }
 
 // RequestUnplug 由開始功能表的「Unplug Virtual Display」捷徑（vdswitch.exe --request-unplug）呼叫，
